@@ -89,42 +89,6 @@ class Trainer(Continual_Evaluation):
         #         classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
         #         classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
 
-    def process_task(task_set, optimizer, ewc_list, importance, train, task_label=False):
-
-        task_loader = DataLoader(task_set, batch_size=64, shuffle=True, num_workers=6)
-
-        if train:
-            self.model.train()
-        else:
-            self.model.eval()
-
-        epoch_loss = 0
-        correct = 0
-
-        for i_, (x_, y_, t_) in enumerate(task_loader):
-
-            x_, y_ = torch.FloatTensor(x_).cuda(), torch.LongTensor(y_).cuda()
-            if train:
-                optimizer.zero_grad()
-            output = F.log_softmax(model(x_), dim=1)
-
-            correct += compute_correct(output, y_, t_, train, task_label)
-
-            loss = F.nll_loss(output, y_)
-            epoch_loss += loss.cpu().item()
-
-            if train:
-
-                for n, ewc in ewc_list.items():
-                    regule = ewc.penalty(model)
-                    loss += importance * regule
-                loss.backward()
-                self.opt.step()
-
-        accuracy = 100 * correct / len(task_loader.dataset)
-        loss_mean = epoch_loss / (1.0 * len(task_loader.dataset))
-
-        return loss_mean, accuracy
 
     def one_task_training(self, train_loader, ind_task):
         correct = 0
@@ -154,17 +118,16 @@ class Trainer(Continual_Evaluation):
     def continual_training(self, scenario_tr):
 
         for task_id, dataset_tr in enumerate(scenario_tr):
-            print("Task {}: Start".format(ind_task))
-            self.init_log(ind_task)
+            print("Task {}: Start".format(task_id))
+            self.init_log(task_id)
 
-            self.init_task(ind_task)
-            self.log_task(ind_task, self.model) # before training
-            self.one_task_training(dataset_tr, ind_task)
-            self.callback_task(ind_task)
+            self.init_task(task_id)
+            self.log_task(task_id, self.model) # before training
+            self.one_task_training(dataset_tr, task_id)
+            self.callback_task(task_id)
 
             self.test()
 
-            continuum.delete_task(ind_task)
 
         # last log (we log  at the beginning of each task exept for the last one)
         self.init_log(self.num_tasks)
