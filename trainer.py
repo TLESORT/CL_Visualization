@@ -119,10 +119,12 @@ class Trainer(Continual_Evaluation):
 
         for task_id, dataset_tr in enumerate(scenario_tr):
             print("Task {}: Start".format(task_id))
-            self.init_log(task_id)
+            # log is disabled for first debugging steps
+            #self.init_log(task_id)
 
             self.init_task(task_id)
-            self.log_task(task_id, self.model) # before training
+            # log is disabled for first debugging steps
+            #self.log_task(task_id, self.model) # before training
             self.one_task_training(dataset_tr, task_id)
             self.callback_task(task_id)
 
@@ -132,9 +134,9 @@ class Trainer(Continual_Evaluation):
         # last log (we log  at the beginning of each task exept for the last one)
 
         # log is disabled for first debugging steps
-        self.init_log(self.num_tasks)
-        self.log_task(self.num_tasks, self.model)
-        self.post_training_log()
+        #self.init_log(self.num_tasks)
+        #self.log_task(self.num_tasks, self.model)
+        #self.post_training_log()
 
 
 
