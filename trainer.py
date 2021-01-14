@@ -57,13 +57,13 @@ class Trainer(Continual_Evaluation):
         classe_prediction = np.zeros(10)
         classe_total = np.zeros(10)
         classe_wrong = np.zeros(10)  # Images wrongly attributed to a particular class
-        for i_, (x_, t_) in enumerate(self.eval_te_loader):
+        for i_, (x_, y_, t_) in enumerate(self.eval_te_loader):
 
             # data does not fit to the model if size<=1
             if x_.size(0) <= 1:
                 continue
 
-            t_ = t_.cuda()
+            y_ = y_.cuda()
             x_ = x_.cuda()
 
             self.model.eval()
@@ -71,15 +71,15 @@ class Trainer(Continual_Evaluation):
             #loss = F.cross_entropy(output, t_)
 
             #loss = self.regularize_loss(self.model, loss)
-            correct += (output.max(dim=1)[1] == t_).data.sum()
+            correct += (output.max(dim=1)[1] == y_).data.sum()
             pred = output.data.max(1, keepdim=True)[1]
-            for i in range(t_.shape[0]):
-                if pred[i].cpu()[0] == t_[i].cpu():
+            for i in range(y_.shape[0]):
+                if pred[i].cpu()[0] == y_[i].cpu():
                     classe_prediction[pred[i].cpu()[0]] += 1
                 else:
                     classe_wrong[pred[i].cpu()[0]] += 1
 
-                classe_total[t_[i]] += 1
+                classe_total[y_[i]] += 1
 
         print(len(self.test_set))
         print("Test Accuracy: {} %".format(100*(1.0*correct)/len(self.test_set)))
