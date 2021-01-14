@@ -37,8 +37,8 @@ class Trainer(Continual_Evaluation):
             fisher_set = ClassIncremental(dataset_train, nb_tasks=1)#.sub_sample(1000)
             self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
 
-        self.eval_tr_loader = DataLoader(fisher_set, batch_size=25, shuffle=False, num_workers=6)
-        self.eval_te_loader = DataLoader(self.test_set, batch_size=25, shuffle=False, num_workers=6)
+        self.fisher_loader = DataLoader(fisher_set[:], batch_size=25, shuffle=False, num_workers=6)
+        self.eval_te_loader = DataLoader(self.test_set[:], batch_size=25, shuffle=False, num_workers=6)
         self.opt = optim.SGD(params=model.parameters(), lr=0.001, momentum=0.9)
 
 
