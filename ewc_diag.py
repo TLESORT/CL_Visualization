@@ -4,10 +4,10 @@ from torch.nn import functional as F
 from copy import deepcopy
 from torch.utils import data
 
-from nngeometry.object import PVector, PMatDiag
-from nngeometry.metrics import FIM_MonteCarlo
+from nngeometry.metrics import FIM
 from nngeometry.layercollection import LayerCollection
-
+from nngeometry.object import PMatDiag
+from nngeometry.object.vector import PVector
 from trainer import Trainer
 
 
@@ -16,16 +16,17 @@ class EWC_Diag(Trainer):
         super().__init__(scenario, continuum, model)
         self.model = model
         self.layer_collection = LayerCollection.from_model(model)
+        
         self.importance = 100
         self.list_Fishers = {}
         self.algo_name = "ewc_diag"
 
-    def compute_fisher(self, model, ind_task):
+    def compute_fisher(self, task_set, model, ind_task):
 
-
-        self.continuum.set_task(ind_task)
-        F_diag = FIM_MonteCarlo(model=model,
-                                 loader=self.train_loader,
+		fisher_set = deepcopy(task_set)
+        
+        F_diag = FIM(model=model,
+                                 loader=self.fisher_set,
                                  representation=PMatDiag,
                                  device='cuda')
 
