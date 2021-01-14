@@ -130,6 +130,8 @@ class Trainer(Continual_Evaluation):
 
 
         # last log (we log  at the beginning of each task exept for the last one)
+
+        # log is disabled for first debugging steps
         self.init_log(self.num_tasks)
         self.log_task(self.num_tasks, self.model)
         self.post_training_log()
