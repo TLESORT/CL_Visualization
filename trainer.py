@@ -81,8 +81,8 @@ class Trainer(Continual_Evaluation):
 
                 classe_total[y_[i]] += 1
 
-        print(len(self.test_set))
-        print("Test Accuracy: {} %".format(100*(1.0*correct)/len(self.test_set)))
+        print(len(self.eval_te_loader))
+        print("Test Accuracy: {} %".format(100.0*correct/len(self.eval_te_loader.dataset)))
 
         # for i in range(10):
         #     print("Task " + str(i) + "- Prediction :" + str(
