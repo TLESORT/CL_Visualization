@@ -7,14 +7,13 @@ from torch.utils import data
 import os
 from copy import copy
 from trainer import Trainer
-#from Continual_Learning_Data_Former.continuum.continuum_loader import ContinuumSetLoader
+from continuum import TaskSet
+from memory import MemorySet
 
 
 class Rehearsal(Trainer):
-    def __init__(self, scenario, continuum, model):
-        super().__init__(scenario, continuum, model)
-        self.model = model
-        self.continuum = continuum
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks)
         self.algo_name = "rehearsal"
         self.data_memory = None
         self.num_classes_per_task = 2
@@ -30,8 +29,9 @@ class Rehearsal(Trainer):
         if ind_task < self.num_tasks:
             self.manage_memory(ind_task, self.nb_samples_rehearsal, self.samples_transfer)
 
-        path = os.path.join(self.sample_dir, 'training_' + str(ind_task) + '.png')
-        self.continuum.visualize_sample(path, self.sample_num, [self.image_size, self.image_size, self.input_size])
+        self.scenario_tr[ind_task].plot(self.sample_dir, f"training_{ind_task}.png",
+                                      nb_samples= 100,
+                                      shape = [self.image_size, self.image_size, self.input_size])
 
     def callback_task(self, ind_task):
         pass
@@ -45,41 +45,29 @@ class Rehearsal(Trainer):
         :return: updated train_set and test_set
         """
         # save sample before modification of training set
-        self.continuum.set_task(ind_task)
-        x_tr, y_tr = self.continuum.get_sample(nb_samples_rehearsal, shape=[self.input_size, self.image_size, self.image_size])
+        self.scenario_tr.set_task(ind_task)
+        x_tr, y_tr = self.scenario_tr.get_sample(nb_samples_rehearsal, shape=[self.input_size, self.image_size, self.image_size])
         self.task_samples = copy(x_tr).reshape(-1, self.input_size* self.image_size* self.image_size)
         self.task_labels = copy(y_tr)
 
         # create data loader with memory from previous task
         if ind_task > 0:
-            # balanced the number of sample and incorporate it in the memory
-            self.continuum.set_task(ind_task)
             # put the memory inside the training dataset
-            self.continuum.concatenate(self.data_memory)
-            self.continuum.set_task(ind_task)
-            self.continuum.shuffle_task()
+            self.scenario_tr.add_samples(self.data_memory)
 
-        # Add data to memory at the end
-        c1 = 0
-        c2 = 1
-        tasks_tr = []  # reset the list
-
-        # save samples from the actual task in the memory
-
-        tasks_tr.append([(c1, c2), self.task_samples, self.task_labels])
         increase_factor = int(samples_transfer / self.nb_samples_rehearsal) * self.num_classes_per_task
-
         assert increase_factor > 0
 
         if ind_task == 0:
-            self.data_memory = ContinuumSetLoader(tasks_tr, transform=None, load_images=False)
-            self.data_memory.increase_size(increase_factor)
+            self.data_memory = MemorySet(self.task_samples, self.task_labels)
+            #self.data_memory.increase_size(increase_factor)
         else:
-            new_data = ContinuumSetLoader(tasks_tr, transform=None, load_images=False)
-            new_data.increase_size(increase_factor)
-            self.data_memory.concatenate(new_data)
+            #new_data = TaskSet(self.task_samples, self.task_label)
+            #new_data.increase_size(increase_factor)
+            self.data_memory.add_samples(self.task_samples, self.task_label)
 
-        path = os.path.join(self.sample_dir, 'memory_' + str(ind_task) + '.png')
-        self.data_memory.visualize_sample(path, self.sample_num, [self.image_size, self.image_size, self.input_size])
+        self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
+                                      nb_samples= 100,
+                                      shape = [self.image_size, self.image_size, self.input_size]))
 
 
