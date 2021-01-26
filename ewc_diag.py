@@ -12,8 +12,8 @@ from trainer import Trainer
 
 
 class EWC_Diag(Trainer):
-    def __init__(self, scenario, continuum, model):
-        super().__init__(scenario, continuum, model)
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks)
         self.model = model
         self.layer_collection = LayerCollection.from_model(model)
 
