@@ -18,9 +18,12 @@ parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag'],
                     default='baseline',
                     help='EWC type')
-parser.add_argument('--scenario', default="Disjoint", type=str,
+parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations'], default="Disjoint",
                     help='continual scenario')
-parser.add_argument('--Root_dir', default="Archives", type=str,
+parser.add_argument('--num_tasks', type=int,
+                    default='5',
+                    help='Task number')
+parser.add_argument('--Root_dir', default="./Archives", type=str,
                     help='data directory name')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
@@ -41,34 +44,21 @@ parser.add_argument('--seed', default="1992", type=int,
 args = parser.parse_args()
 
 dataset = "MNIST"
-scenario = "Disjoint"
-# scenario = "Rotations"
 
-dir = "./Archives"
-dir_data = "Archives/Data"
-log_dir = os.path.join(dir, "Logs", scenario)
-num_tasks = 5
-
-dataset_train = MNIST("../Datasets/", download=True, train=True)
-
-continuum = None
-if scenario == "Rotations":
-    continuum = Rotations(dataset_train, nb_tasks=num_tasks)
-elif scenario == "Disjoint":
-    continuum = ClassIncremental(dataset_train, nb_tasks=num_tasks)
+root_dir = "./Archives"
 
 model = Model().cuda()
 
 if args.name_algo == "baseline":
-    Algo = Trainer(scenario, continuum, model)
+    Algo = Trainer(root_dir, dataset, args.scenario_name, model, args.num_tasks)
 elif args.name_algo == "rehearsal":
-    Algo = Rehearsal(scenario, continuum, model)
+    Algo = Rehearsal(root_dir, dataset, args.scenario_name, model, args.num_tasks)
 elif args.name_algo == "ewc_diag":
-    Algo = EWC_Diag(scenario, continuum, model)
+    Algo = EWC_Diag(root_dir, dataset, args.scenario_name, model, args.num_tasks)
 else:
     print("wrong name")
 
-Algo.continual_training(continuum)
+Algo.continual_training()
 # Algo.eval()
 
-# Continual_Plot(args).plot_figures()
+#Continual_Plot(args).plot_figures()

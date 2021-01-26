@@ -1,14 +1,18 @@
-
 import pickle
 import os
 import torch
 from torch.utils import data
+from nngeometry.layercollection import LayerCollection
+from nngeometry.metrics import FIM
+from nngeometry.object import PMatDiag
 
 from copy import deepcopy
+
 
 class Continual_Evaluation(object):
     """ this class gives function to log for continual algorithms evaluation"""
     """ Log and Figure plotting should be clearly separate we can do on without the other """
+
     def __init__(self, args):
         print("Abstract class")
 
@@ -36,10 +40,10 @@ class Continual_Evaluation(object):
     def log_weights_dist(self, ind_task):
 
         # compute the l2 distance between current model and model at the beginning of the task
-        dist_list = [torch.dist(p_current, p_ref) for p_current, p_ref in zip(self.model.parameters(), self.ref_model.parameters())]
-        dist = torch.tensor(dist_list).mean().item()
+        dist_list = [torch.dist(p_current, p_ref) for p_current, p_ref in
+                     zip(self.model.parameters(), self.ref_model.parameters())]
+        dist = torch.tensor(dist_list).mean().cpu().item()
         self.list_weights_dist[ind_task].append(dist)
-
 
     def log_iter(self, ind_task, model, loss):
 
@@ -57,23 +61,26 @@ class Continual_Evaluation(object):
 
         self.model.eval()
 
-        for i_, (x_, t_) in enumerate(self.eval_tr_loader):
+        for i_, (x_, y_, t_) in enumerate(self.eval_tr_loader):
+
+            if len(self.list_latent[ind_task]) > 200:
+                break
 
             # data does not fit to the model if size<=1
             if x_.size(0) <= 1:
                 continue
             x_ = x_.cuda()
-            self.list_latent[ind_task].append([self.model(x_, latent_vector=True).cpu(), t_])
-
+            latent_vector = self.model(x_, latent_vector=True).cpu()
+            self.list_latent[ind_task].append([latent_vector, y_])
 
     def log_task(self, ind_task, model):
-
-        torch.save(self.model.state_dict(), os.path.join(self.log_dir, "Model_Task_{}.pth".format(ind_task)))
+        model2save = deepcopy(self.model).cpu().state_dict()
+        torch.save(model2save, os.path.join(self.log_dir, "Model_Task_{}.pth".format(ind_task)))
 
         self.log_latent(ind_task)
 
         F_diag, v0 = self.compute_last_layer_fisher(self.model, self.eval_tr_loader)
-        self.list_Fisher.append(F_diag.get_diag())
+        self.list_Fisher.append(F_diag.get_diag().cpu())
 
     def post_training_log(self):
         file_name = os.path.join(self.log_dir, "{}_loss.pkl".format(self.algo_name))
@@ -109,7 +116,7 @@ class Continual_Evaluation(object):
         F_diag = FIM(layer_collection=layer_collection_last_layer,
                      model=model,
                      loader=fisher_loader,
-                     representation=PSpaceDiag,
+                     representation=PMatDiag,
                      n_output=10,
                      variant='classif_logits',
                      device='cuda')

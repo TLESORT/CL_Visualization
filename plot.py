@@ -28,8 +28,8 @@ class Continual_Plot(object):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
 
     def __init__(self, args):
-        self.log_dir = os.path.join(args.Root_dir, "Logs", args.scenario)
-        self.Fig_dir = os.path.join(args.Root_dir, "Figures", args.scenario)
+        self.log_dir = os.path.join(args.Root_dir, "Logs", args.scenario_name)
+        self.Fig_dir = os.path.join(args.Root_dir, "Figures", args.scenario_name)
 
         fast = True
 
@@ -37,14 +37,14 @@ class Continual_Plot(object):
     def plot_figures(self):
 
         name_list = ["baseline","ewc_diag", "rehearsal"]
-        # name_list = ["rehearsal"]
+        name_list = ["baseline"]
         for name in name_list:
-            #plot_tsne(self.log_dir, self.Fig_dir, name)
-            # plot_weights_diff(self.log_dir, self.Fig_dir, name)
-            # plot_mean_weights_dist(self.log_dir, self.Fig_dir, name)
+            plot_tsne(self.log_dir, self.Fig_dir, name)
+            plot_weights_diff(self.log_dir, self.Fig_dir, name)
+            plot_mean_weights_dist(self.log_dir, self.Fig_dir, name)
             plot_Fisher(self.log_dir, self.Fig_dir, name)
-            # plot_loss(self.log_dir, self.Fig_dir, name)
-            # plot_grad(self.log_dir, self.Fig_dir, name)
+            plot_loss(self.log_dir, self.Fig_dir, name)
+            plot_grad(self.log_dir, self.Fig_dir, name)
 
 
 
@@ -53,9 +53,9 @@ class Continual_Plot(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--scenario', default="Disjoint", type=str,
+    parser.add_argument('--scenario_name', default="Disjoint", type=str,
                         help='continual scenario')
-    parser.add_argument('--Root_dir', default="Archives", type=str,
+    parser.add_argument('--Root_dir', default="./Archives", type=str,
                         help='data directory name')
 
     args = parser.parse_args()
