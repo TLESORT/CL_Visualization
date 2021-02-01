@@ -1,13 +1,10 @@
-from continuum import ClassIncremental
-from continuum import Rotations
-from continuum.datasets import MNIST
+
 import os
 import argparse
 from model import Model
 from trainer import Trainer
 from ewc_diag import EWC_Diag
 from rehearsal import Rehearsal
-from plot import Continual_Plot
 
 # le gradient depend de la couche de sortie (pas toujours)
 # mais surtout de la loss function
