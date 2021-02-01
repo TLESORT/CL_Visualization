@@ -7,7 +7,7 @@ from torch.utils import data
 import os
 from copy import copy
 from trainer import Trainer
-from continuum import TaskSet
+from continuum.tasks.task_set import TaskSet
 from memory import MemorySet
 
 
@@ -39,7 +39,7 @@ class Rehearsal(Trainer):
     def manage_memory(self, ind_task, nb_samples_rehearsal, samples_transfer):
         """
         Method to select samples for rehearsal
-        :param ind_task: index of the task to select samples fro;
+        :param ind_task: index of the task to select samples from
         :param nb_samples_rehearsal: number of samples saved per task
         :param samples_transfer: number of samples to incorporate in the new training set (samples_transfer > nb_samples_rehearsal)
         :return: updated train_set and test_set
@@ -68,6 +68,7 @@ class Rehearsal(Trainer):
 
         self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
                                       nb_samples= 100,
-                                      shape = [self.image_size, self.image_size, self.input_size]))
+                                      shape = [self.image_size, self.image_size, self.input_size])
+
 
 
