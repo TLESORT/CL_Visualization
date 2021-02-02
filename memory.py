@@ -33,6 +33,11 @@ class MemorySet(TaskSet):
         """
         return len(self.list_IDs)
 
+    def get_random_raw_samples(self, nb_samples):
+        nb_tot_samples = self._x.shape[0]
+        indexes = np.random.randint(0, nb_tot_samples, nb_samples)
+        return self.get_raw_samples(indexes)
+
     def get_nb_samples(self):
         """
         The nb of samples is the size of the labels vector
@@ -54,20 +59,6 @@ class MemorySet(TaskSet):
 
         self.list_IDs.update(dict_new_memory)
 
-    def balance_classes(self):
-        """
-        modify list_ID so classes will be balanced while loaded with data loader
-        """
-        self.reset_list_IDs()
-        list_classes = np.unique(self._y)
-
-        # TODO
-
-    def balance_tasks(self):
-        """
-        modify list_ID so classes will be balanced while loaded with data loader
-        """
-
     def increase_size(self, increase_factor):
         """
         artificially increase size of memory for balance purpose
@@ -80,11 +71,64 @@ class MemorySet(TaskSet):
         new_dic = {i: np.random.choice(len(self._y)) for i in range(current_len, new_len)}
         self.list_IDs.update(new_dic)
 
-    def get_size_class(self, class_label):
+    def increase_size_class(self, increase_factor, class_label):
+        """
+        artificially increase size of memory for balance purpose
+        """
+        assert increase_factor > 1.0
+        assert class_label in self.get_classes()
+
+        nb_instance_class = self.get_nb_samples(class_label)
+        nb_new_instance_needed = int(nb_instance_class * (increase_factor - 1))
+
+        len_list = len(self)
+
+        class_indexes = self.get_indexes_class(class_label)
+
+        # create dictionnary with new keys
+        new_dic = {i: np.random.choice(class_indexes) for i in range(len_list, len_list + nb_new_instance_needed)}
+        self.list_IDs.update(new_dic)
+
+    def balance_classes(self):
+        """
+        modify list_ID so classes will be balanced while loaded with data loader
+        """
+        self.reset_list_IDs()
+        list_classes = np.unique(self._y)
+
+        # first we get the number of samples for each class
+        list_samples_per_classes = {}
+        for _class in list_classes:
+            nb_samples = self.get_nb_samples_class(_class)
+            list_samples_per_classes[_class] = nb_samples
+
+        max_samples = max(list_samples_per_classes, key=list_samples_per_classes.get)
+
+        # we increase the nb of samples for classes under represented
+        for _class in list_classes:
+            nb_samples = list_samples_per_classes[_class]
+            increase_factor = 1.0 * max_samples / nb_samples
+            # we tolerate 5% error
+            if increase_factor > 1.05:
+                self.increase_size_class(increase_factor, _class)
+
+    def balance_tasks(self):
+        """
+        modify list_ID so classes will be balanced while loaded with data loader
+        """
+        # TODO
+
+    def get_nb_instances_class(self, class_label):
         """
         get the number of iteration of certain class
         """
         return sum(self._y[value] == class_label for value in self.list_IDs.values())
+
+    def get_indexes_class(self, class_label):
+        """
+        get the number of iteration of certain class
+        """
+        return [value for value in self.list_IDs.values() if self._y[value] == class_label]
 
     def get_nb_samples_class(self, class_label):
         """
@@ -94,7 +138,7 @@ class MemorySet(TaskSet):
         """
         return len(np.where(self._y == class_label))
 
-    def get_size_task(self, task_id):
+    def get_nb_instances_task(self, task_id):
         """
         get the number of iteration of certain class
         """
