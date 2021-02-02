@@ -82,13 +82,14 @@ def test_loader_and_increase_factor(increase_factor):
 
     assert len(train_loader.dataset) == SIZE_MEMORY * increase_factor
 
+
 @pytest.mark.parametrize("increase_factor", [3, 3.5, 1.75])
 def test_memory_increase_size_class(increase_factor):
     (x_1, y_1, t_1), _ = gen_data()
 
     memory_set = MemorySet(x_1, y_1, t_1, None)
 
-    class_label=y_1[0]
+    class_label = y_1[0]
 
     nb_initial_instances = memory_set.get_nb_instances_class(class_label=class_label)
 
@@ -99,10 +100,9 @@ def test_memory_increase_size_class(increase_factor):
 
     new_nb_instances = memory_set.get_nb_instances_class(class_label=class_label)
 
-    assert new_nb_instances == int(nb_initial_instances*increase_factor)
+    assert new_nb_instances == int(nb_initial_instances * increase_factor)
     # the number of instance has been multiplied, not the number of samples
-    assert new_nb_instances == int(memory_set.get_nb_samples_class(class_label=class_label)*increase_factor)
-
+    assert new_nb_instances == int(memory_set.get_nb_samples_class(class_label=class_label) * increase_factor)
 
 
 def test_memory_get_nb_samples_class():
