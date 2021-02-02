@@ -3,14 +3,19 @@ from memory import MemorySet
 from torch.utils import data
 import pytest
 
-SIZE_MEMORY=20
+SIZE_MEMORY = 20
+
 
 def gen_data():
     x_1 = np.random.randint(0, 255, size=(SIZE_MEMORY, 32, 32, 3))
-    y_1 = []
-    for i in range(10):
-        y_1.append(np.ones(2) * i)
-    y_1 = np.concatenate(y_1)
+    # label unbalanced of size $SIZE_MEMORY
+    y_1 = [0, 0, 0, 0, 0,
+           0, 0, 1, 1, 1,
+           2, 2, 2, 2, 2,
+           3, 4, 4, 5, 5]
+    # for i in range(int(SIZE_MEMORY / 2)):
+    #     y_1.append(np.ones(2) * i)
+    y_1 = np.array(y_1)
     t_1 = np.ones(len(y_1))
 
     x_2 = np.random.randint(0, 255, size=(SIZE_MEMORY, 32, 32, 3))
@@ -31,6 +36,7 @@ def test_taskset():
     assert len(memory_set) == SIZE_MEMORY
     assert memory_set.get_nb_samples() == SIZE_MEMORY
 
+
 @pytest.mark.parametrize("increase_factor", [2, 2.5, 5.07])
 def test_increase_memory(increase_factor):
     (x_1, y_1, t_1), _ = gen_data()
@@ -46,6 +52,7 @@ def test_increase_memory(increase_factor):
     # the number of samples stay the same only the id list grows
     assert memory_set.get_nb_samples() == before_nb_samples
 
+
 def test_concatenate():
     (x_1, y_1, t_1), (x_2, y_2, t_2) = gen_data()
 
@@ -53,6 +60,7 @@ def test_concatenate():
     memory_set_2 = MemorySet(x_2, y_2, t_2, None)
 
     memory_set_1.concatenate(other_memory_set=memory_set_2)
+
 
 def test_loader():
     (x_1, y_1, t_1), _ = gen_data()
@@ -73,3 +81,53 @@ def test_loader_and_increase_factor(increase_factor):
     train_loader = data.DataLoader(memory_set, batch_size=64, shuffle=True, num_workers=6)
 
     assert len(train_loader.dataset) == SIZE_MEMORY * increase_factor
+
+@pytest.mark.parametrize("increase_factor", [3, 3.5, 1.75])
+def test_memory_increase_size_class(increase_factor):
+    (x_1, y_1, t_1), _ = gen_data()
+
+    memory_set = MemorySet(x_1, y_1, t_1, None)
+
+    class_label=y_1[0]
+
+    nb_initial_instances = memory_set.get_nb_instances_class(class_label=class_label)
+
+    # for now the number of instance should be the same as the number of samples
+    assert nb_initial_instances == memory_set.get_nb_samples_class(class_label=class_label)
+
+    memory_set.increase_size_class(class_label=class_label)
+
+    new_nb_instances = memory_set.get_nb_instances_class(class_label=class_label)
+
+    assert new_nb_instances == int(nb_initial_instances*increase_factor)
+    # the number of instance has been multiplied, not the number of samples
+    assert new_nb_instances == int(memory_set.get_nb_samples_class(class_label=class_label)*increase_factor)
+
+
+
+def test_memory_get_nb_samples_class():
+    (x_1, y_1, t_1), _ = gen_data()
+
+    memory_set = MemorySet(x_1, y_1, t_1, None)
+
+    classes = memory_set.get_classes()
+
+    for i, _class in enumerate(classes):
+        nb_samples = len(np.where(y_1 == _class))
+        assert nb_samples == memory_set.get_nb_samples_class(_class)
+
+
+def test_memory_classes_balance():
+    (x_1, y_1, t_1), _ = gen_data()
+
+    memory_set = MemorySet(x_1, y_1, t_1, None)
+
+    memory_set.balance_classes()
+
+    classes = memory_set.get_classes()
+
+    nb_samples = 0
+    for i, _class in enumerate(classes):
+        if i != 0:
+            assert nb_samples == memory_set.get_nb_samples_class(_class)
+        nb_samples = memory_set.get_nb_samples_class(_class)
