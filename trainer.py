@@ -1,5 +1,6 @@
 import torch
 import torch.multiprocessing
+
 torch.multiprocessing.set_sharing_strategy('file_system')
 
 from torch.utils.data import DataLoader
@@ -15,20 +16,20 @@ from continuum import ClassIncremental
 from continuum import Rotations
 from continuum.datasets import MNIST
 
-
 from eval import Continual_Evaluation
 
 
 class Trainer(Continual_Evaluation):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks):
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, dev):
 
         self.root_dir = root_dir
         self.verbose = False
 
         self.dir_data = os.path.join(self.root_dir, "Data")
-        self.log_dir = os.path.join(self.root_dir , "Logs", scenario_name)
+        self.log_dir = os.path.join(self.root_dir, "Logs", scenario_name)
         self.model = model
         self.algo_name = "baseline"
+        self.dev = dev
 
         dataset_train = MNIST("../Datasets/", download=True, train=True)
         dataset_test = MNIST("../Datasets/", download=True, train=False)
@@ -39,7 +40,6 @@ class Trainer(Continual_Evaluation):
         elif scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
 
-
         self.num_tasks = num_tasks
         self.continuum = scenario
 
@@ -47,7 +47,7 @@ class Trainer(Continual_Evaluation):
         if scenario_name == "Rotations":
             fisher_set = Rotations(dataset_train, nb_tasks=1)
         elif scenario_name == "Disjoint":
-            fisher_set = ClassIncremental(dataset_train, nb_tasks=1)#.sub_sample(1000)
+            fisher_set = ClassIncremental(dataset_train, nb_tasks=1)  # .sub_sample(1000)
             self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
 
         self.fisher_loader = DataLoader(fisher_set[:], batch_size=25, shuffle=True, num_workers=6)
@@ -55,15 +55,13 @@ class Trainer(Continual_Evaluation):
         self.eval_te_loader = DataLoader(self.test_set[:], batch_size=25, shuffle=True, num_workers=6)
         self.opt = optim.SGD(params=self.model.parameters(), lr=0.001, momentum=0.9)
 
-
-
     def regularize_loss(self, model, loss):
         return loss
 
-    def init_task(self, ind_task):
+    def init_task(self, ind_task, task_set):
         pass
 
-    def callback_task(self, ind_task):
+    def callback_task(self, ind_task, task_set):
         pass
 
     def test(self):
@@ -93,7 +91,7 @@ class Trainer(Continual_Evaluation):
 
                 classe_total[y_[i]] += 1
 
-        print("Test Accuracy: {} %".format(100.0*correct/len(self.eval_te_loader.dataset)))
+        print("Test Accuracy: {} %".format(100.0 * correct / len(self.eval_te_loader.dataset)))
 
         if self.verbose:
             for i in range(10):
@@ -101,8 +99,7 @@ class Trainer(Continual_Evaluation):
                     classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
                     classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
 
-
-    def one_task_training(self, task_set, ind_task):
+    def one_task_training(self, ind_task, task_set):
         correct = 0
 
         data_loader = DataLoader(task_set, batch_size=25, shuffle=False, num_workers=6)
@@ -128,6 +125,8 @@ class Trainer(Continual_Evaluation):
 
             assert output.shape[0] == y_.shape[0]
             correct += (output.max(dim=1)[1] == y_).data.sum()
+            if self.dev:
+                break
 
     def continual_training(self):
 
@@ -136,11 +135,11 @@ class Trainer(Continual_Evaluation):
             # log is disabled for first debugging steps
             self.init_log(task_id)
 
-            self.init_task(task_id)
+            self.init_task(task_id, task_set)
             # log is disabled for first debugging steps
-            self.log_task(task_id, self.model) # before training
-            self.one_task_training(task_set, task_id)
-            self.callback_task(task_id)
+            self.log_task(task_id, self.model)  # before training
+            self.one_task_training(task_id, task_set)
+            self.callback_task(task_id, task_set)
 
             self.test()
 
@@ -149,6 +148,3 @@ class Trainer(Continual_Evaluation):
         self.init_log(self.num_tasks)
         self.log_task(self.num_tasks, self.model)
         self.post_training_log()
-
-
-
