@@ -10,97 +10,54 @@ from nngeometry.object import PMatDiag, PMatKFAC
 from nngeometry.object.vector import PVector
 from trainer import Trainer
 
+
 class EWC_Diag(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatDiag)
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, dev):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatDiag, dev)
+        self.algo_name = "ewc_diag"
 
 
 class EWC_KFAC(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatKFAC)
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, dev):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatKFAC, dev)
+        self.algo_name = "ewc_kfac"
 
 
 class EWC(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, representation):
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, representation, dev):
         super().__init__(root_dir, dataset, scenario_name, model, num_tasks)
         self.model = model
         self.layer_collection = LayerCollection.from_model(model)
+        self.representation = representation
 
         self.importance = 100
         self.list_Fishers = {}
-        self.algo_name = "ewc_diag"
-        self.representation=representation
+        self.representation = representation
 
     def compute_fisher(self, task_set, model, ind_task):
         fisher_set = deepcopy(task_set)
 
         F_diag = FIM(model=model,
                      loader=fisher_set,
-                     representation=PMatDiag,
+                     representation=self.representation,
                      device='cuda')
 
         v0 = PVector.from_model(model).clone().detach()
 
         return F_diag, v0
 
+    def init_task(self, ind_task):
+        pass
 
-def init_task(self, ind_task):
-    pass
+    def callback_task(self, ind_task):
+        self.list_Fishers[ind_task] = self.compute_fisher(self.model, ind_task)
 
+    def regularize_loss(self, model, loss):
+        v = PVector.from_model(model)
 
-def callback_task(self, ind_task):
-    self.list_Fishers[ind_task] = self.compute_fisher(self.model, ind_task)
+        for i, (fim, v0) in self.list_Fishers.items():
+            loss += self.importance * fim.vTMv(v - v0)
 
+        assert loss == loss  # sanity check to detect nan
 
-def regularize_loss(self, model, loss):
-    v = PVector.from_model(model)
-
-    for i, (fim, v0) in self.list_Fishers.items():
-        loss += self.importance * fim.vTMv(v - v0)
-
-    assert loss == loss  # sanity check to detect nan
-
-    return loss
-
-
-class EWC_Diag(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks)
-        self.model = model
-        self.layer_collection = LayerCollection.from_model(model)
-
-        self.importance = 100
-        self.list_Fishers = {}
-        self.algo_name = "ewc_diag"
-        self.representation=PMatDiag
-
-    def compute_fisher(self, task_set, model, ind_task):
-        fisher_set = deepcopy(task_set)
-
-        F_diag = FIM(model=model,
-                     loader=fisher_set,
-                     representation=PMatDiag,
-                     device='cuda')
-
-        v0 = PVector.from_model(model).clone().detach()
-
-        return F_diag, v0
-
-
-def init_task(self, ind_task):
-    pass
-
-
-def callback_task(self, ind_task):
-    self.list_Fishers[ind_task] = self.compute_fisher(self.model, ind_task)
-
-
-def regularize_loss(self, model, loss):
-    v = PVector.from_model(model)
-
-    for i, (fim, v0) in self.list_Fishers.items():
-        loss += self.importance * fim.vTMv(v - v0)
-
-    assert loss == loss  # sanity check to detect nan
-
-    return loss
+        return loss
