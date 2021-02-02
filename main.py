@@ -3,8 +3,7 @@ import os
 import argparse
 from model import Model
 from trainer import Trainer
-from ewc_diag import EWC_Diag
-from rehearsal import Rehearsal
+
 
 # le gradient depend de la couche de sortie (pas toujours)
 # mais surtout de la loss function
@@ -41,17 +40,18 @@ parser.add_argument('--seed', default="1992", type=int,
 args = parser.parse_args()
 
 dataset = "MNIST"
-
 root_dir = "./Archives"
 
 model = Model().cuda()
 
 if args.name_algo == "baseline":
-    Algo = Trainer(root_dir, dataset, args.scenario_name, model, args.num_tasks)
+    Algo = Trainer(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.dev)
 elif args.name_algo == "rehearsal":
-    Algo = Rehearsal(root_dir, dataset, args.scenario_name, model, args.num_tasks)
+    from rehearsal import Rehearsal
+    Algo = Rehearsal(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.dev)
 elif args.name_algo == "ewc_diag":
-    Algo = EWC_Diag(root_dir, dataset, args.scenario_name, model, args.num_tasks)
+    from ewc_diag import EWC_Diag
+    Algo = EWC_Diag(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.dev)
 else:
     print("wrong name")
 
