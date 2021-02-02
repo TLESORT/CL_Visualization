@@ -18,10 +18,14 @@ class MemorySet(TaskSet):
     ):
         super().__init__(x=x, y=y, t=t, trsf=trsf, data_type=data_type)
 
-        list_labels = range(len(y))
+        list_labels_id = range(len(self._y))
 
         # dictionnary used by pytorch loader
-        self.list_IDs = {i: list_labels[i] for i in range(0, len(list_labels))}
+        self.list_IDs = {i: list_labels_id[i] for i in range(0, len(list_labels_id))}
+
+    def reset_list_IDs(self):
+        list_labels_id = range(len(self._y))
+        self.list_IDs = {i: list_labels_id[i] for i in range(0, len(list_labels_id))}
 
     def __len__(self):
         """
@@ -49,6 +53,20 @@ class MemorySet(TaskSet):
         self._t = np.concatenate((self._t, other_memory_set._t), axis=0)
 
         self.list_IDs.update(dict_new_memory)
+
+    def balance_classes(self):
+        """
+        modify list_ID so classes will be balanced while loaded with data loader
+        """
+        self.reset_list_IDs()
+        list_classes = np.unique(self._y)
+
+        # TODO
+
+    def balance_tasks(self):
+        """
+        modify list_ID so classes will be balanced while loaded with data loader
+        """
 
     def increase_size(self, increase_factor):
         """
