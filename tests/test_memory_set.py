@@ -96,7 +96,7 @@ def test_memory_increase_size_class(increase_factor):
     # for now the number of instance should be the same as the number of samples
     assert nb_initial_instances == memory_set.get_nb_samples_class(class_label=class_label)
 
-    memory_set.increase_size_class(class_label=class_label)
+    memory_set.increase_size_class(increase_factor, class_label=class_label)
 
     new_nb_instances = memory_set.get_nb_instances_class(class_label=class_label)
 
@@ -113,7 +113,7 @@ def test_memory_get_nb_samples_class():
     classes = memory_set.get_classes()
 
     for i, _class in enumerate(classes):
-        nb_samples = len(np.where(y_1 == _class))
+        nb_samples = len(np.where(y_1 == _class)[0])
         assert nb_samples == memory_set.get_nb_samples_class(_class)
 
 
@@ -126,8 +126,9 @@ def test_memory_classes_balance():
 
     classes = memory_set.get_classes()
 
-    nb_samples = 0
+    nb_instances = 0
     for i, _class in enumerate(classes):
         if i != 0:
-            assert nb_samples == memory_set.get_nb_samples_class(_class)
-        nb_samples = memory_set.get_nb_samples_class(_class)
+            assert nb_instances == memory_set.get_nb_instances_class(_class),\
+                f"index {i}, class {_class} : {nb_instances} vs {memory_set.get_nb_instances_class(_class)}"
+        nb_instances = memory_set.get_nb_instances_class(_class)
