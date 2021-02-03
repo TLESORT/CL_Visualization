@@ -103,7 +103,7 @@ class MemorySet(TaskSet):
         assert class_label in self.get_classes()
 
         nb_instance_class = self.get_nb_instances_class(class_label)
-        nb_new_instance_needed = int(nb_instance_class * (increase_factor - 1))
+        nb_new_instance_needed = int(round(nb_instance_class * (increase_factor - 1)))
 
         len_list = len(self)
 
@@ -118,7 +118,7 @@ class MemorySet(TaskSet):
         modify list_ID so classes will be balanced while loaded with data loader
         """
         self.reset_list_IDs()
-        list_classes = np.unique(self._y)
+        list_classes = self.get_classes()
 
         # first we get the number of samples for each class
         list_samples_per_classes = {}
@@ -133,10 +133,13 @@ class MemorySet(TaskSet):
         for _class in list_classes:
             nb_samples = list_samples_per_classes[_class]
             assert nb_samples <= max_samples
-            increase_factor = 1.0 * max_samples / nb_samples
+            increase_factor = (1.0 * max_samples) / (1.0 * nb_samples)
             # we tolerate 5% error
             if increase_factor > 1.05:
                 self.increase_size_class(increase_factor, _class)
+
+        # Check if everything looks good
+        self.check_internal_state()
 
     def balance_tasks(self):
         """
@@ -218,3 +221,16 @@ class MemorySet(TaskSet):
         """
         # TODO
         pass
+
+    def check_internal_state(self):
+
+        assert len(self._x) == len(self._y)
+        assert len(self._y) == len(self._t)
+        nb_samples=len(self._y)
+        nb_instances=len(self.list_IDs)
+
+        assert nb_instances >= nb_samples
+
+        for key, id_value in self.list_IDs.items():
+            assert id_value < nb_samples
+            assert key < nb_instances
