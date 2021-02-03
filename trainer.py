@@ -69,7 +69,7 @@ class Trainer(Continual_Evaluation):
         classe_prediction = np.zeros(10)
         classe_total = np.zeros(10)
         classe_wrong = np.zeros(10)  # Images wrongly attributed to a particular class
-        for i_, (x_, y_, t_) in enumerate(self.eval_te_loader):
+        for i_, (x_, y_, _) in enumerate(self.eval_te_loader):
 
             # data does not fit to the model if size<=1
             if x_.size(0) <= 1:
