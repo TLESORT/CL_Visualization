@@ -1,6 +1,9 @@
-from continuum.tasks.task_set import TaskSet
+from typing import Tuple, Union
+
 import numpy as np
 from torchvision import transforms
+
+from continuum.tasks.task_set import TaskSet
 
 
 class MemorySet(TaskSet):
@@ -44,20 +47,41 @@ class MemorySet(TaskSet):
         """
         return len(self._y)
 
+    def add_samples(self, x: np.ndarray, y: np.ndarray, t: Union[None, np.ndarray] = None, list_IDs=None):
+        """Add memory for rehearsal.
+
+        :param x: Sampled data chosen for rehearsal.
+        :param y: The associated targets of `x_memory`.
+        :param t: The associated task ids. If not provided, they will be
+                         defaulted to -1.
+        :param dict_new_memory: dict with indexes of samples
+        """
+
+        current_len = len(self)
+        len_data = len(y)
+
+        dict_new_memory = None
+        if list_IDs is None:
+            dict_new_memory = {current_len + i: len_data + i for i in range(len_data)}
+        else:
+            dict_new_memory = {current_len + i: len_data + list_IDs[i] for i in
+                               range(len(list_IDs))}
+
+        super().add_samples(x, y, t)
+
+        self.list_IDs.update(dict_new_memory)
+
     def concatenate(self, other_memory_set):
+        """
+        This function is done to concatenate two memory sets
+        """
         current_len = len(self)
         len_data = self.get_nb_samples()
 
         # we add the list of id from other_memory_set
         # we update the id value with the one in this memory
-        dict_new_memory = {current_len + i: len_data + other_memory_set.list_IDs[i] for i in
-                           range(len(other_memory_set))}
 
-        self._x = np.concatenate((self._x, other_memory_set._x), axis=0)
-        self._y = np.concatenate((self._y, other_memory_set._y), axis=0)
-        self._t = np.concatenate((self._t, other_memory_set._t), axis=0)
-
-        self.list_IDs.update(dict_new_memory)
+        self.add_samples(other_memory_set._x, other_memory_set._y, other_memory_set._t, other_memory_set.list_IDs)
 
     def increase_size(self, increase_factor):
         """
@@ -78,7 +102,7 @@ class MemorySet(TaskSet):
         assert increase_factor > 1.0
         assert class_label in self.get_classes()
 
-        nb_instance_class = self.get_nb_samples(class_label)
+        nb_instance_class = self.get_nb_instances_class(class_label)
         nb_new_instance_needed = int(nb_instance_class * (increase_factor - 1))
 
         len_list = len(self)
@@ -102,11 +126,13 @@ class MemorySet(TaskSet):
             nb_samples = self.get_nb_samples_class(_class)
             list_samples_per_classes[_class] = nb_samples
 
-        max_samples = max(list_samples_per_classes, key=list_samples_per_classes.get)
+        ind_max_samples = max(list_samples_per_classes, key=list_samples_per_classes.get)
+        max_samples = list_samples_per_classes[ind_max_samples]
 
         # we increase the nb of samples for classes under represented
         for _class in list_classes:
             nb_samples = list_samples_per_classes[_class]
+            assert nb_samples <= max_samples
             increase_factor = 1.0 * max_samples / nb_samples
             # we tolerate 5% error
             if increase_factor > 1.05:
@@ -122,7 +148,7 @@ class MemorySet(TaskSet):
         """
         get the number of iteration of certain class
         """
-        return sum(self._y[value] == class_label for value in self.list_IDs.values())
+        return sum(self._y[self.list_IDs[value]] == class_label for value in self.list_IDs.values())
 
     def get_indexes_class(self, class_label):
         """
@@ -136,13 +162,13 @@ class MemorySet(TaskSet):
          (it is different from get_ize_class because a single sample can be instanciated several times
          if its id is the ID_list several time)
         """
-        return len(np.where(self._y == class_label))
+        return len(np.where(self._y == class_label)[0])
 
     def get_nb_instances_task(self, task_id):
         """
         get the number of iteration of certain class
         """
-        return sum(self._t[value] == task_id for value in self.list_IDs.values())
+        return sum(self._t[self.list_IDs[value]] == task_id for value in self.list_IDs.values())
 
     def get_nb_samples_task(self, task_id):
         """
@@ -150,7 +176,7 @@ class MemorySet(TaskSet):
          (it is different from get_ize_class because a single sample can be instanciated several times
          if its id is the ID_list several time)
         """
-        return len(np.where(self._t == task_id))
+        return len(np.where(self._t == task_id)[0])
 
     def reduce_size(self):
         """
