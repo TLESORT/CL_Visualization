@@ -76,10 +76,6 @@ class Rehearsal(Trainer):
 
             task_memory_set.concatenate(self.data_memory)
             task_memory_set.balance_classes()
-
-            print("############  INFOS #############")
-            print(task_memory_set.get_classes())
-            print(len(task_memory_set))
         else:
             task_memory_set = task_set
 
