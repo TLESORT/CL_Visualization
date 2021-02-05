@@ -59,7 +59,7 @@ class Trainer(Continual_Evaluation):
         return loss
 
     def init_task(self, ind_task, task_set):
-        pass
+        return task_set
 
     def callback_task(self, ind_task, task_set):
         pass
@@ -135,7 +135,7 @@ class Trainer(Continual_Evaluation):
             # log is disabled for first debugging steps
             self.init_log(task_id)
 
-            self.init_task(task_id, task_set)
+            task_set = self.init_task(task_id, task_set)
             # log is disabled for first debugging steps
             self.log_task(task_id, self.model)  # before training
             self.one_task_training(task_id, task_set)
