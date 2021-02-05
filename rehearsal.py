@@ -25,49 +25,41 @@ class Rehearsal(Trainer):
         self.image_size = 28
         self.sample_dir = os.path.join(self.root_dir, "Samples")
 
-    def init_task(self, ind_task: int, task_set: TaskSet):
-        # ptit checkup
-        if ind_task > 0:
-            assert len(self.data_memory) == self.data_memory.nb_classes * self.nb_samples_rehearsal_per_class
-
     def callback_task(self, ind_task: int, task_set: TaskSet):
-        if ind_task < self.num_tasks:
-            self.manage_memory(ind_task, task_set)
+        pass
 
-        task_set.plot(self.sample_dir, f"training_{ind_task}.png",
-                              nb_samples=100,
-                              shape=[self.image_size, self.image_size, self.input_size])
-
-    def manage_memory(self, ind_task: int, task_set: MemorySet):
+    def sample_task(self, task_set):
         """
-        Method to select samples for rehearsal
-        :param ind_task: index of the task to select samples from
-        :param nb_samples_rehearsal: number of samples saved per task
-        :param samples_transfer: number of samples to incorporate in the new training set (samples_transfer > nb_samples_rehearsal)
-        :return: updated train_set and test_set
-        """
+                Method to select samples for rehearsal
+                :param ind_task: index of the task to select samples from
+                :param nb_samples_rehearsal: number of samples saved per task
+                :param samples_transfer: number of samples to incorporate in the new training set (samples_transfer > nb_samples_rehearsal)
+                :return: updated train_set and test_set
+                """
         nb_classes = task_set.nb_classes
-        assert self.nb_samples_rehearsal_per_class * nb_classes < len(task_set._y)
+        assert self.nb_samples_rehearsal_per_class * nb_classes < len(task_set._y), \
+            f"{self.nb_samples_rehearsal_per_class} x {nb_classes} =" \
+            f" {self.nb_samples_rehearsal_per_class * nb_classes} vs {len(task_set._y)} "
         indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
         samples, labels, task_ids = task_set.get_raw_samples(indexes)
 
-        if self.data_memory is not None:
-            self.data_memory.add_samples(samples, labels, task_ids)
-        else:
-            self.data_memory = MemorySet(samples, labels, task_ids, None)
+        return MemorySet(samples, labels, task_ids, None)
 
-        self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
-                              nb_samples=100,
-                              shape=[self.image_size, self.image_size, self.input_size])
+    def init_task(self, ind_task: int, task_set: TaskSet):
 
-    def one_task_training(self, ind_task: int, task_set: TaskSet):
-        """
-        In vanilla rehearsal we add memory data to training data and balance classes
-        """
+        task_set.plot(self.sample_dir, f"training_{ind_task}.png",
+                      nb_samples=100,
+                      shape=[self.image_size, self.image_size, self.input_size])
 
-        # We convert task set to a memory set because we need to manipulate the list_ID to balance classes
+        samples_memory = self.sample_task(task_set)
+
+        # add replay samples in taskset without the new samples
         task_memory_set = None
         if ind_task > 0:
+            # ptit checkup
+            assert len(self.data_memory) == self.data_memory.nb_classes * self.nb_samples_rehearsal_per_class, \
+                f"{len(self.data_memory)} == {self.data_memory.nb_classes} * {self.nb_samples_rehearsal_per_class}"
+            # We convert task set to a memory set because we need to manipulate the list_ID to balance classes
             task_memory_set = MemorySet(task_set._x,
                                         task_set._y,
                                         task_set._t,
@@ -76,7 +68,22 @@ class Rehearsal(Trainer):
 
             task_memory_set.concatenate(self.data_memory)
             task_memory_set.balance_classes()
+            task_memory_set.check_internal_state()
         else:
             task_memory_set = task_set
 
-        super().one_task_training(ind_task, task_memory_set)
+        task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
+                      nb_samples=100,
+                      shape=[self.image_size, self.image_size, self.input_size])
+
+        # merge memory with new samples
+        if self.data_memory is not None:
+            self.data_memory.concatenate(samples_memory)
+        else:
+            self.data_memory = samples_memory
+
+        self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
+                              nb_samples=100,
+                              shape=[self.image_size, self.image_size, self.input_size])
+
+        return task_memory_set
