@@ -36,6 +36,13 @@ class MemorySet(TaskSet):
         """
         return len(self.list_IDs)
 
+    def __getitem__(self, index: int) -> Tuple[np.ndarray, int, int]:
+        """Method used by PyTorch's DataLoaders to query a sample and its target."""
+        # convert instance id into data id
+        data_id = self.list_IDs[index]
+        assert data_id <= len(self._y), f"data id {data_id} vs taille taskset {len(self._y)}"
+        return super().__getitem__(data_id)
+
     def get_random_raw_samples(self, nb_samples):
         nb_tot_samples = self._x.shape[0]
         indexes = np.random.randint(0, nb_tot_samples, nb_samples)
@@ -58,11 +65,12 @@ class MemorySet(TaskSet):
         """
 
         current_len = len(self)
-        len_data = len(y)
+        len_new_data = len(y)
+        len_data = len(self._y)
 
         dict_new_memory = None
         if list_IDs is None:
-            dict_new_memory = {current_len + i: len_data + i for i in range(len_data)}
+            dict_new_memory = {current_len + i: len_data + i for i in range(len_new_data)}
         else:
             dict_new_memory = {current_len + i: len_data + list_IDs[i] for i in
                                range(len(list_IDs))}
@@ -75,13 +83,15 @@ class MemorySet(TaskSet):
         """
         This function is done to concatenate two memory sets
         """
-        current_len = len(self)
-        len_data = self.get_nb_samples()
+        # Sanity Check
+        self.check_internal_state()
+        other_memory_set.check_internal_state()
 
-        # we add the list of id from other_memory_set
-        # we update the id value with the one in this memory
-
-        self.add_samples(other_memory_set._x, other_memory_set._y, other_memory_set._t, other_memory_set.list_IDs)
+        # start merge
+        self.add_samples(other_memory_set._x,
+                         other_memory_set._y,
+                         other_memory_set._t,
+                         other_memory_set.list_IDs)
 
     def increase_size(self, increase_factor):
         """
@@ -89,7 +99,7 @@ class MemorySet(TaskSet):
         """
         assert increase_factor > 1.0
         current_len = len(self.list_IDs)
-        new_len = int(current_len * increase_factor)
+        new_len = int(round(current_len * increase_factor))
 
         # create dictionnary with new keys
         new_dic = {i: np.random.choice(len(self._y)) for i in range(current_len, new_len)}
@@ -103,7 +113,7 @@ class MemorySet(TaskSet):
         assert class_label in self.get_classes()
 
         nb_instance_class = self.get_nb_instances_class(class_label)
-        nb_new_instance_needed = int(round(nb_instance_class * (increase_factor - 1)))
+        nb_new_instance_needed = int(round(nb_instance_class * increase_factor)) - nb_instance_class
 
         len_list = len(self)
 
@@ -133,7 +143,7 @@ class MemorySet(TaskSet):
         for _class in list_classes:
             nb_samples = list_samples_per_classes[_class]
             assert nb_samples <= max_samples
-            increase_factor = (1.0 * max_samples) / (1.0 * nb_samples)
+            increase_factor = 1.0 * max_samples / nb_samples
             # we tolerate 5% error
             if increase_factor > 1.05:
                 self.increase_size_class(increase_factor, _class)
@@ -226,11 +236,16 @@ class MemorySet(TaskSet):
 
         assert len(self._x) == len(self._y)
         assert len(self._y) == len(self._t)
-        nb_samples=len(self._y)
-        nb_instances=len(self.list_IDs)
+        nb_samples = len(self._y)
+        nb_instances = len(self.list_IDs)
 
         assert nb_instances >= nb_samples
 
         for key, id_value in self.list_IDs.items():
             assert id_value < nb_samples
             assert key < nb_instances
+
+    def get_random_samples(self, nb_samples):
+        nb_tot_instances = len(self)
+        indexes = np.random.randint(0, nb_tot_instances, nb_samples)
+        return self.get_samples(indexes)
