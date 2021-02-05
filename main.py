@@ -32,6 +32,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
 parser.add_argument('--expert', action='store_true', default=False,
                     help='define if we use expert model who has access to all data')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
+parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="mnist_fellowship", type=str,
                     choices=['mnist_fellowship', 'mnist_fellowship_merge'], help='dataset name')
 parser.add_argument('--seed', default="1992", type=int,
@@ -45,13 +46,13 @@ root_dir = "./Archives"
 model = Model().cuda()
 
 if args.name_algo == "baseline":
-    Algo = Trainer(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.dev)
+    Algo = Trainer(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "rehearsal":
     from rehearsal import Rehearsal
-    Algo = Rehearsal(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.dev)
+    Algo = Rehearsal(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_diag":
     from ewc_diag import EWC_Diag
-    Algo = EWC_Diag(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.dev)
+    Algo = EWC_Diag(root_dir, dataset, args.scenario_name, model, args.num_tasks, args.verbose, args.dev)
 else:
     print("wrong name")
 

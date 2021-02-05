@@ -12,8 +12,8 @@ from trainer import Trainer
 
 
 class EWC(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, representation, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, dev)
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, representation, verbose, dev):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, verbose, dev)
         self.model = model
         self.layer_collection = LayerCollection.from_model(model)
         self.representation = representation
@@ -54,12 +54,12 @@ class EWC(Trainer):
 
 
 class EWC_Diag(EWC):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatDiag, dev)
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatDiag, verbose, dev)
         self.algo_name = "ewc_diag"
 
 
 class EWC_KFAC(EWC):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatKFAC, dev)
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
+        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatKFAC, verbose, dev)
         self.algo_name = "ewc_kfac"

@@ -20,16 +20,17 @@ from eval import Continual_Evaluation
 
 
 class Trainer(Continual_Evaluation):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, dev):
+    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
 
         self.root_dir = root_dir
-        self.verbose = False
+        self.verbose = verbose
 
         self.dir_data = os.path.join(self.root_dir, "Data")
         self.log_dir = os.path.join(self.root_dir, "Logs", scenario_name)
         self.model = model
         self.algo_name = "baseline"
         self.dev = dev
+        self.nb_epochs = 10
 
         dataset_train = MNIST("../Datasets/", download=True, train=True)
         dataset_test = MNIST("../Datasets/", download=True, train=False)
@@ -50,9 +51,9 @@ class Trainer(Continual_Evaluation):
             fisher_set = ClassIncremental(dataset_train, nb_tasks=1)  # .sub_sample(1000)
             self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
 
-        self.fisher_loader = DataLoader(fisher_set[:], batch_size=25, shuffle=True, num_workers=6)
-        self.eval_tr_loader = DataLoader(self.scenario_tr[:], batch_size=25, shuffle=True, num_workers=6)
-        self.eval_te_loader = DataLoader(self.test_set[:], batch_size=25, shuffle=True, num_workers=6)
+        self.fisher_loader = DataLoader(fisher_set[:], batch_size=500, shuffle=True, num_workers=6)
+        self.eval_tr_loader = DataLoader(self.scenario_tr[:], batch_size=500, shuffle=True, num_workers=6)
+        self.eval_te_loader = DataLoader(self.test_set[:], batch_size=500, shuffle=True, num_workers=6)
         self.opt = optim.SGD(params=self.model.parameters(), lr=0.001, momentum=0.9)
 
     def regularize_loss(self, model, loss):
@@ -102,31 +103,32 @@ class Trainer(Continual_Evaluation):
     def one_task_training(self, ind_task, task_set):
         correct = 0
 
-        data_loader = DataLoader(task_set, batch_size=25, shuffle=False, num_workers=6)
-        for i_, (x_, y_, t_) in enumerate(data_loader):
+        data_loader = DataLoader(task_set, batch_size=64, shuffle=False, num_workers=6)
+        for epoch in range(self.nb_epochs):
+            for i_, (x_, y_, t_) in enumerate(data_loader):
 
-            # data does not fit to the model if size<=1
-            if x_.size(0) <= 1:
-                continue
+                # data does not fit to the model if size<=1
+                if x_.size(0) <= 1:
+                    continue
 
-            y_ = y_.cuda()
-            x_ = x_.cuda()
+                y_ = y_.cuda()
+                x_ = x_.cuda()
 
-            self.model.train()
-            self.opt.zero_grad()
-            output = self.model(x_)
-            loss = F.cross_entropy(output, y_)
+                self.model.train()
+                self.opt.zero_grad()
+                output = self.model(x_)
+                loss = F.cross_entropy(output, y_)
 
-            loss = self.regularize_loss(self.model, loss)
+                loss = self.regularize_loss(self.model, loss)
 
-            loss.backward()
-            self.opt.step()
-            self.log_iter(ind_task, self.model, loss)
+                loss.backward()
+                self.opt.step()
+                self.log_iter(ind_task, self.model, loss)
 
-            assert output.shape[0] == y_.shape[0]
-            correct += (output.max(dim=1)[1] == y_).data.sum()
-            if self.dev:
-                break
+                assert output.shape[0] == y_.shape[0]
+                correct += (output.max(dim=1)[1] == y_).data.sum()
+                if self.dev: break
+            if self.dev: break
 
     def continual_training(self):
 
