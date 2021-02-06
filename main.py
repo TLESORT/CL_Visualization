@@ -3,7 +3,7 @@ import os
 import argparse
 from model import Model
 from trainer import Trainer
-
+from plot import Continual_Plot
 
 # le gradient depend de la couche de sortie (pas toujours)
 # mais surtout de la loss function
@@ -31,6 +31,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--expert', action='store_true', default=False,
                     help='define if we use expert model who has access to all data')
+parser.add_argument('--plot', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="mnist_fellowship", type=str,
@@ -56,7 +57,10 @@ elif args.name_algo == "ewc_diag":
 else:
     print("wrong name")
 
-Algo.continual_training()
+
 # Algo.eval()
 
-#Continual_Plot(args).plot_figures()
+if args.plot:
+    Continual_Plot(args).plot_figures()
+else:
+    Algo.continual_training()
