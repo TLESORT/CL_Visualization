@@ -51,9 +51,10 @@ class Trainer(Continual_Evaluation):
             fisher_set = ClassIncremental(dataset_train, nb_tasks=1)  # .sub_sample(1000)
             self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
 
-        self.fisher_loader = DataLoader(fisher_set[:], batch_size=500, shuffle=True, num_workers=6)
-        self.eval_tr_loader = DataLoader(self.scenario_tr[:], batch_size=500, shuffle=True, num_workers=6)
-        self.eval_te_loader = DataLoader(self.test_set[:], batch_size=500, shuffle=True, num_workers=6)
+        self.fisher_loader = DataLoader(fisher_set[:], batch_size=264, shuffle=True, num_workers=6)
+        self.eval_tr_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)
+
+        self.eval_te_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)
         self.opt = optim.SGD(params=self.model.parameters(), lr=0.001, momentum=0.9)
 
     def regularize_loss(self, model, loss):
@@ -85,10 +86,10 @@ class Trainer(Continual_Evaluation):
             correct += (output.max(dim=1)[1] == y_).data.sum()
             pred = output.data.max(1, keepdim=True)[1]
             for i in range(y_.shape[0]):
-                if pred[i].cpu()[0] == y_[i].cpu():
-                    classe_prediction[pred[i].cpu()[0]] += 1
+                if pred[i].detach().cpu()[0] == y_[i].detach().cpu():
+                    classe_prediction[pred[i].detach().cpu()[0]] += 1
                 else:
-                    classe_wrong[pred[i].cpu()[0]] += 1
+                    classe_wrong[pred[i].detach().cpu()[0]] += 1
 
                 classe_total[y_[i]] += 1
 
@@ -103,7 +104,7 @@ class Trainer(Continual_Evaluation):
     def one_task_training(self, ind_task, task_set):
         correct = 0
 
-        data_loader = DataLoader(task_set, batch_size=64, shuffle=False, num_workers=6)
+        data_loader = DataLoader(task_set, batch_size=264, shuffle=False, num_workers=6)
         for epoch in range(self.nb_epochs):
             for i_, (x_, y_, t_) in enumerate(data_loader):
 
