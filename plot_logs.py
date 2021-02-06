@@ -34,6 +34,8 @@ def flatten_results(results, type=""):
 
 
 def plot_Fisher(log_dir, Fig_dir, algo_name):
+    print(f"Plot Fisher {algo_name}")
+
     file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
     list_loss = None
     with open(file_name, 'rb') as fp:
@@ -57,13 +59,13 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
             b = list_weight[0][0][1].reshape(-1, 1)
         else:
             # sinon on prend les poids à la fin de la tâche précédentes
-            w = list_weight[i-1][-1][0]
-            b = list_weight[i-1][-1][1].reshape(-1, 1)
+            w = list_weight[i - 1][-1][0]
+            b = list_weight[i - 1][-1][1].reshape(-1, 1)
 
         layer = np.concatenate((w, b), axis=1)
 
-        fischer_w = np.array(list_Fisher[i].cpu())[:-10].reshape(10, 50)
-        fischer_b = np.array(list_Fisher[i].cpu())[-10:].reshape(10, 1)
+        fischer_w = np.array(list_Fisher[i].detach().cpu())[:-10].reshape(10, 50)
+        fischer_b = np.array(list_Fisher[i].detach().cpu())[-10:].reshape(10, 1)
         fisher = np.concatenate((fischer_w, fischer_b), axis=1)
 
         #  linearly map the colors in the colormap from data values vmin to vmax
@@ -79,7 +81,10 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
     plt.savefig(os.path.join(Fig_dir, "{}_Fishers.png").format(algo_name))
     plt.clf()
 
+
 def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
+    print(f"Mean Weight diff {algo_name}")
+
     file_name = os.path.join(log_dir, "{}_dist.pkl".format(algo_name))
 
     list_dist = None
@@ -104,13 +109,16 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.savefig(os.path.join(Fig_dir, "{}_Dist.png").format(algo_name))
     plt.clf()
 
+
 def plot_weights_diff(log_dir, Fig_dir, algo_name):
+    print(f"Weight diff {algo_name}")
+
     file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
     list_loss = None
     with open(file_name, 'rb') as fp:
         list_weight = pickle.load(fp)
 
-    fig, axs = plt.subplots(len(list_weight)+1, 2)
+    fig, axs = plt.subplots(len(list_weight) + 1, 2)
 
     axs[0, 0].set_title('Weights')
     axs[0, 1].set_title('Weights Difference Since Last Task')
@@ -136,19 +144,21 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
 
         layer = np.concatenate((w, b), axis=1)
 
-        axs[i+1, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r')
-        axs[i+1, 1].imshow(layer-previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
+        axs[i + 1, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r')
+        axs[i + 1, 1].imshow(layer - previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
 
-        axs[i+1, 0].set_yticks([])
-        axs[i+1, 0].get_xaxis().set_visible(False)
-        axs[i+1, 1].get_yaxis().set_visible(False)
-        axs[i+1, 1].get_xaxis().set_visible(False)
-        axs[i+1, 0].set(ylabel='Task {}'.format(i))
+        axs[i + 1, 0].set_yticks([])
+        axs[i + 1, 0].get_xaxis().set_visible(False)
+        axs[i + 1, 1].get_yaxis().set_visible(False)
+        axs[i + 1, 1].get_xaxis().set_visible(False)
+        axs[i + 1, 0].set(ylabel='Task {}'.format(i))
 
     plt.savefig(os.path.join(Fig_dir, "{}_Weight_Diff.png").format(algo_name))
     plt.clf()
 
+
 def plot_tsne(log_dir, Fig_dir, algo_name):
+    print(f"T-SNE {algo_name}")
     file_name = os.path.join(log_dir, "{}_Latent.pkl".format(algo_name))
     list_latent = None
     with open(file_name, 'rb') as fp:
@@ -157,19 +167,10 @@ def plot_tsne(log_dir, Fig_dir, algo_name):
     nb_tasks = len(list_latent)
 
     data = None
-    label =  None
+    label = None
     tsne_df = None
 
-    for ind_task in range(nb_tasks):
-        first = True
-        for i, (x_, t_) in enumerate(list_latent[ind_task]):
-            if first:
-                data = x_.detach().numpy()
-                label = t_.detach().numpy()
-                first = False
-            else:
-                data = np.concatenate((data, x_.detach().numpy()), axis=0)
-                label = np.concatenate((label, t_.detach().numpy()), axis=0)
+    for ind_task, (data, label) in enumerate(list_latent):
         model = TSNE(n_components=2, random_state=0)
         # the number of components = 2
         # default perplexity = 30
@@ -177,18 +178,20 @@ def plot_tsne(log_dir, Fig_dir, algo_name):
         # default Maximum number of iterations for the optimization = 1000
 
         tsne_data = model.fit_transform(data)
-        task_id = np.ones(label.shape[0])*ind_task
+        task_id = np.ones(label.shape[0]) * ind_task
         tsne_data = np.vstack((tsne_data.T, label, task_id)).T
-        if ind_task==0:
+        if ind_task == 0:
             tsne_df = pd.DataFrame(data=tsne_data, columns=("Dim_1", "Dim_2", "label", "task"))
         else:
             tsne_df = pd.concat([tsne_df, pd.DataFrame(data=tsne_data, columns=("Dim_1", "Dim_2", "label", "task"))])
 
-    sn.FacetGrid(tsne_df, hue="label", height = 6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
+    sn.FacetGrid(tsne_df, hue="label", height=6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
     plt.savefig(os.path.join(Fig_dir, "{}_tsne.png").format(algo_name))
 
 
 def plot_loss(log_dir, Fig_dir, algo_name):
+    print(f"Plot Loss {algo_name}")
+
     file_name = os.path.join(log_dir, "{}_loss.pkl".format(algo_name))
     list_loss = None
     with open(file_name, 'rb') as fp:
@@ -205,8 +208,11 @@ def plot_loss(log_dir, Fig_dir, algo_name):
     plt.savefig(os.path.join(Fig_dir, "{}_Loss.png").format(algo_name))
     plt.clf()
 
+
 # grad of the last layer (without bias)
 def plot_grad(log_dir, Fig_dir, algo_name):
+    print(f"Plot Grad {algo_name}")
+
     file_name = os.path.join(log_dir, "{}_grad.pkl".format(algo_name))
 
     list_grad = None

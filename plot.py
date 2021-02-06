@@ -37,7 +37,6 @@ class Continual_Plot(object):
     def plot_figures(self):
 
         name_list = ["baseline","ewc_diag", "rehearsal"]
-        name_list = ["baseline"]
         for name in name_list:
             plot_tsne(self.log_dir, self.Fig_dir, name)
             plot_weights_diff(self.log_dir, self.Fig_dir, name)
@@ -45,8 +44,6 @@ class Continual_Plot(object):
             plot_Fisher(self.log_dir, self.Fig_dir, name)
             plot_loss(self.log_dir, self.Fig_dir, name)
             plot_grad(self.log_dir, self.Fig_dir, name)
-
-
 
             # plot_grad_gif(log_dir, Fig_dir, fast)
 
