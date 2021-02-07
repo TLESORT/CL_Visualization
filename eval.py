@@ -46,8 +46,8 @@ class Continual_Evaluation(object):
 
         grad = model.fc2.weight.grad.clone().detach().cpu()
         self.list_grad[ind_task].append(grad)
-        w = model.fc2.weight.data.detach().cpu().clone()
-        b = model.fc2.bias.data.detach().cpu().clone()
+        w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
+        b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
 
         self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
         self.list_weights[ind_task].append([w, b])

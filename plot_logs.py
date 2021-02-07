@@ -283,7 +283,7 @@ def plot_grad_gif(log_dir, Fig_dir, fast=True):
             np_weights[iteration, :, -1] = np.array(list_weights[ind_task][i][1])
             iteration += 1
 
-    file_name = os.path.join(Fig_dir, 'weigths.gif')
+    file_name = os.path.join(Fig_dir, 'weights.gif')
     if fast:
         imageio.mimsave(file_name, list(np_weights))
     else:
