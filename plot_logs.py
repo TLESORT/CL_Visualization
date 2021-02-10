@@ -62,10 +62,10 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
             w = list_weight[i - 1][-1][0]
             b = list_weight[i - 1][-1][1].reshape(-1, 1)
 
-        layer = np.concatenate((w, b), axis=1)
+        layer = np.concatenate((w, b), axis=1).astype(np.float)
 
-        fischer_w = np.array(list_Fisher[i].detach().cpu())[:-10].reshape(10, 50)
-        fischer_b = np.array(list_Fisher[i].detach().cpu())[-10:].reshape(10, 1)
+        fischer_w = np.array(list_Fisher[i])[:-10].reshape(10, 50)
+        fischer_b = np.array(list_Fisher[i])[-10:].reshape(10, 1)
         fisher = np.concatenate((fischer_w, fischer_b), axis=1)
 
         #  linearly map the colors in the colormap from data values vmin to vmax
@@ -78,7 +78,8 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
         axs[i, 1].get_xaxis().set_visible(False)
         axs[i, 0].set(ylabel='Task {}'.format(i))
 
-    plt.savefig(os.path.join(Fig_dir, "{}_Fishers.png").format(algo_name))
+    save_name = os.path.join(Fig_dir, f"{algo_name}_Fishers.png")
+    plt.savefig(save_name)
     plt.clf()
 
 
@@ -110,6 +111,50 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.clf()
 
 
+def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
+    file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
+    list_loss = None
+    with open(file_name, 'rb') as fp:
+        list_weight = pickle.load(fp)
+
+    nb_classes = list_weight[0][0][0].shape[0]
+
+    fig, axs = plt.subplots(1, len(list_weight) + 1)
+
+    list_dot = []
+    for i in range(len(list_weight) + 1):
+
+        dot_products = np.zeros((nb_classes, nb_classes))
+
+        for j in range(nb_classes):
+            for k in range(nb_classes):
+                if i == 0:
+                    # pour la première fisher on prent les poids à l'initialization
+                    w_j = list_weight[0][0][0][j, :]
+                    w_k = list_weight[0][0][0][k, :]
+                    assert len(w_j) == 50  # latent space
+
+
+
+                else:
+                    w_j = list_weight[i - 1][-1][0][j, :]
+                    w_k = list_weight[i - 1][-1][0][k, :]
+
+                dot_products[j][k] = w_j.dot(w_k)
+
+                axs[i].imshow(dot_products, vmin=-0., vmax=1., cmap='PuBu_r')
+                axs[i].get_xaxis().set_visible(False)
+                axs[i].axis('off')
+                if i == 0:
+                    axs[i].set_title('Init')
+                else:
+                    axs[i].set_title('End Task {}'.format(i))
+
+    save_name = os.path.join(Fig_dir, f"{algo_name}_Output_Layer_Correlation.png")
+    plt.savefig(save_name)
+    plt.clf()
+
+
 def plot_weights_diff(log_dir, Fig_dir, algo_name):
     print(f"Weight diff {algo_name}")
 
@@ -129,7 +174,7 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
             # pour la première fisher on prent les poids à l'initialization
             w = list_weight[0][0][0]
             b = list_weight[0][0][1].reshape(-1, 1)
-            previous_layer = np.concatenate((w, b), axis=1)
+            previous_layer = np.concatenate((w, b), axis=1).astype(np.float)
 
             axs[i, 0].imshow(previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
 
@@ -142,7 +187,7 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
         w = list_weight[i][-1][0]
         b = list_weight[i][-1][1].reshape(-1, 1)
 
-        layer = np.concatenate((w, b), axis=1)
+        layer = np.concatenate((w, b), axis=1).astype(np.float)
 
         axs[i + 1, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r')
         axs[i + 1, 1].imshow(layer - previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
@@ -153,7 +198,8 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
         axs[i + 1, 1].get_xaxis().set_visible(False)
         axs[i + 1, 0].set(ylabel='Task {}'.format(i))
 
-    plt.savefig(os.path.join(Fig_dir, "{}_Weight_Diff.png").format(algo_name))
+    save_name = os.path.join(Fig_dir, f"{algo_name}_Weight_Diff.png")
+    plt.savefig(save_name)
     plt.clf()
 
 
@@ -187,6 +233,7 @@ def plot_tsne(log_dir, Fig_dir, algo_name):
 
     sn.FacetGrid(tsne_df, hue="label", height=6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
     plt.savefig(os.path.join(Fig_dir, "{}_tsne.png").format(algo_name))
+    plt.clf()
 
 
 def plot_loss(log_dir, Fig_dir, algo_name):

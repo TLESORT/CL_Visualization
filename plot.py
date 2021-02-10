@@ -22,7 +22,8 @@ from plot_logs import plot_loss,\
     plot_Fisher,\
     plot_tsne,\
     plot_weights_diff,\
-    plot_mean_weights_dist
+    plot_mean_weights_dist, \
+    plot_orthogonal_output_layers
 
 class Continual_Plot(object):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
@@ -37,11 +38,16 @@ class Continual_Plot(object):
     def plot_figures(self):
 
         name_list = ["baseline","ewc_diag", "rehearsal"]
+        name_list = ["ewc_kfac"]
         for name in name_list:
+            plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, name)
+
             plot_tsne(self.log_dir, self.Fig_dir, name)
             plot_weights_diff(self.log_dir, self.Fig_dir, name)
             plot_mean_weights_dist(self.log_dir, self.Fig_dir, name)
+
             plot_Fisher(self.log_dir, self.Fig_dir, name)
+
             plot_loss(self.log_dir, self.Fig_dir, name)
             plot_grad(self.log_dir, self.Fig_dir, name)
 
