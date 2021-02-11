@@ -29,15 +29,15 @@ class Continual_Plot(object):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
 
     def __init__(self, args):
-        self.log_dir = os.path.join(args.Root_dir, "Logs", args.scenario_name)
-        self.Fig_dir = os.path.join(args.Root_dir, "Figures", args.scenario_name)
+        self.log_dir = os.path.join(args.Root_dir, args.dataset, "Logs", args.scenario_name)
+        self.Fig_dir = os.path.join(args.Root_dir, args.dataset, "Figures", args.scenario_name)
 
         fast = True
 
 
     def plot_figures(self):
 
-        name_list = ["baseline","ewc_diag", "rehearsal"]
+        name_list = ["baseline","ewc_diag", "rehearsal", "ewc_kfac"]
         name_list = ["ewc_kfac"]
         for name in name_list:
             plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, name)
@@ -60,6 +60,8 @@ if __name__ == "__main__":
                         help='continual scenario')
     parser.add_argument('--Root_dir', default="./Archives", type=str,
                         help='data directory name')
+    parser.add_argument('--dataset', default="MNIST", type=str,
+                        help='dataset name')
 
     args = parser.parse_args()
 
