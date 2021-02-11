@@ -1,11 +1,5 @@
 
 import torch.nn as nn
-import math
-import torch.nn.functional as F
-from torch.nn import init
-import torchvision
-
-import logging
 
 class Model(nn.Module):
     def __init__(self, num_classes=10):
@@ -20,7 +14,6 @@ class Model(nn.Module):
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
         self.fc1 = nn.Linear(320, 50)
         self.fc2 = nn.Linear(50, self.global_num_classes)
-        self.apply(Xavier)
 
     def forward(self, x, latent_vector=False):
         x = x.view(-1, 1, 28, 28)
@@ -32,15 +25,3 @@ class Model(nn.Module):
         if not latent_vector:
             x = self.fc2(x)
         return x
-
-    def reinit(self):
-        self.apply(Xavier)
-
-
-def Xavier(m):
-    if m.__class__.__name__ == 'Linear':
-        nn.init.xavier_uniform_(m.weight)
-    elif m.__class__.__name__ == 'Conv':
-        nn.init.xavier_uniform_(m.weight)
-        if m.bias:
-            nn.init.xavier_uniform_(m.bias)
