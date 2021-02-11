@@ -13,8 +13,8 @@ from memory import MemorySet
 
 
 class Rehearsal(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, verbose, dev)
+    def __init__(self, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(root_dir, scenario_name, num_tasks, verbose, dev)
         self.algo_name = "rehearsal"
         self.data_memory = None
         self.num_classes_per_task = 2
@@ -23,7 +23,6 @@ class Rehearsal(Trainer):
         self.sample_num = 100
         self.input_size = 1
         self.image_size = 28
-        self.sample_dir = os.path.join(self.root_dir, "Samples")
 
     def callback_task(self, ind_task: int, task_set: TaskSet):
         pass

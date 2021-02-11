@@ -12,34 +12,46 @@ import os
 import numpy as np
 from copy import deepcopy
 
+from utils import get_dataset
+from model import Model
 from continuum import ClassIncremental
 from continuum import Rotations
-from continuum.datasets import MNIST
 
 from eval import Continual_Evaluation
 
 
 class Trainer(Continual_Evaluation):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
 
+        self.lr = args.lr
         self.root_dir = root_dir
         self.verbose = verbose
+        self.batch_size = args.batch_size
 
-        self.dir_data = os.path.join(self.root_dir, "Data")
+        self.dir_data = os.path.join(self.root_dir, "../../Datasets/")
+        if not os.path.exists(self.dir_data):
+            os.makedirs(self.dir_data)
         self.log_dir = os.path.join(self.root_dir, "Logs", scenario_name)
-        self.model = model
+        if not os.path.exists(self.log_dir):
+            os.makedirs(self.log_dir)
+        self.sample_dir = os.path.join(self.root_dir, "Samples")
+        if not os.path.exists(self.sample_dir):
+            os.makedirs(self.sample_dir)
+
         self.algo_name = "baseline"
         self.dev = dev
-        self.nb_epochs = 10
+        self.nb_epochs = args.nb_epochs
 
-        dataset_train = MNIST("../Datasets/", download=True, train=True)
-        dataset_test = MNIST("../Datasets/", download=True, train=False)
+        dataset_train = get_dataset(self.dir_data, args.dataset, train=True)
+        dataset_test = get_dataset(self.dir_data, args.dataset, train=False)
 
         scenario = None
         if scenario_name == "Rotations":
             self.scenario_tr = Rotations(dataset_train, nb_tasks=num_tasks)
         elif scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
+
+        self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
 
         self.num_tasks = num_tasks
         self.continuum = scenario
@@ -51,11 +63,11 @@ class Trainer(Continual_Evaluation):
             fisher_set = ClassIncremental(dataset_train, nb_tasks=1)  # .sub_sample(1000)
             self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
 
-        self.fisher_loader = DataLoader(fisher_set[:], batch_size=264, shuffle=True, num_workers=6)
+        #self.fisher_eval_loader = DataLoader(fisher_set[:], batch_size=264, shuffle=True, num_workers=6)
         self.eval_tr_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)
 
         self.eval_te_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)
-        self.opt = optim.SGD(params=self.model.parameters(), lr=0.001, momentum=0.9)
+        self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=0.9)
 
     def regularize_loss(self, model, loss):
         return loss
@@ -68,9 +80,9 @@ class Trainer(Continual_Evaluation):
 
     def test(self):
         correct = 0.0
-        classe_prediction = np.zeros(10)
-        classe_total = np.zeros(10)
-        classe_wrong = np.zeros(10)  # Images wrongly attributed to a particular class
+        classe_prediction = np.zeros(self.scenario_tr.nb_classes)
+        classe_total = np.zeros(self.scenario_tr.nb_classes)
+        classe_wrong = np.zeros(self.scenario_tr.nb_classes)  # Images wrongly attributed to a particular class
         for i_, (x_, y_, _) in enumerate(self.eval_te_loader):
 
             # data does not fit to the model if size<=1
@@ -96,7 +108,7 @@ class Trainer(Continual_Evaluation):
         print("Test Accuracy: {} %".format(100.0 * correct / len(self.eval_te_loader.dataset)))
 
         if self.verbose:
-            for i in range(10):
+            for i in range(self.scenario_tr.nb_classes):
                 print("Task " + str(i) + "- Prediction :" + str(
                     classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
                     classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
@@ -104,7 +116,9 @@ class Trainer(Continual_Evaluation):
     def one_task_training(self, ind_task, task_set):
         correct = 0
 
-        data_loader = DataLoader(task_set, batch_size=264, shuffle=False, num_workers=6)
+        accuracy_per_epoch = []
+
+        data_loader = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
         for epoch in range(self.nb_epochs):
             for i_, (x_, y_, t_) in enumerate(data_loader):
 
@@ -123,6 +137,7 @@ class Trainer(Continual_Evaluation):
                 loss = self.regularize_loss(self.model, loss)
 
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0) # clip gradient to avoid Nan
                 self.opt.step()
                 self.log_iter(ind_task, self.model, loss)
 
@@ -130,6 +145,10 @@ class Trainer(Continual_Evaluation):
                 correct += (output.max(dim=1)[1] == y_).data.sum()
                 if self.dev: break
             if self.dev: break
+
+            accuracy_per_epoch.append(1.0 * correct / len(data_loader))
+
+        return
 
     def continual_training(self):
 
@@ -146,7 +165,7 @@ class Trainer(Continual_Evaluation):
 
             self.test()
 
-        # last log (we log  at the beginning of each task exept for the last one)
+        # last log (we log  at the beginning of each task except for the last one)
 
         self.init_log(self.num_tasks)
         self.log_task(self.num_tasks, self.model)

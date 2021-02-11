@@ -9,24 +9,24 @@ from nngeometry.layercollection import LayerCollection
 from nngeometry.object import PMatDiag, PMatKFAC
 from nngeometry.object.vector import PVector
 from trainer import Trainer
+import numpy as np
 
 
 class EWC(Trainer):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, representation, verbose, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, verbose, dev)
-        self.model = model
-        self.layer_collection = LayerCollection.from_model(model)
+    def __init__(self, args, root_dir, scenario_name, num_tasks, representation, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
+        self.layer_collection = LayerCollection.from_model(self.model)
         self.representation = representation
 
-        self.importance = 100
+        self.importance = 1000.
         self.list_Fishers = {}
         self.representation = representation
 
-    def compute_fisher(self, ind_task, task_set, model):
-        fisher_set = deepcopy(task_set)
+    def compute_fisher(self, ind_task, fisher_set, model):
+        fisher_loader = DataLoader(fisher_set, batch_size=264, shuffle=True, num_workers=6)
 
-        F_diag = FIM(model=model,
-                     loader=DataLoader(fisher_set),
+        fim = FIM(model=model,
+                     loader=fisher_loader,
                      representation=self.representation,
                      n_output=self.scenario_tr.nb_classes,
                      variant='classif_logits',
@@ -34,7 +34,11 @@ class EWC(Trainer):
 
         v0 = PVector.from_model(model).clone().detach()
 
-        return F_diag, v0
+        assert not np.isnan(v0.norm().item())
+
+        assert not np.isnan(fim.frobenius_norm().item()), "There are Nan in the Fisher Matrix"
+
+        return fim, v0
 
     def init_task(self, ind_task, task_set):
         return task_set
@@ -44,22 +48,27 @@ class EWC(Trainer):
 
     def regularize_loss(self, model, loss):
         v = PVector.from_model(model)
+        loss_regul = 0.
+
+        assert not np.isnan(loss.item()), "Unfortunately, the loss is NaN (before regularization)"
+
+        assert not np.isnan(v.norm().item()), "model weights"
 
         for i, (fim, v0) in self.list_Fishers.items():
-            loss += self.importance * fim.vTMv(v - v0)
+            loss_regul += self.importance * fim.vTMv(v - v0)
 
-        assert loss == loss  # sanity check to detect nan
+            assert not np.isnan(loss_regul.item()), "Unfortunately, the loss is NaN"  # sanity check to detect nan
 
-        return loss
+        return loss_regul+loss
 
 
 class EWC_Diag(EWC):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatDiag, verbose, dev)
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
         self.algo_name = "ewc_diag"
 
 
 class EWC_KFAC(EWC):
-    def __init__(self, root_dir, dataset, scenario_name, model, num_tasks, verbose, dev):
-        super().__init__(root_dir, dataset, scenario_name, model, num_tasks, PMatKFAC, verbose, dev)
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
         self.algo_name = "ewc_kfac"
