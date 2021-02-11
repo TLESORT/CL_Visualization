@@ -121,7 +121,7 @@ class Continual_Evaluation(object):
                      model=model,
                      loader=fisher_loader,
                      representation=PMatDiag,
-                     n_output=10,
+                     n_output=self.scenario_tr.nb_classes,
                      variant='classif_logits',
                      device='cuda')
         return F_diag, None
