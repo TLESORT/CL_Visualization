@@ -13,11 +13,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', 'ewc_kfac'],
                     default='baseline', help='Approach type')
-parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations'], default="Disjoint",
+parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
                     help='continual scenario')
-parser.add_argument('--num_tasks', type=int,
-                    default='5',
-                    help='Task number')
+parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
 parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
@@ -33,7 +31,7 @@ parser.add_argument('--plot', action='store_true', default=False, help='dev flag
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST','mnist_fellowship', 'mnist_fellowship_merge'], help='dataset name')
+                    choices=['MNIST','mnist_fellowship'], help='dataset name')
 parser.add_argument('--seed', default="1992", type=int,
                     help='seed for number generator')
 

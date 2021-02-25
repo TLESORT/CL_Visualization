@@ -6,11 +6,12 @@ from torch.utils import data
 from nngeometry.layercollection import LayerCollection
 from nngeometry.metrics import FIM
 from nngeometry.object import PMatDiag
+import abc
 
 from copy import deepcopy
 
 
-class Continual_Evaluation(object):
+class Continual_Evaluation(abc.ABC):
     """ this class gives function to log for continual algorithms evaluation"""
     """ Log and Figure plotting should be clearly separate we can do on without the other """
 

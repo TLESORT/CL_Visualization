@@ -13,8 +13,8 @@ from memory import MemorySet
 
 
 class Rehearsal(Trainer):
-    def __init__(self, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(root_dir, scenario_name, num_tasks, verbose, dev)
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
         self.algo_name = "rehearsal"
         self.data_memory = None
         self.num_classes_per_task = 2

@@ -14,7 +14,7 @@ from copy import deepcopy
 
 from utils import get_dataset
 from model import Model
-from continuum import ClassIncremental
+from continuum import ClassIncremental, InstanceIncremental
 from continuum import Rotations
 
 from eval import Continual_Evaluation
@@ -50,7 +50,8 @@ class Trainer(Continual_Evaluation):
             self.scenario_tr = Rotations(dataset_train, nb_tasks=num_tasks)
         elif scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
-
+        elif scenario_name == "Domain":
+            self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
         self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
 
         self.num_tasks = num_tasks
