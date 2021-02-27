@@ -46,6 +46,8 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
     with open(file_name, 'rb') as fp:
         list_Fisher = pickle.load(fp)
 
+    nb_classes = list_weight[0][0][0].shape[0]
+
     fig, axs = plt.subplots(len(list_Fisher), 2)
 
     axs[0, 0].set_title('Weights')
@@ -64,8 +66,8 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
 
         layer = np.concatenate((w, b), axis=1).astype(np.float)
 
-        fischer_w = np.array(list_Fisher[i])[:-10].reshape(10, 50)
-        fischer_b = np.array(list_Fisher[i])[-10:].reshape(10, 1)
+        fischer_w = np.array(list_Fisher[i])[:-nb_classes].reshape(nb_classes, 50)
+        fischer_b = np.array(list_Fisher[i])[-nb_classes:].reshape(nb_classes, 1)
         fisher = np.concatenate((fischer_w, fischer_b), axis=1)
 
         #  linearly map the colors in the colormap from data values vmin to vmax

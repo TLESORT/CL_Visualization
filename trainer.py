@@ -39,18 +39,19 @@ class Trainer(Continual_Evaluation):
             os.makedirs(self.sample_dir)
 
         self.algo_name = "baseline"
+        self.scenario_name = scenario_name
         self.dev = dev
         self.nb_epochs = args.nb_epochs
 
-        dataset_train = get_dataset(self.dir_data, args.dataset, train=True)
-        dataset_test = get_dataset(self.dir_data, args.dataset, train=False)
+        dataset_train = get_dataset(self.dir_data, args.dataset, self.scenario_name, train=True)
+        dataset_test = get_dataset(self.dir_data, args.dataset, self.scenario_name, train=False)
 
         scenario = None
-        if scenario_name == "Rotations":
+        if self.scenario_name == "Rotations":
             self.scenario_tr = Rotations(dataset_train, nb_tasks=num_tasks)
-        elif scenario_name == "Disjoint":
+        elif self.scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
-        elif scenario_name == "Domain":
+        elif self.scenario_name == "Domain":
             self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
         self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
 
@@ -61,8 +62,11 @@ class Trainer(Continual_Evaluation):
         if scenario_name == "Rotations":
             fisher_set = Rotations(dataset_train, nb_tasks=1)
         elif scenario_name == "Disjoint":
-            fisher_set = ClassIncremental(dataset_train, nb_tasks=1)  # .sub_sample(1000)
+            fisher_set = ClassIncremental(dataset_train, nb_tasks=1)
             self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
+        elif scenario_name == "Domain":
+            fisher_set = InstanceIncremental(dataset_train, nb_tasks=1)
+            self.test_set = InstanceIncremental(dataset_test, nb_tasks=1)
 
         #self.fisher_eval_loader = DataLoader(fisher_set[:], batch_size=264, shuffle=True, num_workers=6)
         self.eval_tr_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)

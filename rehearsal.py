@@ -56,8 +56,17 @@ class Rehearsal(Trainer):
         task_memory_set = None
         if ind_task > 0:
             # ptit checkup
-            assert len(self.data_memory) == self.data_memory.nb_classes * self.nb_samples_rehearsal_per_class, \
-                f"{len(self.data_memory)} == {self.data_memory.nb_classes} * {self.nb_samples_rehearsal_per_class}"
+            if self.scenario_name == "Domain":
+                assert len(self.data_memory) == self.data_memory.nb_classes *\
+                       self.nb_samples_rehearsal_per_class *\
+                       ind_task, \
+                    f"{len(self.data_memory)} ==" \
+                    f" {self.data_memory.nb_classes} *" \
+                    f" {self.nb_samples_rehearsal_per_class} *" \
+                    f"{ind_task}"
+            else:
+                assert len(self.data_memory) == self.data_memory.nb_classes * self.nb_samples_rehearsal_per_class, \
+                    f"{len(self.data_memory)} == {self.data_memory.nb_classes} * {self.nb_samples_rehearsal_per_class}"
             # We convert task set to a memory set because we need to manipulate the list_ID to balance classes
             task_memory_set = MemorySet(task_set._x,
                                         task_set._y,

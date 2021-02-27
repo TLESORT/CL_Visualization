@@ -11,7 +11,7 @@ from trainer import Trainer
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
-                    choices=['baseline', 'rehearsal', 'ewc_diag', 'ewc_kfac'],
+                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", 'ewc_kfac'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
                     help='continual scenario')
@@ -50,6 +50,9 @@ elif args.name_algo == "rehearsal":
 elif args.name_algo == "ewc_diag":
     from Ewc import EWC_Diag
     Algo = EWC_Diag(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
+elif args.name_algo == "ewc_diag_id":
+    from Ewc import EWC_Diag_id
+    Algo = EWC_Diag_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_kfac":
     from Ewc import EWC_KFAC
     Algo = EWC_KFAC(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)

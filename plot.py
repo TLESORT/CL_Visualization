@@ -38,7 +38,7 @@ class Continual_Plot(object):
     def plot_figures(self):
 
         name_list = ["baseline","ewc_diag", "rehearsal", "ewc_kfac"]
-        name_list = ["ewc_kfac"]
+        name_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
         for name in name_list:
             plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, name)
 
@@ -56,11 +56,11 @@ class Continual_Plot(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--scenario_name', default="Disjoint", type=str,
+    parser.add_argument('--scenario_name', default="Disjoint", type=str, choices=["Disjoint","Domain"],
                         help='continual scenario')
     parser.add_argument('--Root_dir', default="./Archives", type=str,
                         help='data directory name')
-    parser.add_argument('--dataset', default="MNIST", type=str,
+    parser.add_argument('--dataset', default="MNIST", type=str, choices=["MNIST","mnist_fellowship"],
                         help='dataset name')
 
     args = parser.parse_args()
