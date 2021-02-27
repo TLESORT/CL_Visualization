@@ -18,7 +18,7 @@ class EWC(Trainer):
         self.layer_collection = LayerCollection.from_model(self.model)
         self.representation = representation
 
-        self.importance = 1000.
+        self.importance = 1.
         self.list_Fishers = {}
         self.representation = representation
 
@@ -66,6 +66,29 @@ class EWC_Diag(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
         self.algo_name = "ewc_diag"
+
+class EWC_Diag_id(EWC_Diag):
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
+        self.algo_name = "ewc_diag_id"
+        self.small_lambda = 0.1
+
+    def regularize_loss(self, model, loss):
+        v = PVector.from_model(model)
+        loss_regul = 0.
+        loss_first = 0.
+
+        assert not np.isnan(loss.item()), "Unfortunately, the loss is NaN (before regularization)"
+
+        assert not np.isnan(v.norm().item()), "model weights"
+
+        for i, (fim, v0) in self.list_Fishers.items():
+            small_lambda = 0.01 * fim.trace().max().item()
+            loss_regul += self.importance * (fim.vTMv(v - v0) + small_lambda * (v - v0).norm()**2)
+
+            assert not np.isnan(loss_regul.item()), "Unfortunately, the loss is NaN"  # sanity check to detect nan
+
+        return loss_regul+loss+loss_first
 
 
 class EWC_KFAC(EWC):
