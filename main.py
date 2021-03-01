@@ -27,7 +27,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--expert', action='store_true', default=False,
                     help='define if we use expert model who has access to all data')
-parser.add_argument('--plot', action='store_true', default=False, help='dev flag')
+parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
@@ -62,8 +62,8 @@ else:
 
 # Algo.eval()
 
-if args.plot:
-    from plot import Continual_Plot
-    Continual_Plot(args).plot_figures()
-else:
+if not args.no_train:
     Algo.continual_training()
+
+from plot import Continual_Plot
+Continual_Plot(args).plot_figures(method=args.name_algo)
