@@ -23,6 +23,8 @@ from eval import Continual_Evaluation
 class Trainer(Continual_Evaluation):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
 
+        super().__init__(args)
+
         self.lr = args.lr
         self.root_dir = root_dir
         self.verbose = verbose
@@ -49,29 +51,21 @@ class Trainer(Continual_Evaluation):
         scenario = None
         if self.scenario_name == "Rotations":
             self.scenario_tr = Rotations(dataset_train, nb_tasks=num_tasks)
+            # NO SATISFYING SOLUTION YET HERE
         elif self.scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
+            self.scenario_te = ClassIncremental(dataset_test, nb_tasks=1)
         elif self.scenario_name == "Domain":
             self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
+            self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=1)
         self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
 
         self.num_tasks = num_tasks
         self.continuum = scenario
 
-        fisher_set = None
-        if scenario_name == "Rotations":
-            fisher_set = Rotations(dataset_train, nb_tasks=1)
-        elif scenario_name == "Disjoint":
-            fisher_set = ClassIncremental(dataset_train, nb_tasks=1)
-            self.test_set = ClassIncremental(dataset_test, nb_tasks=1)
-        elif scenario_name == "Domain":
-            fisher_set = InstanceIncremental(dataset_train, nb_tasks=1)
-            self.test_set = InstanceIncremental(dataset_test, nb_tasks=1)
+        self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=264, shuffle=True, num_workers=6)
 
-        #self.fisher_eval_loader = DataLoader(fisher_set[:], batch_size=264, shuffle=True, num_workers=6)
-        self.eval_tr_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)
-
-        self.eval_te_loader = DataLoader(self.test_set[:], batch_size=264, shuffle=True, num_workers=6)
+        self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=264, shuffle=True, num_workers=6)
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=0.9)
 
     def regularize_loss(self, model, loss):
@@ -83,11 +77,7 @@ class Trainer(Continual_Evaluation):
     def callback_task(self, ind_task, task_set):
         pass
 
-    def test(self):
-        correct = 0.0
-        classe_prediction = np.zeros(self.scenario_tr.nb_classes)
-        classe_total = np.zeros(self.scenario_tr.nb_classes)
-        classe_wrong = np.zeros(self.scenario_tr.nb_classes)  # Images wrongly attributed to a particular class
+    def test(self, ind_task):
         for i_, (x_, y_, _) in enumerate(self.eval_te_loader):
 
             # data does not fit to the model if size<=1
@@ -99,29 +89,13 @@ class Trainer(Continual_Evaluation):
 
             self.model.eval()
             output = self.model(x_)
+            loss = F.cross_entropy(output, y_)
 
-            correct += (output.max(dim=1)[1] == y_).data.sum()
-            pred = output.data.max(1, keepdim=True)[1]
-            for i in range(y_.shape[0]):
-                if pred[i].detach().cpu()[0] == y_[i].detach().cpu():
-                    classe_prediction[pred[i].detach().cpu()[0]] += 1
-                else:
-                    classe_wrong[pred[i].detach().cpu()[0]] += 1
+            self.log_iter(ind_task, None, loss, output, y_, train=False)
 
-                classe_total[y_[i]] += 1
 
-        print("Test Accuracy: {} %".format(100.0 * correct / len(self.eval_te_loader.dataset)))
-
-        if self.verbose:
-            for i in range(self.scenario_tr.nb_classes):
-                print("Task " + str(i) + "- Prediction :" + str(
-                    classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
-                    classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
 
     def one_task_training(self, ind_task, task_set):
-        correct = 0
-
-        accuracy_per_epoch = []
 
         data_loader = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
         for epoch in range(self.nb_epochs):
@@ -137,6 +111,8 @@ class Trainer(Continual_Evaluation):
                 self.model.train()
                 self.opt.zero_grad()
                 output = self.model(x_)
+
+                assert output.shape[0] == y_.shape[0]
                 loss = F.cross_entropy(output, y_)
 
                 loss = self.regularize_loss(self.model, loss)
@@ -144,14 +120,14 @@ class Trainer(Continual_Evaluation):
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0) # clip gradient to avoid Nan
                 self.opt.step()
-                self.log_iter(ind_task, self.model, loss)
+                self.log_iter(ind_task, self.model, loss, output, y_)
 
-                assert output.shape[0] == y_.shape[0]
-                correct += (output.max(dim=1)[1] == y_).data.sum()
                 if self.dev: break
-            if self.dev: break
 
-            accuracy_per_epoch.append(1.0 * correct / len(data_loader))
+            self.test(ind_task)
+            # we log and we print acc only for the last epoch
+            self.log_post_epoch_processing(ind_task, print_acc=(epoch==self.nb_epochs-1))
+            if self.dev: break
 
         return
 
@@ -168,7 +144,6 @@ class Trainer(Continual_Evaluation):
             self.one_task_training(task_id, task_set)
             self.callback_task(task_id, task_set)
 
-            self.test()
 
         # last log (we log  at the beginning of each task except for the last one)
 

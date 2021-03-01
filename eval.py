@@ -16,13 +16,18 @@ class Continual_Evaluation(abc.ABC):
     """ Log and Figure plotting should be clearly separate we can do on without the other """
 
     def __init__(self, args):
-        print("Abstract class")
+        self.vector_predictions_epoch_tr = np.zeros(0)
+        self.vector_labels_epoch_tr = np.zeros(0)
+        self.vector_predictions_epoch_te = np.zeros(0)
+        self.vector_labels_epoch_te = np.zeros(0)
 
     def init_log(self, ind_task):
         if ind_task == 0:
-            self.list_loss = {}
             self.list_grad = {}
-            self.list_latent = [] # we just need a simple list here
+            self.list_loss = {}
+            self.list_accuracies = {}
+            self.list_accuracies_per_classes = {}
+            self.list_latent = []  # we just need a simple list here
             self.list_weights = {}
             self.list_weights_dist = {}
             self.list_Fisher = []
@@ -30,6 +35,8 @@ class Continual_Evaluation(abc.ABC):
         if ind_task != self.num_tasks:
             self.list_grad[ind_task] = []
             self.list_loss[ind_task] = []
+            self.list_accuracies[ind_task] = []
+            self.list_accuracies_per_classes[ind_task] = []
             self.list_weights[ind_task] = []
             self.list_weights_dist[ind_task] = []
 
@@ -43,17 +50,90 @@ class Continual_Evaluation(abc.ABC):
         dist = torch.tensor(dist_list).mean().detach().cpu().item()
         self.list_weights_dist[ind_task].append(dist)
 
-    def log_iter(self, ind_task, model, loss):
+    def _process_classes_logs(self, train):
 
-        grad = model.fc2.weight.grad.clone().detach().cpu()
-        self.list_grad[ind_task].append(grad)
-        w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
-        b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
+        assert self.scenario_tr.nb_classes == self.scenario_te.nb_classes
+        nb_classes = self.scenario_tr.nb_classes
 
-        self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
-        self.list_weights[ind_task].append([w, b])
+        if train:
+            vector_label = self.vector_labels_epoch_tr
+            vector_preds = self.vector_predictions_epoch_tr
+        else:
+            vector_label = self.vector_labels_epoch_te
+            vector_preds = self.vector_predictions_epoch_te
 
-        self.log_weights_dist(ind_task)
+        classes_correctly_predicted = np.zeros(nb_classes)
+        classes_wrongly_predicted = np.zeros(nb_classes)
+        nb_instance_classes = np.zeros(nb_classes)
+
+        for i in range(nb_classes):
+            indexes_class = np.where(vector_label == i)[0]
+            nb_instance_classes[i] = len(indexes_class)
+            classes_correctly_predicted[i] = np.count_nonzero(vector_preds[indexes_class] == i)
+
+            # number of predicted class i without the correctly predicted
+            classes_wrongly_predicted[i] = len(np.where(vector_preds == i)[0]) - \
+                                           classes_correctly_predicted[i]
+            assert classes_wrongly_predicted[i] >= 0
+
+        return classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes
+
+    def log_post_epoch_processing(self, ind_task, print_acc=False):
+
+        # 1. processing for accuracy logs
+        assert self.vector_predictions_epoch_tr.shape[0] == self.vector_labels_epoch_tr.shape[0]
+        assert self.vector_predictions_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
+        correct_tr = (self.vector_predictions_epoch_tr == self.vector_labels_epoch_tr).sum()
+        correct_te = (self.vector_predictions_epoch_te == self.vector_labels_epoch_te).sum()
+        nb_instances_tr = self.vector_labels_epoch_tr.shape[0]
+        nb_instances_te = self.vector_labels_epoch_te.shape[0]
+
+        # log correct prediction on nb instances for accuracy computation
+        accuracy_infos = [correct_tr, nb_instances_tr, correct_te, nb_instances_te]
+        self.list_accuracies[ind_task].append(accuracy_infos)
+
+        # 2. processing for accuracy per class logs
+        class_infos_tr = self._process_classes_logs(train=True)
+        class_infos_te = self._process_classes_logs(train=False)
+
+        if print_acc:
+            print("Train Accuracy: {} %".format(100.0 * correct_tr / nb_instances_tr))
+            print("Test Accuracy: {} %".format(100.0 * correct_te / nb_instances_te))
+
+        if self.verbose:
+            classe_prediction, classe_wrong, classe_total=class_infos_te
+            for i in range(self.scenario_tr.nb_classes):
+                print("Task " + str(i) + "- Prediction :" + str(
+                    classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
+                    classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
+
+        self.list_accuracies_per_classes[ind_task].append([class_infos_tr, class_infos_te])
+        # Reinit log vector
+        self.vector_predictions_epoch_tr = np.zeros(0)
+        self.vector_labels_epoch_tr = np.zeros(0)
+        self.vector_predictions_epoch_te = np.zeros(0)
+        self.vector_labels_epoch_te = np.zeros(0)
+
+    def log_iter(self, ind_task, model, loss, output, y_, train=True):
+        predictions = np.array(output.max(dim=1)[1].cpu())
+
+        if train:
+            self.vector_predictions_epoch_tr = np.concatenate([self.vector_predictions_epoch_tr, predictions])
+            self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, y_.cpu().numpy()])
+
+            grad = model.fc2.weight.grad.clone().detach().cpu()
+            self.list_grad[ind_task].append(grad)
+            w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
+            b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
+
+            self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
+            self.list_weights[ind_task].append([w, b])
+
+            self.log_weights_dist(ind_task)
+        else:
+            ## / ! \ we do not log loss for test, maybe one day....
+            self.vector_predictions_epoch_te = np.concatenate([self.vector_predictions_epoch_te, predictions])
+            self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, y_.cpu().numpy()])
 
     def log_latent(self, ind_task):
 
@@ -91,6 +171,14 @@ class Continual_Evaluation(abc.ABC):
         file_name = os.path.join(self.log_dir, "{}_loss.pkl".format(self.algo_name))
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_loss, f, pickle.HIGHEST_PROTOCOL)
+
+        file_name = os.path.join(self.log_dir, "{}_accuracies.pkl".format(self.algo_name))
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.list_accuracies, f, pickle.HIGHEST_PROTOCOL)
+
+        file_name = os.path.join(self.log_dir, "{}_accuracies_per_class.pkl".format(self.algo_name))
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.list_accuracies_per_classes, f, pickle.HIGHEST_PROTOCOL)
 
         file_name = os.path.join(self.log_dir, "{}_grad.pkl".format(self.algo_name))
         with open(file_name, 'wb') as f:
