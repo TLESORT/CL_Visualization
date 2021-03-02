@@ -16,7 +16,9 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 
 import matplotlib.pyplot as plt
 
-from plot_logs import plot_loss,\
+from plot_logs import plot_accuracies, \
+    plot_accuracies_per_classes,\
+    plot_loss,\
     plot_grad,\
     plot_grad_gif,\
     plot_Fisher,\
@@ -42,16 +44,21 @@ class Continual_Plot(object):
 
 
     def plot_figures(self, method):
-        plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
 
+        plot_accuracies_per_classes(self.log_dir, self.Fig_dir, method)
+        plot_accuracies(self.log_dir, self.Fig_dir, method)
+        plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
         plot_tsne(self.log_dir, self.Fig_dir, method)
         plot_weights_diff(self.log_dir, self.Fig_dir, method)
         plot_mean_weights_dist(self.log_dir, self.Fig_dir, method)
-
         plot_Fisher(self.log_dir, self.Fig_dir, method)
-
         plot_loss(self.log_dir, self.Fig_dir, method)
         plot_grad(self.log_dir, self.Fig_dir, method)
+
+
+
+
+
 
         # plot_grad_gif(log_dir, Fig_dir, fast)
 

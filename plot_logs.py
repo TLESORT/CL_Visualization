@@ -12,6 +12,8 @@ import pandas as pd
 import seaborn as sn
 
 
+
+
 def flatten_results(results, type=""):
     nb_iterations = 0
     ind_task_transition = []
@@ -30,7 +32,7 @@ def flatten_results(results, type=""):
         for i in range(len(results[ind_task])):
             np_flat_data[iteration] = np.array(results[ind_task][i])
             iteration += 1
-    return np_flat_data, ind_task_transition
+    return np_flat_data, np.array(ind_task_transition)
 
 
 def plot_Fisher(log_dir, Fig_dir, algo_name):
@@ -96,6 +98,9 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
 
     np_dist, ind_task_transition = flatten_results(list_dist, type="dist")
 
+    # we remove dist before start of training
+    np_dist = np_dist[ind_task_transition[0]:-1]
+
     np_grad_reshaped = np_dist.reshape(np_dist.shape[0], -1)
 
     mean = np_grad_reshaped.mean(1)
@@ -104,8 +109,9 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.plot(range(np_dist.shape[0]), mean, label="Distance")
     plt.fill_between(range(np_dist.shape[0]), mean - std, mean + std, alpha=0.4)
 
-    xcoords = ind_task_transition
-    for xc in xcoords:
+    # remove first transition which is start of training and remove offset
+    xcoords = ind_task_transition[1:-1] - ind_task_transition[0]
+    for i, xc in enumerate(xcoords):
         plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
 
     plt.title("L2 distance between current model and model at the beginning of the task")
@@ -115,32 +121,23 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
 
 def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
     file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
-    list_loss = None
+    list_weight = None
     with open(file_name, 'rb') as fp:
         list_weight = pickle.load(fp)
 
     nb_classes = list_weight[0][0][0].shape[0]
 
-    fig, axs = plt.subplots(1, len(list_weight) + 1)
+    fig, axs = plt.subplots(1, len(list_weight), figsize=(15,3))
 
-    list_dot = []
-    for i in range(len(list_weight) + 1):
+    for i in range(len(list_weight)):
 
         dot_products = np.zeros((nb_classes, nb_classes))
 
         for j in range(nb_classes):
             for k in range(nb_classes):
-                if i == 0:
-                    # pour la première fisher on prent les poids à l'initialization
-                    w_j = list_weight[0][0][0][j, :]
-                    w_k = list_weight[0][0][0][k, :]
-                    assert len(w_j) == 50  # latent space
-
-
-
-                else:
-                    w_j = list_weight[i - 1][-1][0][j, :]
-                    w_k = list_weight[i - 1][-1][0][k, :]
+                w_j = list_weight[i][-1][0][j, :]
+                w_k = list_weight[i][-1][0][k, :]
+                assert len(w_j) == 50  # latent space
 
                 dot_products[j][k] = w_j.dot(w_k)
 
@@ -198,7 +195,7 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
         axs[i + 1, 0].get_xaxis().set_visible(False)
         axs[i + 1, 1].get_yaxis().set_visible(False)
         axs[i + 1, 1].get_xaxis().set_visible(False)
-        axs[i + 1, 0].set(ylabel='Task {}'.format(i))
+        axs[i + 1, 0].set(ylabel=f'Task {i}')
 
     save_name = os.path.join(Fig_dir, f"{algo_name}_Weight_Diff.png")
     plt.savefig(save_name)
@@ -251,11 +248,76 @@ def plot_loss(log_dir, Fig_dir, algo_name):
     plt.plot(range(flat_loss.shape[0]), flat_loss, label="Loss")
 
     xcoords = ind_task_transition
-    for xc in xcoords:
-        plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
+
+    for i, xc in enumerate(xcoords):
+        if i==0:
+            plt.axvline(x=xc, color='red', linewidth=0.5, linestyle='-')
+        else:
+            plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
 
     plt.savefig(os.path.join(Fig_dir, "{}_Loss.png").format(algo_name))
     plt.clf()
+
+def plot_accuracies(log_dir, Fig_dir, algo_name):
+    print(f"Plot Accuracies {algo_name}")
+
+    file_name = os.path.join(log_dir, "{}_accuracies.pkl".format(algo_name))
+    dict_accuracies = None
+    with open(file_name, 'rb') as fp:
+        dict_accuracies = pickle.load(fp)
+
+    flat_acc, ind_task_transition = flatten_results(dict_accuracies, type="acc")
+
+    nb_correct_tr = flat_acc[:,0]
+    nb_instances_tr = flat_acc[:,1]
+    nb_correct_te = flat_acc[:,2]
+    nb_instances_te = flat_acc[:,3]
+
+    flat_acc_tr = np.divide(nb_correct_tr,nb_instances_tr)
+    flat_acc_te = np.divide(nb_correct_te,nb_instances_te)
+
+    plt.plot(range(flat_acc_tr.shape[0]), flat_acc_tr, label="Train Accuracy")
+    plt.plot(range(flat_acc_te.shape[0]), flat_acc_te, label="Test Accuracy")
+
+    xcoords = ind_task_transition
+    for xc in xcoords:
+        plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
+
+    plt.savefig(os.path.join(Fig_dir, "{}_Accuracy.png").format(algo_name))
+    plt.clf()
+
+def plot_accuracies_per_classes(log_dir, Fig_dir, algo_name):
+    file_name = os.path.join(log_dir, "{}_accuracies_per_class.pkl".format(algo_name))
+    dict_accuracies = None
+    with open(file_name, 'rb') as fp:
+        dict_accuracies = pickle.load(fp)
+
+    flat_acc, ind_task_transition = flatten_results(dict_accuracies, type="acc")
+
+    flat_te = flat_acc[:,1]
+    flat_correct_te = flat_te[:,0]
+    flat_wrong_te = flat_te[:,1]
+    flat_nb_te = flat_te[:,2]
+
+    fig, axs = plt.subplots(1, len(ind_task_transition), figsize=(15,3))
+
+    # accuracy per class on test set (last epoch per task)
+    for i, ind_epoch in enumerate(ind_task_transition):
+        accuracy = np.divide(flat_correct_te[ind_epoch-1], flat_nb_te[ind_epoch-1]) * 100
+        axs[i].bar(np.arange(len(accuracy))+1, accuracy, width = 0.8, tick_label = range(len(accuracy)))
+        axs[i].set_xlim(0, len(accuracy)+1) # +2 for space management
+        axs[i].set_box_aspect(1)
+        if i == 0:
+            axs[0].set_ylabel('Accuracy Per Class')
+            axs[0].set_xlabel('Before Training')
+        else:
+            axs[i].set_xlabel(f'Task {i}')
+
+    save_name = os.path.join(Fig_dir, f"{algo_name}_accuracies_per_class.png")
+    plt.title('Accuracy at the end of each task')
+    plt.savefig(save_name)
+    plt.clf()
+
 
 
 # grad of the last layer (without bias)
@@ -270,15 +332,19 @@ def plot_grad(log_dir, Fig_dir, algo_name):
 
     np_grad, ind_task_transition = flatten_results(list_grad, type="grad")
 
-    print(np_grad.shape)
-    print(np_grad[0].shape)
     np_grad_reshaped = np_grad.reshape(np_grad.shape[0], -1)
+
+    # remove log before start of training
+    np_grad_reshaped=np_grad_reshaped[ind_task_transition[1]:]
+
+    # remove first ind and correct offset
+    ind_task_transition = ind_task_transition[1:]-ind_task_transition[0]
 
     mean = np_grad_reshaped.mean(1)
     std = np_grad_reshaped.std(1)
 
-    plt.plot(range(np_grad.shape[0]), mean, label="Grad")
-    plt.fill_between(range(np_grad.shape[0]), mean - std, mean + std, alpha=0.4)
+    plt.plot(range(np_grad_reshaped.shape[0]), mean, label="Grad")
+    plt.fill_between(range(np_grad_reshaped.shape[0]), mean - std, mean + std, alpha=0.4)
 
     xcoords = ind_task_transition
     for xc in xcoords:

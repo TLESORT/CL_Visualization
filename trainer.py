@@ -72,13 +72,23 @@ class Trainer(Continual_Evaluation):
         return loss
 
     def init_task(self, ind_task, task_set):
-        return task_set
+        data_loader_tr = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
+        if ind_task==0:
+            # log before training
+            self.init_log(ind_task_log=ind_task)
+            self.test(ind_task_log=ind_task, train=False)
+            self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
+            self.log_post_epoch_processing(0)
+        return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
         pass
 
-    def test(self, ind_task):
-        for i_, (x_, y_, _) in enumerate(self.eval_te_loader):
+    def test(self, ind_task_log, data_loader=None, train=False):
+
+        if data_loader is None:
+            data_loader = self.eval_te_loader
+        for i_, (x_, y_, t_) in enumerate(data_loader):
 
             # data does not fit to the model if size<=1
             if x_.size(0) <= 1:
@@ -91,13 +101,10 @@ class Trainer(Continual_Evaluation):
             output = self.model(x_)
             loss = F.cross_entropy(output, y_)
 
-            self.log_iter(ind_task, None, loss, output, y_, train=False)
+            self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
+    def one_task_training(self, ind_task, data_loader):
 
-
-    def one_task_training(self, ind_task, task_set):
-
-        data_loader = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
         for epoch in range(self.nb_epochs):
             for i_, (x_, y_, t_) in enumerate(data_loader):
 
@@ -118,15 +125,15 @@ class Trainer(Continual_Evaluation):
                 loss = self.regularize_loss(self.model, loss)
 
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0) # clip gradient to avoid Nan
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
                 self.opt.step()
-                self.log_iter(ind_task, self.model, loss, output, y_)
+                self.log_iter(ind_task+1, self.model, loss, output, y_, t_)
 
                 if self.dev: break
 
-            self.test(ind_task)
+            self.test(ind_task_log=ind_task+1)
             # we log and we print acc only for the last epoch
-            self.log_post_epoch_processing(ind_task, print_acc=(epoch==self.nb_epochs-1))
+            self.log_post_epoch_processing(ind_task+1, print_acc=(epoch == self.nb_epochs - 1))
             if self.dev: break
 
         return
@@ -135,18 +142,14 @@ class Trainer(Continual_Evaluation):
 
         for task_id, task_set in enumerate(self.scenario_tr):
             print("Task {}: Start".format(task_id))
-            # log is disabled for first debugging steps
-            self.init_log(task_id)
 
-            task_set = self.init_task(task_id, task_set)
-            # log is disabled for first debugging steps
+            data_loader = self.init_task(task_id, task_set)
+            self.init_log(task_id+1) # after init task!
             self.log_task(task_id, self.model)  # before training
-            self.one_task_training(task_id, task_set)
+            self.one_task_training(task_id, data_loader)
             self.callback_task(task_id, task_set)
-
 
         # last log (we log  at the beginning of each task except for the last one)
 
-        self.init_log(self.num_tasks)
         self.log_task(self.num_tasks, self.model)
         self.post_training_log()

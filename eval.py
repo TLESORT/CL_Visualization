@@ -20,27 +20,35 @@ class Continual_Evaluation(abc.ABC):
         self.vector_labels_epoch_tr = np.zeros(0)
         self.vector_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
+        self.list_grad = {}
+        self.list_loss = {}
+        self.list_accuracies = {}
+        self.list_accuracies_per_classes = {}
+        self.list_latent = []  # we just need a simple list here
+        self.list_weights = {}
+        self.list_weights_dist = {}
+        self.list_Fisher = []
 
-    def init_log(self, ind_task):
-        if ind_task == 0:
-            self.list_grad = {}
-            self.list_loss = {}
-            self.list_accuracies = {}
-            self.list_accuracies_per_classes = {}
-            self.list_latent = []  # we just need a simple list here
-            self.list_weights = {}
-            self.list_weights_dist = {}
-            self.list_Fisher = []
+    def init_log(self, ind_task_log):
 
-        if ind_task != self.num_tasks:
-            self.list_grad[ind_task] = []
-            self.list_loss[ind_task] = []
-            self.list_accuracies[ind_task] = []
-            self.list_accuracies_per_classes[ind_task] = []
-            self.list_weights[ind_task] = []
-            self.list_weights_dist[ind_task] = []
+        self.list_grad[ind_task_log] = []
+        self.list_loss[ind_task_log] = []
+        self.list_accuracies[ind_task_log] = []
+        self.list_accuracies_per_classes[ind_task_log] = []
+        self.list_weights[ind_task_log] = []
+        self.list_weights_dist[ind_task_log] = []
 
         self.ref_model = deepcopy(self.model)
+
+
+    def log_task(self, ind_task, model):
+        model2save = deepcopy(model).cpu().state_dict()
+        torch.save(model2save, os.path.join(self.log_dir, "Model_Task_{}.pth".format(ind_task)))
+
+        self.log_latent(ind_task)
+
+        F_diag, v0 = self.compute_last_layer_fisher(model, self.eval_tr_loader)
+        self.list_Fisher.append(F_diag.get_diag().detach().cpu())
 
     def log_weights_dist(self, ind_task):
 
@@ -76,7 +84,7 @@ class Continual_Evaluation(abc.ABC):
                                            classes_correctly_predicted[i]
             assert classes_wrongly_predicted[i] >= 0
 
-        return classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes
+        return np.array([classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes])
 
     def log_post_epoch_processing(self, ind_task, print_acc=False):
 
@@ -89,7 +97,7 @@ class Continual_Evaluation(abc.ABC):
         nb_instances_te = self.vector_labels_epoch_te.shape[0]
 
         # log correct prediction on nb instances for accuracy computation
-        accuracy_infos = [correct_tr, nb_instances_tr, correct_te, nb_instances_te]
+        accuracy_infos = np.array([correct_tr, nb_instances_tr, correct_te, nb_instances_te])
         self.list_accuracies[ind_task].append(accuracy_infos)
 
         # 2. processing for accuracy per class logs
@@ -107,22 +115,28 @@ class Continual_Evaluation(abc.ABC):
                     classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
                     classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
 
-        self.list_accuracies_per_classes[ind_task].append([class_infos_tr, class_infos_te])
+        self.list_accuracies_per_classes[ind_task].append(np.array([class_infos_tr, class_infos_te]))
         # Reinit log vector
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
         self.vector_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
 
-    def log_iter(self, ind_task, model, loss, output, y_, train=True):
+    def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
         predictions = np.array(output.max(dim=1)[1].cpu())
 
         if train:
             self.vector_predictions_epoch_tr = np.concatenate([self.vector_predictions_epoch_tr, predictions])
-            self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, y_.cpu().numpy()])
+            self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, labels.cpu().numpy()])
 
-            grad = model.fc2.weight.grad.clone().detach().cpu()
+            if model.fc2.weight.grad is not None:
+                grad = model.fc2.weight.grad.clone().detach().cpu()
+            else:
+                # useful for first log before training
+                grad = torch.zeros(model.fc2.weight.shape)
+
             self.list_grad[ind_task].append(grad)
+
             w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
             b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
 
@@ -133,7 +147,7 @@ class Continual_Evaluation(abc.ABC):
         else:
             ## / ! \ we do not log loss for test, maybe one day....
             self.vector_predictions_epoch_te = np.concatenate([self.vector_predictions_epoch_te, predictions])
-            self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, y_.cpu().numpy()])
+            self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, labels.cpu().numpy()])
 
     def log_latent(self, ind_task):
 
@@ -158,14 +172,6 @@ class Continual_Evaluation(abc.ABC):
         y_vectors = y_vectors[:200]
         self.list_latent.append([latent_vectors, y_vectors])
 
-    def log_task(self, ind_task, model):
-        model2save = deepcopy(self.model).cpu().state_dict()
-        torch.save(model2save, os.path.join(self.log_dir, "Model_Task_{}.pth".format(ind_task)))
-
-        self.log_latent(ind_task)
-
-        F_diag, v0 = self.compute_last_layer_fisher(self.model, self.eval_tr_loader)
-        self.list_Fisher.append(F_diag.get_diag().detach().cpu())
 
     def post_training_log(self):
         file_name = os.path.join(self.log_dir, "{}_loss.pkl".format(self.algo_name))
