@@ -18,8 +18,12 @@ class Continual_Evaluation(abc.ABC):
     def __init__(self, args):
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
+        self.vector_task_labels_epoch_tr = np.zeros(0)
+
         self.vector_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
+        self.vector_task_labels_epoch_te = np.zeros(0)
+
         self.list_grad = {}
         self.list_loss = {}
         self.list_accuracies = {}
@@ -128,6 +132,7 @@ class Continual_Evaluation(abc.ABC):
         if train:
             self.vector_predictions_epoch_tr = np.concatenate([self.vector_predictions_epoch_tr, predictions])
             self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, labels.cpu().numpy()])
+            self.vector_task_labels_epoch_tr  = np.concatenate([self.vector_task_labels_epoch_tr, task_labels])
 
             if model.fc2.weight.grad is not None:
                 grad = model.fc2.weight.grad.clone().detach().cpu()
@@ -148,6 +153,7 @@ class Continual_Evaluation(abc.ABC):
             ## / ! \ we do not log loss for test, maybe one day....
             self.vector_predictions_epoch_te = np.concatenate([self.vector_predictions_epoch_te, predictions])
             self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, labels.cpu().numpy()])
+            self.vector_task_labels_epoch_te  = np.concatenate([self.vector_task_labels_epoch_te, task_labels])
 
     def log_latent(self, ind_task):
 

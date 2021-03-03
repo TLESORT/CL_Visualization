@@ -11,9 +11,6 @@ from sklearn.manifold import TSNE
 import pandas as pd
 import seaborn as sn
 
-
-
-
 def flatten_results(results, type=""):
     nb_iterations = 0
     ind_task_transition = []
