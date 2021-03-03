@@ -40,9 +40,6 @@ class EWC(Trainer):
 
         return fim, v0
 
-    def init_task(self, ind_task, task_set):
-        return task_set
-
     def callback_task(self, ind_task, task_set):
         self.list_Fishers[ind_task] = self.compute_fisher(ind_task, task_set, self.model)
 

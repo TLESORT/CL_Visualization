@@ -2,7 +2,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from copy import deepcopy
-from torch.utils import data
+from torch.utils.data import DataLoader
 import numpy as np
 
 import os
@@ -94,4 +94,4 @@ class Rehearsal(Trainer):
                               nb_samples=100,
                               shape=[self.image_size, self.image_size, self.input_size])
 
-        return task_memory_set
+        return super().init_task(ind_task, task_memory_set)
