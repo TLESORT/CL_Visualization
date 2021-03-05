@@ -98,6 +98,7 @@ class EWC_Diag_id(EWC_Diag):
 class EWC_KFAC_id(EWC_Diag_id):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
+        self.algo_name = "ewc_kfac_id"
 
 class EWC_KFAC(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
