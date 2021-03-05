@@ -161,6 +161,7 @@ class Continual_Evaluation(abc.ABC):
 
         latent_vectors = np.zeros([0, 50])
         y_vectors = np.zeros([0])
+        t_vectors = np.zeros([0])
 
         for i_, (x_, y_, t_) in enumerate(self.eval_tr_loader):
 
@@ -171,12 +172,14 @@ class Continual_Evaluation(abc.ABC):
             latent_vector = self.model(x_, latent_vector=True).detach().cpu()
             latent_vectors = np.concatenate([latent_vectors, latent_vector], axis=0)
             y_vectors = np.concatenate([y_vectors, np.array(y_)], axis=0)
+            t_vectors = np.concatenate([t_vectors, np.array(t_)], axis=0)
 
             if len(y_vectors) >= 200:
                 break
         latent_vectors = latent_vectors[:200]
         y_vectors = y_vectors[:200]
-        self.list_latent.append([latent_vectors, y_vectors])
+        t_vectors = t_vectors[:200]
+        self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
 
     def post_training_log(self):
