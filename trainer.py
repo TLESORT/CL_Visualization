@@ -54,10 +54,10 @@ class Trainer(Continual_Evaluation):
             # NO SATISFYING SOLUTION YET HERE
         elif self.scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
-            self.scenario_te = ClassIncremental(dataset_test, nb_tasks=1)
+            self.scenario_te = ClassIncremental(dataset_test, nb_tasks=num_tasks)
         elif self.scenario_name == "Domain":
             self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
-            self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=1)
+            self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=num_tasks)
         self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
 
         self.num_tasks = num_tasks
