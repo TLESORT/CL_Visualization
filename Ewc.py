@@ -73,7 +73,7 @@ class EWC_Diag_id(EWC_Diag):
     def compute_fisher(self, ind_task, fisher_set, model):
         fim, v0 = super().compute_fisher(ind_task, fisher_set, model)
         #small_lambda = 0.0001 * fim.trace().max().item()
-        small_lambda = 0.001
+        small_lambda = 0.01
 
         return fim, v0, small_lambda
 
@@ -95,6 +95,9 @@ class EWC_Diag_id(EWC_Diag):
             loss = loss + weight_decay
         return loss
 
+class EWC_KFAC_id(EWC_Diag_id):
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
 
 class EWC_KFAC(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
