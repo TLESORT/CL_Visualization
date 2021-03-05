@@ -70,8 +70,8 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
         fisher = np.concatenate((fischer_w, fischer_b), axis=1)
 
         #  linearly map the colors in the colormap from data values vmin to vmax
-        axs[i, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r')
-        axs[i, 1].imshow(fisher, vmin=-0., vmax=1., cmap='PuBu_r')
+        axs[i, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r', interpolation='nearest')
+        axs[i, 1].imshow(fisher, vmin=-0., vmax=1., cmap='PuBu_r', interpolation='nearest')
 
         axs[i, 0].set_yticks([])
         axs[i, 0].get_xaxis().set_visible(False)
@@ -212,7 +212,7 @@ def plot_tsne(log_dir, Fig_dir, algo_name):
     label = None
     tsne_df = None
 
-    for ind_task, (data, label) in enumerate(list_latent):
+    for ind_task, (data, label, task_labels) in enumerate(list_latent):
         model = TSNE(n_components=2, random_state=0)
         # the number of components = 2
         # default perplexity = 30
@@ -280,10 +280,12 @@ def plot_accuracies(log_dir, Fig_dir, algo_name):
     for xc in xcoords:
         plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
 
+    plt.title('Evolution of Accuracy')
     plt.savefig(os.path.join(Fig_dir, "{}_Accuracy.png").format(algo_name))
     plt.clf()
 
 def plot_accuracies_per_classes(log_dir, Fig_dir, algo_name):
+    print(f"Plot Accuracies per Class {algo_name}")
     file_name = os.path.join(log_dir, "{}_accuracies_per_class.pkl".format(algo_name))
     dict_accuracies = None
     with open(file_name, 'rb') as fp:
@@ -311,7 +313,7 @@ def plot_accuracies_per_classes(log_dir, Fig_dir, algo_name):
             axs[i].set_xlabel(f'Task {i}')
 
     save_name = os.path.join(Fig_dir, f"{algo_name}_accuracies_per_class.png")
-    plt.title('Accuracy at the end of each task')
+    plt.title('Accuracy per Class at the end of each task')
     plt.savefig(save_name)
     plt.clf()
 
