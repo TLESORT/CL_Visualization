@@ -3,7 +3,7 @@ import os
 import torch
 import argparse
 
-from trainer import Trainer
+from methods.trainer import Trainer
 
 # le gradient depend de la couche de sortie (pas toujours)
 # mais surtout de la loss function
@@ -11,7 +11,7 @@ from trainer import Trainer
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
-                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac'],
+                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
                     help='continual scenario')
@@ -19,6 +19,7 @@ parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
 parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
+parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
 parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
@@ -45,20 +46,23 @@ if not os.path.exists(args.root_dir):
 if args.name_algo == "baseline":
     Algo = Trainer(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "rehearsal":
-    from rehearsal import Rehearsal
+    from methods.rehearsal import Rehearsal
     Algo = Rehearsal(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_diag":
-    from Ewc import EWC_Diag
+    from methods.Ewc import EWC_Diag
     Algo = EWC_Diag(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_diag_id":
-    from Ewc import EWC_Diag_id
+    from methods.Ewc import EWC_Diag_id
     Algo = EWC_Diag_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_kfac_id":
-    from Ewc import EWC_KFAC_id
+    from methods.Ewc import EWC_KFAC_id
     Algo = EWC_KFAC_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_kfac":
-    from Ewc import EWC_KFAC
+    from methods.Ewc import EWC_KFAC
     Algo = EWC_KFAC(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
+elif args.name_algo == "ogd":
+    from methods.OGD import OGD
+    Algo = OGD(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 else:
     print("wrong name")
 

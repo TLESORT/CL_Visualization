@@ -16,6 +16,10 @@ class Continual_Evaluation(abc.ABC):
     """ Log and Figure plotting should be clearly separate we can do on without the other """
 
     def __init__(self, args):
+
+
+        self.dataset = args.dataset
+
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
         self.vector_task_labels_epoch_tr = np.zeros(0)
@@ -126,8 +130,40 @@ class Continual_Evaluation(abc.ABC):
         self.vector_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
 
+    def _multihead_predictions(self, output, labels, task_labels):
+        #TODO: faire ca proprement pour que ca marche pour tout type de scenario
+
+        list_preds = []
+        for x,y,t in zip(output, labels, task_labels):
+
+            label=y.cpu().item()
+
+            # 4 POC we test in only on Split MNist 5 tasks
+            assert self.dataset == "MNIST"
+            assert self.num_tasks == 5
+
+            head_ind = label // 2
+            assert 0 <= head_ind < 5
+
+            ind_start=2*head_ind
+            ind_end= 2*(head_ind+1)
+
+            binary_pred = x[ind_start:ind_end].argmax().item()
+            pred= 2*head_ind + binary_pred
+            list_preds.append(pred)
+
+        assert len(list_preds) == len(labels)
+
+        return np.array(list_preds)
+
+
     def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
-        predictions = np.array(output.max(dim=1)[1].cpu())
+
+        if not self.test_label:
+            predictions = np.array(output.max(dim=1)[1].cpu())
+        else:
+            predictions = self._multihead_predictions(output, labels, task_labels)
+
 
         if train:
             self.vector_predictions_epoch_tr = np.concatenate([self.vector_predictions_epoch_tr, predictions])
