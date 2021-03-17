@@ -8,8 +8,9 @@ from nngeometry.metrics import FIM
 from nngeometry.layercollection import LayerCollection
 from nngeometry.object import PMatDiag, PMatKFAC
 from nngeometry.object.vector import PVector
-from trainer import Trainer
 import numpy as np
+
+from methods.trainer import Trainer
 
 
 class EWC(Trainer):
@@ -57,18 +58,10 @@ class EWC(Trainer):
             assert not np.isnan(loss_regul.item()), "Unfortunately, the loss is NaN"  # sanity check to detect nan
 
         return loss_regul+loss
-
-
-class EWC_Diag(EWC):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
-        self.algo_name = "ewc_diag"
-
-class EWC_Diag_id(EWC_Diag):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
-        self.algo_name = "ewc_diag_id"
-        #self.small_lambda = 0.001
+class EWC_id(EWC):
+    def __init__(self, args, root_dir, scenario_name, num_tasks, representation, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, representation, verbose, dev)
+        self.algo_name = "ewc_id"
 
     def compute_fisher(self, ind_task, fisher_set, model):
         fim, v0 = super().compute_fisher(ind_task, fisher_set, model)
@@ -95,12 +88,24 @@ class EWC_Diag_id(EWC_Diag):
             loss = loss + weight_decay
         return loss
 
-class EWC_KFAC_id(EWC_Diag_id):
+class EWC_Diag(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
-        self.algo_name = "ewc_kfac_id"
+        super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
+        self.algo_name = "ewc_diag"
+
+class EWC_Diag_id(EWC_id):
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
+        self.algo_name = "ewc_diag_id"
+
 
 class EWC_KFAC(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
         self.algo_name = "ewc_kfac"
+
+class EWC_KFAC_id(EWC_id):
+    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+        super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
+        self.algo_name = "ewc_kfac_id"
+
