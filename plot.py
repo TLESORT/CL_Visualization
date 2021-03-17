@@ -17,15 +17,18 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 import matplotlib.pyplot as plt
 
 from plot_logs import plot_accuracies, \
+    plot_angles_latent_output, \
     plot_accuracies_per_classes,\
     plot_loss,\
     plot_grad,\
     plot_grad_gif,\
     plot_Fisher,\
-    plot_tsne,\
+    plot_tsne_classes,\
+    plot_tsne_tasks,\
     plot_weights_diff,\
     plot_mean_weights_dist, \
-    plot_orthogonal_output_layers
+    plot_orthogonal_output_layers, \
+    plot_norm_bias_output_layers
 
 class Continual_Plot(object):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
@@ -45,15 +48,18 @@ class Continual_Plot(object):
 
     def plot_figures(self, method):
 
-        plot_accuracies_per_classes(self.log_dir, self.Fig_dir, method)
-        plot_accuracies(self.log_dir, self.Fig_dir, method)
-        plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
-        plot_tsne(self.log_dir, self.Fig_dir, method)
-        plot_weights_diff(self.log_dir, self.Fig_dir, method)
-        plot_mean_weights_dist(self.log_dir, self.Fig_dir, method)
-        plot_Fisher(self.log_dir, self.Fig_dir, method)
-        plot_loss(self.log_dir, self.Fig_dir, method)
-        plot_grad(self.log_dir, self.Fig_dir, method)
+        # plot_accuracies(self.log_dir, self.Fig_dir, method)
+        # plot_accuracies_per_classes(self.log_dir, self.Fig_dir, method)
+        # plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
+        # plot_tsne_tasks(self.log_dir, self.Fig_dir, method)
+        # plot_tsne_classes(self.log_dir, self.Fig_dir, method)
+        # plot_weights_diff(self.log_dir, self.Fig_dir, method)
+        # plot_mean_weights_dist(self.log_dir, self.Fig_dir, method)
+        # plot_Fisher(self.log_dir, self.Fig_dir, method)
+        # plot_loss(self.log_dir, self.Fig_dir, method)
+        # plot_grad(self.log_dir, self.Fig_dir, method)
+        # plot_angles_latent_output(self.log_dir, self.Fig_dir, method)
+        plot_norm_bias_output_layers(self.log_dir, self.Fig_dir, method)
 
 
 
@@ -77,7 +83,8 @@ if __name__ == "__main__":
     args.root_dir = os.path.join(args.root_dir, args.dataset)
     plot_object = Continual_Plot(args)
 
-    method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac"]
-    method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
+    method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id"]
+    # method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
+    #method_list = ["baseline"]
     for method in method_list:
         plot_object.plot_figures(method)

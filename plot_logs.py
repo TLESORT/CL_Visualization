@@ -45,14 +45,24 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
     with open(file_name, 'rb') as fp:
         list_Fisher = pickle.load(fp)
 
-    nb_classes = list_weight[0][0][0].shape[0]
+
 
     fig, axs = plt.subplots(len(list_Fisher), 2)
 
     axs[0, 0].set_title('Weights')
-    axs[0, 1].set_title('Fisher Information')
+    axs[0, 1].set_title('Fisher Matrix')
+
+    list_proc_Fisher = []
+    list_Proc_Weights = []
+
+    # we create variable to normalize figures between 0 and 1
+    max_f = -1*np.inf
+    min_f = np.inf
+    max_w = -1*np.inf
+    min_w = np.inf
 
     for i in range(len(list_Fisher)):
+        nb_classes = list_weight[i][0][0].shape[0]
 
         if i == 0:
             # pour la première fisher on prent les poids à l'initialization
@@ -65,13 +75,29 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
 
         layer = np.concatenate((w, b), axis=1).astype(np.float)
 
+
         fischer_w = np.array(list_Fisher[i])[:-nb_classes].reshape(nb_classes, 50)
         fischer_b = np.array(list_Fisher[i])[-nb_classes:].reshape(nb_classes, 1)
         fisher = np.concatenate((fischer_w, fischer_b), axis=1)
 
+        if fisher.max()>max_f:max_f=fisher.max()
+        if fisher.min()<min_f:min_f=fisher.min()
+        if layer.max()>max_w:max_w=layer.max()
+        if layer.min()<min_w:min_w=layer.min()
+
+        list_proc_Fisher.append(fisher)
+        list_Proc_Weights.append(layer)
+
+    for i, (fisher, layer) in enumerate(zip(list_proc_Fisher, list_Proc_Weights)):
+
+        fisher= fisher.repeat(2, axis=0).repeat(2, axis=1) # grow image
+        layer= layer.repeat(2, axis=0).repeat(2, axis=1) # grow image
+
         #  linearly map the colors in the colormap from data values vmin to vmax
-        axs[i, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r', interpolation='nearest')
-        axs[i, 1].imshow(fisher, vmin=-0., vmax=1., cmap='PuBu_r', interpolation='nearest')
+        pcm0 = axs[i, 0].imshow(layer, vmin=min_w, vmax=max_w, cmap='PuBu_r', interpolation='nearest')
+        fig.colorbar(pcm0, ax=axs[i, 0], extend='max', orientation='vertical')
+        pcm1 = axs[i, 1].imshow(fisher, vmin=-min_f, vmax=max_f, cmap='PuBu_r', interpolation='nearest')
+        clb1 = fig.colorbar(pcm1, ax=axs[i, 1], extend='max')
 
         axs[i, 0].set_yticks([])
         axs[i, 0].get_xaxis().set_visible(False)
@@ -115,7 +141,7 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.savefig(os.path.join(Fig_dir, "{}_Dist.png").format(algo_name))
     plt.clf()
 
-
+from plot_utils import angle_between
 def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
     file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
     list_weight = None
@@ -126,27 +152,119 @@ def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
 
     fig, axs = plt.subplots(1, len(list_weight), figsize=(15,3))
 
+    max_value = -1 * np.inf
+    min_value =  np.inf
+
     for i in range(len(list_weight)):
 
-        dot_products = np.zeros((nb_classes, nb_classes))
+        angles_mat = np.zeros((nb_classes, nb_classes))
 
         for j in range(nb_classes):
             for k in range(nb_classes):
                 w_j = list_weight[i][-1][0][j, :]
                 w_k = list_weight[i][-1][0][k, :]
                 assert len(w_j) == 50  # latent space
+                assert len(w_k) == 50  # latent space
+                angles_mat[j][k] = angle_between(w_j,w_k)
 
-                dot_products[j][k] = w_j.dot(w_k)
 
-                axs[i].imshow(dot_products, vmin=-0., vmax=1., cmap='PuBu_r')
-                axs[i].get_xaxis().set_visible(False)
-                axs[i].axis('off')
-                if i == 0:
-                    axs[i].set_title('Init')
-                else:
-                    axs[i].set_title('End Task {}'.format(i))
+        pcm1 = axs[i].imshow(angles_mat, vmin=0, vmax=np.pi, cmap='PuBu_r')
+        clb1 = fig.colorbar(pcm1, ax=axs[i], extend='max')
+        axs[i].get_xaxis().set_visible(False)
+        axs[i].axis('off')
+        if i == 0:
+            axs[i].set_title('Init')
+        else:
+            axs[i].set_title('End Task {}'.format(i))
 
     save_name = os.path.join(Fig_dir, f"{algo_name}_Output_Layer_Correlation.png")
+    plt.title("Angles between output layer dimensions")
+    plt.savefig(save_name)
+    plt.clf()
+from numpy import linalg as LA
+def plot_norm_bias_output_layers(log_dir, Fig_dir, algo_name):
+    file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
+    list_weight = None
+    with open(file_name, 'rb') as fp:
+        list_weight = pickle.load(fp)
+
+    nb_classes = list_weight[0][0][0].shape[0]
+
+    fig, axs = plt.subplots(2, len(list_weight), figsize=(15,6))
+
+    for i in range(len(list_weight)):
+
+        norm_mat = np.zeros(nb_classes)
+
+        for j in range(nb_classes):
+            norm_mat[j] = LA.norm(list_weight[i][-1][0][j, :])
+
+        bias=list_weight[i][-1][1]
+
+        assert bias.shape[0]==norm_mat.shape[0]
+
+        axs[0,i].bar(np.arange(nb_classes) + 1, norm_mat, width=0.8, tick_label=range(nb_classes))
+        axs[1,i].bar(np.arange(nb_classes) + 1, bias, width=0.8, tick_label=range(nb_classes))
+        axs[0,i].set_xlim(0, nb_classes + 1)  # +1 for space management
+        axs[1,i].set_xlim(0, nb_classes + 1)  # +1 for space management
+        axs[0,i].set_box_aspect(1)
+        axs[1,i].set_box_aspect(1)
+        if i == 0:
+            axs[0,0].set_ylabel('Norm')
+            axs[1,0].set_ylabel('Bias')
+            axs[1,0].set_xlabel('Before Training')
+        else:
+            axs[1,i].set_xlabel(f'Task {i}')
+
+    save_name = os.path.join(Fig_dir, f"{algo_name}_Norm_Bias_Output_Layer.png")
+    plt.savefig(save_name)
+    plt.clf()
+
+def plot_angles_latent_output(log_dir, Fig_dir, algo_name):
+    print(f"Angles Latent Output {algo_name}")
+    file_name = os.path.join(log_dir, "{}_Latent.pkl".format(algo_name))
+    list_latent = None
+    with open(file_name, 'rb') as fp:
+        list_latent = pickle.load(fp)
+
+    file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
+    list_weight = None
+    with open(file_name, 'rb') as fp:
+        list_weight = pickle.load(fp)
+
+    nb_classes = list_weight[0][0][0].shape[0]
+
+    fig, axs = plt.subplots(1, len(list_weight), figsize=(15, 3))
+
+    for ind_task, (datas, labels, task_labels) in enumerate(list_latent):
+
+        angles_mat = np.zeros(nb_classes)
+        nb_instance_classes = np.zeros(nb_classes)
+
+        for j in range(nb_classes):
+            indexes_class = np.where(labels == j)[0]
+            nb_instance_classes[j] = len(indexes_class)
+
+        for i, (data, label, task_label) in enumerate(zip(datas, labels, task_labels)):
+            label = int(label)
+            weight_vector = list_weight[ind_task][-1][0][label, :]
+
+            assert data.shape[0]==weight_vector.shape[0]
+            angle = angle_between(data,weight_vector)
+            angles_mat[label]=angle
+
+        norm_angles_mat = np.divide(angles_mat, nb_instance_classes)
+        axs[ind_task].bar(np.arange(nb_classes) + 1, norm_angles_mat, width=0.8, tick_label=range(nb_classes))
+        axs[ind_task].set_xlim(0, nb_classes + 1)  # +1 for space management
+        axs[ind_task].set_box_aspect(1)
+        if ind_task == 0:
+            axs[0].set_ylabel('Mean Angles')
+            axs[0].set_xlabel('Before Training')
+        else:
+            axs[ind_task].set_xlabel(f'Task {ind_task}')
+
+    save_name = os.path.join(Fig_dir, f"{algo_name}_angles_latent_output.png")
+    plt.title('Angles Between Latent Vector and Output Layer')
     plt.savefig(save_name)
     plt.clf()
 
@@ -159,25 +277,12 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
     with open(file_name, 'rb') as fp:
         list_weight = pickle.load(fp)
 
-    fig, axs = plt.subplots(len(list_weight) + 1, 2)
+    fig, axs = plt.subplots(len(list_weight), 2)
 
     axs[0, 0].set_title('Weights')
     axs[0, 1].set_title('Weights Difference Since Last Task')
     previous_layer = None
     for i in range(len(list_weight)):
-
-        if i == 0:
-            # pour la première fisher on prent les poids à l'initialization
-            w = list_weight[0][0][0]
-            b = list_weight[0][0][1].reshape(-1, 1)
-            previous_layer = np.concatenate((w, b), axis=1).astype(np.float)
-
-            axs[i, 0].imshow(previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
-
-            axs[i, 0].set_yticks([])
-            axs[i, 0].get_xaxis().set_visible(False)
-            axs[i, 1].axis('off')
-            axs[i, 0].set(ylabel='Init'.format(i))
 
         # sinon on prend les poids à la fin de la tâche précédentes
         w = list_weight[i][-1][0]
@@ -185,22 +290,35 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
 
         layer = np.concatenate((w, b), axis=1).astype(np.float)
 
-        axs[i + 1, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r')
-        axs[i + 1, 1].imshow(layer - previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
+        #pcm0 = axs[i, 0].imshow(layer, vmin=-0., vmax=1., cmap='PuBu_r')
+        pcm0 = axs[i, 0].imshow(layer, cmap='PuBu_r')
+        clb1 = fig.colorbar(pcm0, ax=axs[i, 0], extend='max')
 
-        axs[i + 1, 0].set_yticks([])
-        axs[i + 1, 0].get_xaxis().set_visible(False)
-        axs[i + 1, 1].get_yaxis().set_visible(False)
-        axs[i + 1, 1].get_xaxis().set_visible(False)
-        axs[i + 1, 0].set(ylabel=f'Task {i}')
+
+        if i > 0:
+            #pcm1 = axs[i, 1].imshow(layer - previous_layer, vmin=-0., vmax=1., cmap='PuBu_r')
+            pcm1 = axs[i, 1].imshow(layer - previous_layer, cmap='PuBu_r')
+            clb1 = fig.colorbar(pcm1, ax=axs[i, 1], extend='max')
+            axs[i, 0].set(ylabel=f'Task {i}')
+        else:
+            axs[i, 1].axis('off')
+            axs[i, 0].set(ylabel=f'Init')
+
+        previous_layer = layer
+
+        axs[i, 0].set_yticks([])
+        axs[i, 0].get_xaxis().set_visible(False)
+        axs[i, 1].get_yaxis().set_visible(False)
+        axs[i, 1].get_xaxis().set_visible(False)
+
 
     save_name = os.path.join(Fig_dir, f"{algo_name}_Weight_Diff.png")
     plt.savefig(save_name)
     plt.clf()
 
 
-def plot_tsne(log_dir, Fig_dir, algo_name):
-    print(f"T-SNE {algo_name}")
+def plot_tsne_classes(log_dir, Fig_dir, algo_name):
+    print(f"T-SNE Classes {algo_name}")
     file_name = os.path.join(log_dir, "{}_Latent.pkl".format(algo_name))
     list_latent = None
     with open(file_name, 'rb') as fp:
@@ -228,7 +346,45 @@ def plot_tsne(log_dir, Fig_dir, algo_name):
             tsne_df = pd.concat([tsne_df, pd.DataFrame(data=tsne_data, columns=("Dim_1", "Dim_2", "label", "task"))])
 
     sn.FacetGrid(tsne_df, hue="label", height=6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
-    plt.savefig(os.path.join(Fig_dir, "{}_tsne.png").format(algo_name))
+    plt.savefig(os.path.join(Fig_dir, "{}_tsne_classes.png").format(algo_name))
+    plt.clf()
+
+def plot_tsne_tasks(log_dir, Fig_dir, algo_name):
+    print(f"T-SNE Tasks {algo_name}")
+    file_name = os.path.join(log_dir, "{}_Latent.pkl".format(algo_name))
+    with open(file_name, 'rb') as fp:
+        list_latent = pickle.load(fp)
+
+    print("!!!!!!  ACHTUNG !!!!!!!")
+    print("temporare fix for task labels that works only for mnist fellowship disjoint!!!")
+    print("To remove asap")
+
+    nb_tasks = len(list_latent)
+
+    data = None
+    label = None
+    tsne_df = None
+
+    for ind_task, (data, label, task_labels) in enumerate(list_latent):
+        model = TSNE(n_components=2, random_state=0)
+        # the number of components = 2
+        # default perplexity = 30
+        # default learning rate = 200
+        # default Maximum number of iterations for the optimization = 1000
+
+        tsne_data = model.fit_transform(data)
+        task_id = np.ones(label.shape[0]) * ind_task
+        # Fix to remove
+        tsne_data = np.vstack((tsne_data.T, np.floor((label / 10)).astype(int), task_id)).T
+        # correct one to make work
+        #tsne_data = np.vstack((tsne_data.T, task_labels, task_id)).T
+        if ind_task == 0:
+            tsne_df = pd.DataFrame(data=tsne_data, columns=("Dim_1", "Dim_2", "label", "task"))
+        else:
+            tsne_df = pd.concat([tsne_df, pd.DataFrame(data=tsne_data, columns=("Dim_1", "Dim_2", "label", "task"))])
+
+    sn.FacetGrid(tsne_df, hue="label", height=6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
+    plt.savefig(os.path.join(Fig_dir, "{}_tsne_tasks.png").format(algo_name))
     plt.clf()
 
 
@@ -334,16 +490,17 @@ def plot_grad(log_dir, Fig_dir, algo_name):
     np_grad_reshaped = np_grad.reshape(np_grad.shape[0], -1)
 
     # remove log before start of training
-    np_grad_reshaped=np_grad_reshaped[ind_task_transition[1]:]
+    np_grad_reshaped=np_grad_reshaped[ind_task_transition[0]:]
 
     # remove first ind and correct offset
     ind_task_transition = ind_task_transition[1:]-ind_task_transition[0]
-
-    mean = np_grad_reshaped.mean(1)
+    norm = LA.norm(np_grad_reshaped, axis=1)
     std = np_grad_reshaped.std(1)
 
-    plt.plot(range(np_grad_reshaped.shape[0]), mean, label="Grad")
-    plt.fill_between(range(np_grad_reshaped.shape[0]), mean - std, mean + std, alpha=0.4)
+    assert norm.shape[0]==np_grad_reshaped.shape[0]
+
+    plt.plot(range(np_grad_reshaped.shape[0]), norm, label="Grad")
+    #plt.fill_between(range(np_grad_reshaped.shape[0]), mean - std, mean + std, alpha=0.4)
 
     xcoords = ind_task_transition
     for xc in xcoords:
