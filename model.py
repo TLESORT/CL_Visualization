@@ -1,9 +1,9 @@
-
 import torch.nn as nn
 import torch
 
+
 class Model(nn.Module):
-    def __init__(self, num_classes=10, heads_dim=None):
+    def __init__(self, num_classes=10):
         super(Model, self).__init__()
         self.global_num_classes = num_classes
 
@@ -16,10 +16,9 @@ class Model(nn.Module):
         self.fc1 = nn.Linear(320, 50)
         self.linear = nn.Sequential(self.fc1,
                                     self.relu,
-                                    ) # for ogd
+                                    )  # for ogd
         self.fc2 = nn.Linear(50, self.global_num_classes)
-        self.last = self.fc2 # for ogd
-
+        self.last = self.fc2  # for ogd
 
         self.marginalized_class = None
 
@@ -33,12 +32,6 @@ class Model(nn.Module):
         x = x.view(-1, 320)
         return self.linear(x)
 
-    def forward_task(self, x, task_id):
-        x = x.view(-1, 1, 28, 28)
-        x = self.feature_extractor(x)
-        x = self.list_heads[task_id](x)
-        return x
-
     def forward(self, x, latent_vector=False):
         x = x.view(-1, 1, 28, 28)
         x = self.feature_extractor(x)
@@ -47,9 +40,9 @@ class Model(nn.Module):
             x = self.last(x)
 
         if self.marginalized_class is not None:
-            #TODO: test this
+            # TODO: test this
             x_class = x[:, self.marginalized_class]
-            x_others = torch.cat([x[:,:self.marginalized_class],x[:,self.marginalized_class+1:]], axis=1)
+            x_others = torch.cat([x[:, :self.marginalized_class], x[:, self.marginalized_class + 1:]], axis=1)
             x_others = torch.max(x_others, axis=1)
             x = torch.cat([x_class, x_others], axis=1)
             assert x.shape[1] == 2

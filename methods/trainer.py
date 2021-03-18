@@ -57,6 +57,9 @@ class Trainer(Continual_Evaluation):
         elif self.scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
             self.scenario_te = ClassIncremental(dataset_test, nb_tasks=num_tasks)
+
+
+
         elif self.scenario_name == "Domain":
             self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
             self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=num_tasks)
@@ -64,16 +67,22 @@ class Trainer(Continual_Evaluation):
 
         self.num_tasks = num_tasks
         if self.test_label:
-            #TODO: make it more general
-            assert self.dataset == "MNIST"
-            assert self.num_tasks == 5
-            self.model = MultiHead_Model(num_classes=self.scenario_tr.nb_classes, heads_dim=[2,2,2,2,2]).cuda()
+            # there are no test label for domain incremental since the classes should be always the same
+            assert self.scenario_name == "Disjoint"
+
+            self.list_classes_per_tasks = []
+            self.heads_dim = []
+            for task_set in self.scenario_tr:
+                classes = task_set.get_classes()
+                self.list_classes_per_tasks.append(classes)
+                self.heads_dim.append(len(classes))
+
+            self.model = MultiHead_Model(num_classes=self.scenario_tr.nb_classes,
+                                         classes_per_tasks=self.list_classes_per_tasks
+                                         ).cuda()
         else:
             self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
-
-        # todo virer self.continuum
-        self.continuum = scenario
 
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=264, shuffle=True, num_workers=6)
 

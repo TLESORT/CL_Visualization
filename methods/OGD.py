@@ -206,8 +206,6 @@ class OGD(Trainer):
 
     def optimizer_step(self, ind_task):
 
-        task_key = str(ind_task)
-
         ### take gradients with respect to the parameters
         grad_vec = parameters_to_grad_vector(self.get_params_dict(last=False))
         cur_param = parameters_to_vector(self.get_params_dict(last=False))
