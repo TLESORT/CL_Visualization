@@ -48,17 +48,17 @@ class Continual_Plot(object):
 
     def plot_figures(self, method):
 
-        # plot_accuracies(self.log_dir, self.Fig_dir, method)
-        # plot_accuracies_per_classes(self.log_dir, self.Fig_dir, method)
-        # plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
-        # plot_tsne_tasks(self.log_dir, self.Fig_dir, method)
-        # plot_tsne_classes(self.log_dir, self.Fig_dir, method)
-        # plot_weights_diff(self.log_dir, self.Fig_dir, method)
-        # plot_mean_weights_dist(self.log_dir, self.Fig_dir, method)
-        # plot_Fisher(self.log_dir, self.Fig_dir, method)
-        # plot_loss(self.log_dir, self.Fig_dir, method)
-        # plot_grad(self.log_dir, self.Fig_dir, method)
-        # plot_angles_latent_output(self.log_dir, self.Fig_dir, method)
+        plot_accuracies(self.log_dir, self.Fig_dir, method)
+        plot_accuracies_per_classes(self.log_dir, self.Fig_dir, method)
+        plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
+        plot_tsne_tasks(self.log_dir, self.Fig_dir, method)
+        plot_tsne_classes(self.log_dir, self.Fig_dir, method)
+        plot_weights_diff(self.log_dir, self.Fig_dir, method)
+        plot_mean_weights_dist(self.log_dir, self.Fig_dir, method)
+        plot_Fisher(self.log_dir, self.Fig_dir, method)
+        plot_loss(self.log_dir, self.Fig_dir, method)
+        plot_grad(self.log_dir, self.Fig_dir, method)
+        plot_angles_latent_output(self.log_dir, self.Fig_dir, method)
         plot_norm_bias_output_layers(self.log_dir, self.Fig_dir, method)
 
 
@@ -85,6 +85,6 @@ if __name__ == "__main__":
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id"]
     # method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
-    #method_list = ["baseline"]
+    method_list = ["rehearsal"]
     for method in method_list:
         plot_object.plot_figures(method)
