@@ -44,14 +44,7 @@ class Model(nn.Module):
         x = self.feature_extractor(x)
 
         if not latent_vector:
-            if self.multi_heads:
-                list_out=[]
-                for head in self.list_heads:
-                    list_out.append(head(x))
-                x = torch.cat(list_out, dim=1)
-
-            else:
-                x = self.last(x)
+            x = self.last(x)
 
         if self.marginalized_class is not None:
             #TODO: test this
