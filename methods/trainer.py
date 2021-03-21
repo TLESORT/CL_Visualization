@@ -31,6 +31,7 @@ class Trainer(Continual_Evaluation):
         self.verbose = verbose
         self.batch_size = args.batch_size
         self.test_label = args.test_label
+        self.masked_out = args.masked_out
 
         self.dir_data = os.path.join(self.root_dir, "../../Datasets/")
         if not os.path.exists(self.dir_data):
@@ -45,6 +46,7 @@ class Trainer(Continual_Evaluation):
         self.algo_name = "baseline"
         self.scenario_name = scenario_name
         self.dev = dev
+        self.fast = args.fast
         self.nb_epochs = args.nb_epochs
 
         dataset_train = get_dataset(self.dir_data, args.dataset, self.scenario_name, train=True)
@@ -64,8 +66,10 @@ class Trainer(Continual_Evaluation):
             self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
             self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=num_tasks)
 
-
         self.num_tasks = num_tasks
+        self.num_classes = self.scenario_tr.nb_classes
+        self.classes_mask = torch.eye(self.num_classes).cuda()
+
         if self.test_label:
             # there are no test label for domain incremental since the classes should be always the same
             assert self.scenario_name == "Disjoint"
@@ -81,7 +85,20 @@ class Trainer(Continual_Evaluation):
                                          classes_per_tasks=self.list_classes_per_tasks
                                          ).cuda()
         else:
-            self.model = Model(num_classes=self.scenario_tr.nb_classes).cuda()
+            from resnet import cifar_resnet20
+            if self.dataset=="CIFAR10":
+
+                def weight_reset(m):
+                    if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
+                        m.reset_parameters()
+
+                self.model = cifar_resnet20(pretrained="cifar10")
+
+                self.model.fc.apply(weight_reset)
+
+            else:
+                self.model = Model(num_classes=self.scenario_tr.nb_classes)
+        self.model.cuda()
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
 
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=264, shuffle=True, num_workers=6)
@@ -93,7 +110,7 @@ class Trainer(Continual_Evaluation):
 
     def init_task(self, ind_task, task_set):
         data_loader_tr = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
-        if ind_task==0:
+        if ind_task == 0:
             # log before training
             self.init_log(ind_task_log=ind_task)
             self.test(ind_task_log=ind_task, train=False)
@@ -145,21 +162,26 @@ class Trainer(Continual_Evaluation):
                 else:
                     output = self.model(x_)
 
+                if self.masked_out and ind_task > 0:
+                    masked_output = torch.mul(output, self.classes_mask[y_])
+                    loss = F.cross_entropy(masked_output, y_)
+                else:
+                    loss = F.cross_entropy(output, y_)
+
                 assert output.shape[0] == y_.shape[0]
-                loss = F.cross_entropy(output, y_)
 
                 loss = self.regularize_loss(self.model, loss)
 
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
                 self.optimizer_step(ind_task)
-                self.log_iter(ind_task+1, self.model, loss, output, y_, t_)
+                self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
 
                 if self.dev: break
 
-            self.test(ind_task_log=ind_task+1)
+            self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
-            self.log_post_epoch_processing(ind_task+1, print_acc=(epoch == self.nb_epochs - 1))
+            self.log_post_epoch_processing(ind_task + 1, print_acc=(epoch == self.nb_epochs - 1))
             if self.dev: break
 
         return
@@ -173,7 +195,7 @@ class Trainer(Continual_Evaluation):
             print("Task {}: Start".format(task_id))
 
             data_loader = self.init_task(task_id, task_set)
-            self.init_log(task_id+1) # after init task!
+            self.init_log(task_id + 1)  # after init task!
             self.log_task(task_id, self.model)  # before training
             self.one_task_training(task_id, data_loader)
             self.callback_task(task_id, task_set)

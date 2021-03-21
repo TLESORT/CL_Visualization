@@ -28,11 +28,13 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--expert', action='store_true', default=False,
                     help='define if we use expert model who has access to all data')
+parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
+parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST','mnist_fellowship'], help='dataset name')
+                    choices=['MNIST','mnist_fellowship', 'CIFAR10'], help='dataset name')
 parser.add_argument('--seed', default="1992", type=int,
                     help='seed for number generator')
 

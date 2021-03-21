@@ -52,11 +52,11 @@ class Continual_Evaluation(abc.ABC):
     def log_task(self, ind_task, model):
         model2save = deepcopy(model).cpu().state_dict()
         torch.save(model2save, os.path.join(self.log_dir, "Model_Task_{}.pth".format(ind_task)))
+        if not self.fast:
+            self.log_latent(ind_task)
 
-        self.log_latent(ind_task)
-
-        F_diag, v0 = self.compute_last_layer_fisher(model, self.eval_tr_loader)
-        self.list_Fisher.append(F_diag.get_diag().detach().cpu())
+            F_diag, v0 = self.compute_last_layer_fisher(model, self.eval_tr_loader)
+            self.list_Fisher.append(F_diag.get_diag().detach().cpu())
 
     def log_weights_dist(self, ind_task):
 
@@ -170,21 +170,22 @@ class Continual_Evaluation(abc.ABC):
             self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, labels.cpu().numpy()])
             self.vector_task_labels_epoch_tr  = np.concatenate([self.vector_task_labels_epoch_tr, task_labels])
 
-            if model.fc2.weight.grad is not None:
-                grad = model.fc2.weight.grad.clone().detach().cpu()
-            else:
-                # useful for first log before training
-                grad = torch.zeros(model.fc2.weight.shape)
+            if not self.fast:
+                if model.fc2.weight.grad is not None:
+                    grad = model.fc2.weight.grad.clone().detach().cpu()
+                else:
+                    # useful for first log before training
+                    grad = torch.zeros(model.fc2.weight.shape)
 
-            self.list_grad[ind_task].append(grad)
+                self.list_grad[ind_task].append(grad)
 
-            w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
-            b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
+                w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
+                b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
 
-            self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
-            self.list_weights[ind_task].append([w, b])
+                self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
+                self.list_weights[ind_task].append([w, b])
 
-            self.log_weights_dist(ind_task)
+                self.log_weights_dist(ind_task)
         else:
             ## / ! \ we do not log loss for test, maybe one day....
             self.vector_predictions_epoch_te = np.concatenate([self.vector_predictions_epoch_te, predictions])
@@ -192,7 +193,6 @@ class Continual_Evaluation(abc.ABC):
             self.vector_task_labels_epoch_te  = np.concatenate([self.vector_task_labels_epoch_te, task_labels])
 
     def log_latent(self, ind_task):
-
         self.model.eval()
 
         latent_vectors = np.zeros([0, 50])
@@ -231,25 +231,26 @@ class Continual_Evaluation(abc.ABC):
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_accuracies_per_classes, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_grad.pkl".format(self.algo_name))
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.list_grad, f, pickle.HIGHEST_PROTOCOL)
+        if not self.fast:
+            file_name = os.path.join(self.log_dir, "{}_grad.pkl".format(self.algo_name))
+            with open(file_name, 'wb') as f:
+                pickle.dump(self.list_grad, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_weights.pkl".format(self.algo_name))
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.list_weights, f, pickle.HIGHEST_PROTOCOL)
+            file_name = os.path.join(self.log_dir, "{}_weights.pkl".format(self.algo_name))
+            with open(file_name, 'wb') as f:
+                pickle.dump(self.list_weights, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_dist.pkl".format(self.algo_name))
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.list_weights_dist, f, pickle.HIGHEST_PROTOCOL)
+            file_name = os.path.join(self.log_dir, "{}_dist.pkl".format(self.algo_name))
+            with open(file_name, 'wb') as f:
+                pickle.dump(self.list_weights_dist, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_Fishers.pkl".format(self.algo_name))
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.list_Fisher, f, pickle.HIGHEST_PROTOCOL)
+            file_name = os.path.join(self.log_dir, "{}_Fishers.pkl".format(self.algo_name))
+            with open(file_name, 'wb') as f:
+                pickle.dump(self.list_Fisher, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_Latent.pkl".format(self.algo_name))
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
+            file_name = os.path.join(self.log_dir, "{}_Latent.pkl".format(self.algo_name))
+            with open(file_name, 'wb') as f:
+                pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
 
     def compute_last_layer_fisher(self, model, fisher_loader):
 
