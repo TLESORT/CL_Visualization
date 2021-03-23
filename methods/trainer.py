@@ -85,7 +85,7 @@ class Trainer(Continual_Evaluation):
                                          classes_per_tasks=self.list_classes_per_tasks
                                          ).cuda()
         else:
-            from resnet import cifar_resnet20
+            from resnet import cifar_resnet20, CosineLayer
             if self.dataset=="CIFAR10":
 
                 def weight_reset(m):
@@ -93,8 +93,19 @@ class Trainer(Continual_Evaluation):
                         m.reset_parameters()
 
                 self.model = cifar_resnet20(pretrained="cifar10")
+                for param in self.model.parameters():
+                    param.requires_grad = False
 
-                self.model.fc.apply(weight_reset)
+                latent_dim = self.model.fc.in_features
+                self.model.fc = CosineLayer(latent_dim, 10)
+                #self.model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
+
+                #
+                #self.model.fc.apply(weight_reset)
+                #self.model.fc = torch.nn.utils.weight_norm(torch.nn.Linear(latent_dim, 10, bias=False), dim=0)
+                #self.model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
+                #self.model.fc.weight_g.requires_grad = False
+                #self.model.fc.weight_g.fill_(1) # hence no preferences computed
 
             else:
                 self.model = Model(num_classes=self.scenario_tr.nb_classes)
