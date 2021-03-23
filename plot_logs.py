@@ -105,6 +105,7 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
     save_name = os.path.join(Fig_dir, f"{algo_name}_Fishers.png")
     plt.savefig(save_name)
     plt.clf()
+    plt.close()
 
 
 def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
@@ -137,6 +138,7 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.title("L2 distance between current model and model at the beginning of the task")
     plt.savefig(os.path.join(Fig_dir, "{}_Dist.png").format(algo_name))
     plt.clf()
+    plt.close()
 
 
 from plot_utils import angle_between
@@ -180,6 +182,7 @@ def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
     plt.title("Angles between output layer dimensions")
     plt.savefig(save_name)
     plt.clf()
+    plt.close()
 
 
 from numpy import linalg as LA
@@ -222,6 +225,7 @@ def plot_norm_bias_output_layers(log_dir, Fig_dir, algo_name):
     save_name = os.path.join(Fig_dir, f"{algo_name}_Norm_Bias_Output_Layer.png")
     plt.savefig(save_name)
     plt.clf()
+    plt.close()
 
 
 def plot_angles_latent_output(log_dir, Fig_dir, algo_name):
@@ -271,6 +275,7 @@ def plot_angles_latent_output(log_dir, Fig_dir, algo_name):
     plt.title('Angles Between Latent Vector and Output Layer')
     plt.savefig(save_name)
     plt.clf()
+    plt.close()
 
 
 def plot_weights_diff(log_dir, Fig_dir, algo_name):
@@ -317,6 +322,7 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
     save_name = os.path.join(Fig_dir, f"{algo_name}_Weight_Diff.png")
     plt.savefig(save_name)
     plt.clf()
+    plt.close()
 
 
 def plot_tsne_classes(log_dir, Fig_dir, algo_name):
@@ -350,6 +356,7 @@ def plot_tsne_classes(log_dir, Fig_dir, algo_name):
     sn.FacetGrid(tsne_df, hue="label", height=6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
     plt.savefig(os.path.join(Fig_dir, "{}_tsne_classes.png").format(algo_name))
     plt.clf()
+    plt.close()
 
 
 def plot_tsne_tasks(log_dir, Fig_dir, algo_name):
@@ -383,6 +390,7 @@ def plot_tsne_tasks(log_dir, Fig_dir, algo_name):
     sn.FacetGrid(tsne_df, hue="label", height=6, col="task").map(plt.scatter, 'Dim_1', 'Dim_2').add_legend()
     plt.savefig(os.path.join(Fig_dir, "{}_tsne_tasks.png").format(algo_name))
     plt.clf()
+    plt.close()
 
 
 def plot_loss(log_dir, Fig_dir, algo_name):
@@ -407,6 +415,7 @@ def plot_loss(log_dir, Fig_dir, algo_name):
 
     plt.savefig(os.path.join(Fig_dir, "{}_Loss.png").format(algo_name))
     plt.clf()
+    plt.close()
 
 
 def plot_accuracies(log_dir, Fig_dir, algo_name):
@@ -437,6 +446,7 @@ def plot_accuracies(log_dir, Fig_dir, algo_name):
     plt.title('Evolution of Accuracy')
     plt.savefig(os.path.join(Fig_dir, "{}_Accuracy.png").format(algo_name))
     plt.clf()
+    plt.close()
 
 
 def plot_accuracies_per_classes(log_dir, Fig_dir, algo_name):
@@ -471,6 +481,7 @@ def plot_accuracies_per_classes(log_dir, Fig_dir, algo_name):
     plt.title('Accuracy per Class at the end of each task')
     plt.savefig(save_name)
     plt.clf()
+    plt.close()
 
 
 # grad of the last layer (without bias)
@@ -506,6 +517,7 @@ def plot_grad(log_dir, Fig_dir, algo_name):
 
     plt.savefig(os.path.join(Fig_dir, "{}_Grad.png").format(algo_name))
     plt.clf()
+    plt.close()
 
 
 def plot_grad_gif(log_dir, Fig_dir, fast=True):
@@ -571,4 +583,7 @@ def plot_grad_gif(log_dir, Fig_dir, fast=True):
     # #ax2.yaxis.tick_right()
     # #ax2.tick_params(rotation=0)
     # plt.savefig(os.path.join(Fig_dir, "test.png"))
-    # plt.clf()
+
+
+    plt.clf()
+    plt.close()
