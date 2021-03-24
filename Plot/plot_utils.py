@@ -77,3 +77,24 @@ def animate_heat_map(data_grad, data_weights, filename):
     # anim = animation.FuncAnimation(fig, animate, init_func=init, frames=data_grad.shape[0], interval=20)
     anim = animation.FuncAnimation(fig, animate, init_func=init, frames=10, interval=20)
     anim.save(filename, writer='imagemagick')
+
+
+def flatten_results(results, type=""):
+    nb_iterations = 0
+    ind_task_transition = []
+    for ind_task in range(len(results)):
+        nb_iterations += len(results[ind_task])
+        ind_task_transition.append(nb_iterations)
+
+    if type == "loss" or type == "dist":
+        shape_data = [nb_iterations]
+    else:
+        shape_data = [nb_iterations] + list(results[0][0].shape)
+    np_flat_data = np.zeros(shape_data)
+
+    iteration = 0
+    for ind_task in range(len(results)):
+        for i in range(len(results[ind_task])):
+            np_flat_data[iteration] = np.array(results[ind_task][i])
+            iteration += 1
+    return np_flat_data, np.array(ind_task_transition)

@@ -9,29 +9,9 @@ from copy import copy
 from sklearn.manifold import TSNE
 import pandas as pd
 import seaborn as sn
+from numpy import linalg as LA
 
-from Plot.plot_utils import animate_heat_map
-
-def flatten_results(results, type=""):
-    nb_iterations = 0
-    ind_task_transition = []
-    for ind_task in range(len(results)):
-        nb_iterations += len(results[ind_task])
-        ind_task_transition.append(nb_iterations)
-
-    if type == "loss" or type == "dist":
-        shape_data = [nb_iterations]
-    else:
-        shape_data = [nb_iterations] + list(results[0][0].shape)
-    np_flat_data = np.zeros(shape_data)
-
-    iteration = 0
-    for ind_task in range(len(results)):
-        for i in range(len(results[ind_task])):
-            np_flat_data[iteration] = np.array(results[ind_task][i])
-            iteration += 1
-    return np_flat_data, np.array(ind_task_transition)
-
+from Plot.plot_utils import animate_heat_map, flatten_results, angle_between
 
 def plot_Fisher(log_dir, Fig_dir, algo_name):
     print(f"Plot Fisher {algo_name}")
@@ -141,7 +121,6 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.close()
 
 
-from plot_utils import angle_between
 
 
 def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
@@ -183,9 +162,6 @@ def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
     plt.savefig(save_name)
     plt.clf()
     plt.close()
-
-
-from numpy import linalg as LA
 
 
 def plot_norm_bias_output_layers(log_dir, Fig_dir, algo_name):

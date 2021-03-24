@@ -12,27 +12,6 @@ import pandas as pd
 import seaborn as sn
 
 
-def flatten_results(results, type=""):
-    nb_iterations = 0
-    ind_task_transition = []
-    for ind_task in range(len(results)):
-        nb_iterations += len(results[ind_task])
-        ind_task_transition.append(nb_iterations)
-
-    if type == "loss" or type == "dist":
-        shape_data = [nb_iterations]
-    else:
-        shape_data = [nb_iterations] + list(results[0][0].shape)
-    np_flat_data = np.zeros(shape_data)
-
-    iteration = 0
-    for ind_task in range(len(results)):
-        for i in range(len(results[ind_task])):
-            np_flat_data[iteration] = np.array(results[ind_task][i])
-            iteration += 1
-    return np_flat_data, np.array(ind_task_transition)
-
-
 def plot_Fisher(log_dir, Fig_dir, algo_name):
     print(f"Plot Fisher {algo_name}")
 
