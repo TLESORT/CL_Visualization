@@ -9,9 +9,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import os
 
-from utils import get_dataset
-from Models.model import Model
-from Models.multihead_model import MultiHead_Model
+from utils import get_dataset, get_model
 from continuum import ClassIncremental, InstanceIncremental
 from continuum import Rotations
 
@@ -44,6 +42,8 @@ class Trainer(Continual_Evaluation):
         self.scenario_name = scenario_name
         self.dev = dev
         self.fast = args.fast
+        self.pretrained = args.pretrained
+        self.cosLayer = args.cosLayer
         self.nb_epochs = args.nb_epochs
 
         dataset_train = get_dataset(self.dir_data, args.dataset, self.scenario_name, train=True)
@@ -56,9 +56,6 @@ class Trainer(Continual_Evaluation):
         elif self.scenario_name == "Disjoint":
             self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
             self.scenario_te = ClassIncremental(dataset_test, nb_tasks=num_tasks)
-
-
-
         elif self.scenario_name == "Domain":
             self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
             self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=num_tasks)
@@ -67,45 +64,7 @@ class Trainer(Continual_Evaluation):
         self.num_classes = self.scenario_tr.nb_classes
         self.classes_mask = torch.eye(self.num_classes).cuda()
 
-        if self.test_label:
-            # there are no test label for domain incremental since the classes should be always the same
-            assert self.scenario_name == "Disjoint"
-
-            self.list_classes_per_tasks = []
-            self.heads_dim = []
-            for task_set in self.scenario_tr:
-                classes = task_set.get_classes()
-                self.list_classes_per_tasks.append(classes)
-                self.heads_dim.append(len(classes))
-
-            self.model = MultiHead_Model(num_classes=self.scenario_tr.nb_classes,
-                                         classes_per_tasks=self.list_classes_per_tasks
-                                         ).cuda()
-        else:
-            from Models.resnet import cifar_resnet20, CosineLayer
-            if self.dataset=="CIFAR10":
-
-                def weight_reset(m):
-                    if isinstance(m, torch.nn.Conv2d) or isinstance(m, torch.nn.Linear):
-                        m.reset_parameters()
-
-                self.model = cifar_resnet20(pretrained="cifar10")
-                for param in self.model.parameters():
-                    param.requires_grad = False
-
-                latent_dim = self.model.fc.in_features
-                self.model.fc = CosineLayer(latent_dim, 10)
-                #self.model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
-
-                #
-                #self.model.fc.apply(weight_reset)
-                #self.model.fc = torch.nn.utils.weight_norm(torch.nn.Linear(latent_dim, 10, bias=False), dim=0)
-                #self.model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
-                #self.model.fc.weight_g.requires_grad = False
-                #self.model.fc.weight_g.fill_(1) # hence no preferences computed
-
-            else:
-                self.model = Model(num_classes=self.scenario_tr.nb_classes)
+        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained, self.test_label, self.cosLayer)
         self.model.cuda()
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
 
