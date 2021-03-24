@@ -31,7 +31,4 @@ for task_set in scenario_tr:
         pred = output.max(dim=1)[1].cpu()
         correct += (pred == y).sum()
 
-    print(correct)
-    print(len(task_set))
-    print(1.0*correct/len(task_set))
 #pred = net(img.expand_dims(axis=0))

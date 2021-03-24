@@ -11,14 +11,14 @@ import torch.utils.model_zoo as model_zoo
 __all__ = ['CifarResNet', 'cifar_resnet20', 'cifar_resnet32', 'cifar_resnet44', 'cifar_resnet56']
 
 pretrained_settings = {
-    "cifar10": {
+    "CIFAR10": {
         'resnet20': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet20-30abc31d.pth',
         'resnet32': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet32-e96f90cf.pth',
         'resnet44': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet44-f2c66da5.pth',
         'resnet56': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet56-f5939a66.pth',
         'num_classes': 10
     },
-    "cifar100": {
+    "CIFAR100": {
         'resnet20': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet20-8412cc70.pth',
         'resnet32': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet32-6568a0a0.pth',
         'resnet44': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet44-20aaa8cf.pth',
@@ -70,32 +70,6 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
-
-import math
-class CosineLayer(nn.Module):
-    """ Custom Linear layer but mimics a standard linear layer """
-    def __init__(self, size_in, size_out):
-        super().__init__()
-        self.size_in, self.size_out = size_in, size_out
-        weights = torch.Tensor(size_out, size_in)
-        self.weights = nn.Parameter(weights)  # nn.Parameter is a Tensor that's a module parameter.
-
-        #self.cos = nn.CosineSimilarity(dim=1, eps=1e-6)
-
-        # initialize weights and biases
-        nn.init.kaiming_uniform_(self.weights, a=math.sqrt(5)) # weight init
-        fan_in, _ = nn.init._calculate_fan_in_and_fan_out(self.weights)
-
-    def forward(self, x):
-
-        cosine_out = []
-        for i in range(self.size_out):
-            #cosine_out.append(self.cos(x, self.weights[i,:].unsqueeze(0)).unsqueeze(-1))
-            cosine_out.append(torch.cosine_similarity(x, self.weights[i,:].unsqueeze(0)).unsqueeze(-1))
-
-        x = torch.cat(cosine_out, dim=1)
-        return x
-
 
 class CifarResNet(nn.Module):
 
@@ -150,7 +124,7 @@ class CifarResNet(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.fc(x)
 
-        assert x.shape[1]==self.num_classes
+        assert x.shape[1]==self.num_classes, print(f"{x.shape[1]} vs {self.num_classes}")
 
         return x
 

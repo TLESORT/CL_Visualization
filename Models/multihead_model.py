@@ -4,9 +4,10 @@ import numpy as np
 
 from Models.model import Model
 
+from Models.layer import CosineLayer
 
 class MultiHead_Model(Model):
-    def __init__(self, num_classes=10, classes_per_tasks=None):
+    def __init__(self, num_classes=10, classes_per_tasks=None, cosLayer=False):
         super(MultiHead_Model, self).__init__(num_classes)
 
         assert len(np.unique(classes_per_tasks))==num_classes
@@ -15,6 +16,11 @@ class MultiHead_Model(Model):
 
         self.classes_heads=torch.zeros(num_classes)
         self.heads_mask=torch.zeros(self.num_head, num_classes).cuda()
+
+        if cosLayer:
+            last_layer_type=CosineLayer
+        else:
+            last_layer_type=nn.Linear
 
         self.classes_per_tasks = classes_per_tasks
         if self.classes_per_tasks is not None:
@@ -27,7 +33,7 @@ class MultiHead_Model(Model):
                     self.classes_heads[_class]=i
                     self.heads_mask[i, _class]=1
                 dim = len(classes)
-                self.list_heads.append(nn.Linear(50, dim).cuda())
+                self.list_heads.append(last_layer_type(50, dim).cuda())
             del self.last
             self.last = self.list_heads  # for ogd
         else:

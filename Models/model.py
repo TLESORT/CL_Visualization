@@ -1,9 +1,11 @@
 import torch.nn as nn
 import torch
 
+from Models.layer import CosineLayer
+
 
 class Model(nn.Module):
-    def __init__(self, num_classes=10):
+    def __init__(self, num_classes=10, cosLayer=False):
         super(Model, self).__init__()
         self.global_num_classes = num_classes
 
@@ -14,10 +16,14 @@ class Model(nn.Module):
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
         self.fc1 = nn.Linear(320, 50)
+
         self.linear = nn.Sequential(self.fc1,
                                     self.relu,
                                     )  # for ogd
-        self.fc2 = nn.Linear(50, self.global_num_classes)
+        if cosLayer:
+            self.fc2 = CosineLayer(50, self.global_num_classes)
+        else:
+            self.fc2 = nn.Linear(50, self.global_num_classes)
         self.last = self.fc2  # for ogd
 
         self.marginalized_class = None
