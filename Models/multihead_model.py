@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 
-from model import Model
+from Models.model import Model
 
 
 class MultiHead_Model(Model):

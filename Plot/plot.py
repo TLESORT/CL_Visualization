@@ -16,7 +16,7 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 
 import matplotlib.pyplot as plt
 
-from plot.plot_logs import plot_accuracies, \
+from Plot.plot_logs import plot_accuracies, \
     plot_angles_latent_output, \
     plot_accuracies_per_classes,\
     plot_loss,\
@@ -72,6 +72,7 @@ class Continual_Plot(object):
     def plot_comparison(self, methods):
 
         #todo
+        print("in progress")
 
 
 if __name__ == "__main__":

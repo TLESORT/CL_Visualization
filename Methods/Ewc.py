@@ -10,7 +10,7 @@ from nngeometry.object import PMatDiag, PMatKFAC
 from nngeometry.object.vector import PVector
 import numpy as np
 
-from methods.trainer import Trainer
+from Methods.trainer import Trainer
 
 
 class EWC(Trainer):

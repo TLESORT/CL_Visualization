@@ -7,14 +7,11 @@ from torch.utils.data import DataLoader
 
 import torch.optim as optim
 import torch.nn.functional as F
-import pickle
 import os
-import numpy as np
-from copy import deepcopy
 
 from utils import get_dataset
-from model import Model
-from multihead_model import MultiHead_Model
+from Models.model import Model
+from Models.multihead_model import MultiHead_Model
 from continuum import ClassIncremental, InstanceIncremental
 from continuum import Rotations
 
@@ -85,7 +82,7 @@ class Trainer(Continual_Evaluation):
                                          classes_per_tasks=self.list_classes_per_tasks
                                          ).cuda()
         else:
-            from resnet import cifar_resnet20, CosineLayer
+            from Models.resnet import cifar_resnet20, CosineLayer
             if self.dataset=="CIFAR10":
 
                 def weight_reset(m):

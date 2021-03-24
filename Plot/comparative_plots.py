@@ -6,7 +6,7 @@ import imageio
 from matplotlib import colors
 from copy import copy
 
-from plot_utils import animate_heat_map
+from Plot.plot_utils import animate_heat_map
 from sklearn.manifold import TSNE
 import pandas as pd
 import seaborn as sn

@@ -1,15 +1,8 @@
-import torch.nn as nn
-import torch
 from torch.utils.data import DataLoader
 
-from gluoncv import utils
 from continuum.datasets import CIFAR10
 from continuum import ClassIncremental
 
-
-
-
-from gluoncv.model_zoo import get_model
 from torchvision import transforms
 
 transformations=transforms.Compose([
@@ -26,7 +19,7 @@ scenario_tr = ClassIncremental(dataset, nb_tasks=1, transformations=[transformat
 #net = get_model('cifar_resnet110_v1', classes=10, pretrained=True)
 
 
-from resnet import cifar_resnet20
+from Models.resnet import cifar_resnet20
 
 net = cifar_resnet20(pretrained="cifar10")
 

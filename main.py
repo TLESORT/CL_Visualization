@@ -3,7 +3,7 @@ import os
 import torch
 import argparse
 
-from methods.trainer import Trainer
+from Methods.trainer import Trainer
 
 # le gradient depend de la couche de sortie (pas toujours)
 # mais surtout de la loss function
@@ -48,22 +48,22 @@ if not os.path.exists(args.root_dir):
 if args.name_algo == "baseline":
     Algo = Trainer(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "rehearsal":
-    from methods.rehearsal import Rehearsal
+    from Methods.rehearsal import Rehearsal
     Algo = Rehearsal(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_diag":
-    from methods.Ewc import EWC_Diag
+    from Methods.Ewc import EWC_Diag
     Algo = EWC_Diag(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_diag_id":
-    from methods.Ewc import EWC_Diag_id
+    from Methods.Ewc import EWC_Diag_id
     Algo = EWC_Diag_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_kfac_id":
-    from methods.Ewc import EWC_KFAC_id
+    from Methods.Ewc import EWC_KFAC_id
     Algo = EWC_KFAC_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ewc_kfac":
-    from methods.Ewc import EWC_KFAC
+    from Methods.Ewc import EWC_KFAC
     Algo = EWC_KFAC(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "ogd":
-    from methods.OGD import OGD
+    from Methods.OGD import OGD
     Algo = OGD(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 else:
     print("wrong name")
@@ -75,5 +75,5 @@ if not args.no_train:
     Algo.continual_training()
 
 if not args.fast:
-    from plot.plot import Continual_Plot
+    from Plot.plot import Continual_Plot
     Continual_Plot(args).plot_figures(method=args.name_algo)
