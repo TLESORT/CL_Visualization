@@ -75,5 +75,5 @@ if not args.no_train:
     Algo.continual_training()
 
 if not args.fast:
-    from plot import Continual_Plot
+    from plot.plot import Continual_Plot
     Continual_Plot(args).plot_figures(method=args.name_algo)

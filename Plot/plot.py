@@ -16,7 +16,7 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 
 import matplotlib.pyplot as plt
 
-from plot_logs import plot_accuracies, \
+from plot.plot_logs import plot_accuracies, \
     plot_angles_latent_output, \
     plot_accuracies_per_classes,\
     plot_loss,\
@@ -69,6 +69,11 @@ class Continual_Plot(object):
         # plot_grad_gif(log_dir, Fig_dir, fast)
 
 
+    def plot_comparison(self, methods):
+
+        #todo
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--scenario_name', default="Disjoint", type=str, choices=["Disjoint","Domain"],
@@ -83,8 +88,9 @@ if __name__ == "__main__":
     args.root_dir = os.path.join(args.root_dir, args.dataset)
     plot_object = Continual_Plot(args)
 
-    method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id"]
+    method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
     # method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
-    method_list = ["rehearsal"]
+    #method_list = ["rehearsal"]
     for method in method_list:
         plot_object.plot_figures(method)
+    plot_object.plot_comparison(method_list)
