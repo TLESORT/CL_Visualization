@@ -1,6 +1,7 @@
 
 import os
 import torch
+import numpy as np
 import argparse
 
 from Methods.trainer import Trainer
@@ -37,13 +38,15 @@ parser.add_argument('--dev', action='store_true', default=False, help='dev flag'
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST','mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN'], help='dataset name')
-parser.add_argument('--seed', default="1992", type=int,
+parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
 args = parser.parse_args()
 torch.manual_seed(args.seed)
+np.random.seed(args.seed)
 
-args.root_dir = os.path.join(args.root_dir, args.dataset)
+args.root_dir = os.path.join(args.root_dir, args.dataset, f"seed-{args.seed}")
+
 if not os.path.exists(args.root_dir):
     os.makedirs(args.root_dir)
 

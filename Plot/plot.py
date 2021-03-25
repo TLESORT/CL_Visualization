@@ -16,7 +16,7 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 
 import matplotlib.pyplot as plt
 
-from Plot.plot_logs import plot_accuracies, \
+from plot_logs import plot_accuracies, \
     plot_angles_latent_output, \
     plot_accuracies_per_classes,\
     plot_loss,\
@@ -29,6 +29,9 @@ from Plot.plot_logs import plot_accuracies, \
     plot_mean_weights_dist, \
     plot_orthogonal_output_layers, \
     plot_norm_bias_output_layers
+
+from comparative_plots import plot_comparative_accuracies, plot_comparative_tsne_tasks
+
 
 class Continual_Plot(object):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
@@ -69,7 +72,10 @@ class Continual_Plot(object):
         # plot_grad_gif(log_dir, Fig_dir, fast)
 
 
-    def plot_comparison(self, methods):
+    def plot_comparison(self, list_methods):
+
+        #plot_comparative_accuracies(self.log_dir, self.Fig_dir, list_methods)
+        plot_comparative_tsne_tasks(self.log_dir, self.Fig_dir, list_methods)
 
         #todo
         print("in progress")
@@ -90,8 +96,13 @@ if __name__ == "__main__":
     plot_object = Continual_Plot(args)
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
-    # method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
+    seed_list = [1664]
+    #method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["rehearsal"]
-    for method in method_list:
-        plot_object.plot_figures(method)
+
+
+    # for method in method_list:
+    #     plot_object.plot_figures(method)
+
+
     plot_object.plot_comparison(method_list)
