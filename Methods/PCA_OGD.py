@@ -8,7 +8,7 @@ from collections import defaultdict
 
 import torch
 
-from methods.trainer import Trainer
+from Methods.trainer import Trainer
 from torch.nn.utils.convert_parameters import _check_param_device, parameters_to_vector, vector_to_parameters
 
 

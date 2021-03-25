@@ -10,7 +10,7 @@ from copy import copy
 from continuum.tasks.task_set import TaskSet
 from memory import MemorySet
 
-from methods.trainer import Trainer
+from Methods.trainer import Trainer
 
 class Rehearsal(Trainer):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):

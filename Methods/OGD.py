@@ -11,8 +11,7 @@ from collections import defaultdict
 import torch
 from types import MethodType
 
-from methods.trainer import Trainer
-from model import Model
+from Methods.trainer import Trainer
 
 
 
