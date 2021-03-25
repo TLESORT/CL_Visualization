@@ -3,6 +3,7 @@ import os
 import torch
 import numpy as np
 import argparse
+import datetime
 
 from Methods.trainer import Trainer
 
@@ -50,6 +51,13 @@ args.root_dir = os.path.join(args.root_dir, args.dataset, f"seed-{args.seed}")
 if not os.path.exists(args.root_dir):
     os.makedirs(args.root_dir)
 
+
+# save args parameters and date
+file_name = os.path.join(args.root_dir, f"args.txt")
+with open(file_name, 'w') as fp:
+    fp.write(f'{datetime.datetime.now()} \n')
+    fp.write(str(args).replace(",",",\n"))
+
 if args.name_algo == "baseline":
     Algo = Trainer(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
 elif args.name_algo == "rehearsal":
@@ -73,6 +81,8 @@ elif args.name_algo == "ogd":
 else:
     print("wrong name")
 
+print("*********  START TRAINING *********")
+print(args)
 
 # Algo.eval()
 

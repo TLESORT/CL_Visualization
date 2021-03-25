@@ -92,11 +92,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    args.root_dir = os.path.join(args.root_dir, args.dataset)
-    plot_object = Continual_Plot(args)
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
     seed_list = [1664]
+    args.root_dir = os.path.join(args.root_dir, args.dataset, f"seed-{seed_list[0]}") # TEMPORARY
     #method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["rehearsal"]
 
@@ -105,4 +104,5 @@ if __name__ == "__main__":
     #     plot_object.plot_figures(method)
 
 
+    plot_object = Continual_Plot(args)
     plot_object.plot_comparison(method_list)
