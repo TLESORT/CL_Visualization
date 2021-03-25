@@ -28,9 +28,9 @@ class Trainer(Continual_Evaluation):
         self.test_label = args.test_label
         self.masked_out = args.masked_out
 
-        self.dir_data = os.path.join(self.root_dir, "../../Datasets/")
-        if not os.path.exists(self.dir_data):
-            os.makedirs(self.dir_data)
+        self.data_dir = args.data_dir
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
         self.log_dir = os.path.join(self.root_dir, "Logs", scenario_name)
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)

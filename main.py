@@ -20,6 +20,8 @@ parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
+parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
+                    help='data directory name')
 parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
@@ -46,6 +48,7 @@ args = parser.parse_args()
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
+args.data_dir = os.path.join(args.root_dir, "Datasets")
 args.root_dir = os.path.join(args.root_dir, args.dataset, f"seed-{args.seed}")
 
 if not os.path.exists(args.root_dir):
