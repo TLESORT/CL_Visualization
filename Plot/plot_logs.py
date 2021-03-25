@@ -11,7 +11,8 @@ import pandas as pd
 import seaborn as sn
 from numpy import linalg as LA
 
-from Plot.plot_utils import animate_heat_map, flatten_results, angle_between
+from plot_utils import animate_heat_map, flatten_results, angle_between
+
 
 def plot_Fisher(log_dir, Fig_dir, algo_name):
     print(f"Plot Fisher {algo_name}")
@@ -119,8 +120,6 @@ def plot_mean_weights_dist(log_dir, Fig_dir, algo_name):
     plt.savefig(os.path.join(Fig_dir, "{}_Dist.png").format(algo_name))
     plt.clf()
     plt.close()
-
-
 
 
 def plot_orthogonal_output_layers(log_dir, Fig_dir, algo_name):
@@ -559,7 +558,6 @@ def plot_grad_gif(log_dir, Fig_dir, fast=True):
     # #ax2.yaxis.tick_right()
     # #ax2.tick_params(rotation=0)
     # plt.savefig(os.path.join(Fig_dir, "test.png"))
-
 
     plt.clf()
     plt.close()
