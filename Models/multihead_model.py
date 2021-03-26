@@ -40,8 +40,6 @@ class MultiHead_Model(Model):
         else:
             raise AssertionError("You should use a normal model if you do not define heads_dim")
 
-        self.marginalized_class = None
-
     def forward_task(self, x, task_ids):
         # we recreate a prediction tensor of size [batch_size, self.global_num_classes]
         # we do so to get outputs of always same shape, the zeros should not interfere with prediction
@@ -57,4 +55,5 @@ class MultiHead_Model(Model):
             for head in self.list_heads:
                 list_out.append(head(x))
             x = torch.cat(list_out, dim=1)
+        assert x.shape[1]==self.global_num_classes
         return x

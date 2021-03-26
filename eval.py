@@ -17,7 +17,6 @@ class Continual_Evaluation(abc.ABC):
 
     def __init__(self, args):
 
-
         self.dataset = args.dataset
 
         self.vector_predictions_epoch_tr = np.zeros(0)
@@ -47,7 +46,6 @@ class Continual_Evaluation(abc.ABC):
         self.list_weights_dist[ind_task_log] = []
 
         self.ref_model = deepcopy(self.model)
-
 
     def log_task(self, ind_task, model):
         model2save = deepcopy(model).cpu().state_dict()
@@ -117,7 +115,7 @@ class Continual_Evaluation(abc.ABC):
             print("Test Accuracy: {} %".format(100.0 * correct_te / nb_instances_te))
 
         if self.verbose:
-            classe_prediction, classe_wrong, classe_total=class_infos_te
+            classe_prediction, classe_wrong, classe_total = class_infos_te
             for i in range(self.scenario_tr.nb_classes):
                 print("Task " + str(i) + "- Prediction :" + str(
                     classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
@@ -132,28 +130,30 @@ class Continual_Evaluation(abc.ABC):
 
     def _multihead_predictions(self, output, labels, task_labels):
 
+        assert self.scenario_name == "Disjoint"
+
         list_preds = []
-        for x,y,t in zip(output, labels, task_labels):
+        for x, y, t in zip(output, labels, task_labels):
             # / ! \ data are processed one by one here
 
-            label=y.cpu().item()
+            label = y.cpu().item()
 
             # the output is a vector of size equal to the total number of classes
             # all value are zeros exept those corresponding to the correct head
-            if max(x)>0:
+            if max(x) > 0:
                 # the prediction here is simple
                 pred = x.argmax().item()
             else:
-                head_mask = self.model.heads_mask[label]
+                ind_mask = self.model.classes_heads[label]
+                head_mask = self.model.heads_mask[ind_mask]
                 inds_mask = torch.nonzero(head_mask)
-                local_pred=x[inds_mask].argmax().item()
-                pred= inds_mask[local_pred].item()
+                local_pred = x[inds_mask].argmax().item()
+                pred = inds_mask[local_pred].item()
             list_preds.append(pred)
 
         assert len(list_preds) == len(labels)
 
         return np.array(list_preds)
-
 
     def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
 
@@ -162,11 +162,10 @@ class Continual_Evaluation(abc.ABC):
         else:
             predictions = self._multihead_predictions(output, labels, task_labels)
 
-
         if train:
             self.vector_predictions_epoch_tr = np.concatenate([self.vector_predictions_epoch_tr, predictions])
             self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, labels.cpu().numpy()])
-            self.vector_task_labels_epoch_tr  = np.concatenate([self.vector_task_labels_epoch_tr, task_labels])
+            self.vector_task_labels_epoch_tr = np.concatenate([self.vector_task_labels_epoch_tr, task_labels])
 
             if not self.fast:
                 if model.fc2.weight.grad is not None:
@@ -188,7 +187,7 @@ class Continual_Evaluation(abc.ABC):
             ## / ! \ we do not log loss for test, maybe one day....
             self.vector_predictions_epoch_te = np.concatenate([self.vector_predictions_epoch_te, predictions])
             self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, labels.cpu().numpy()])
-            self.vector_task_labels_epoch_te  = np.concatenate([self.vector_task_labels_epoch_te, task_labels])
+            self.vector_task_labels_epoch_te = np.concatenate([self.vector_task_labels_epoch_te, task_labels])
 
     def log_latent(self, ind_task):
         self.model.eval()
@@ -214,7 +213,6 @@ class Continual_Evaluation(abc.ABC):
         y_vectors = y_vectors[:200]
         t_vectors = t_vectors[:200]
         self.list_latent.append([latent_vectors, y_vectors, t_vectors])
-
 
     def post_training_log(self):
         file_name = os.path.join(self.log_dir, "{}_loss.pkl".format(self.algo_name))

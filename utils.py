@@ -36,11 +36,9 @@ def get_model(name_dataset, scenario, pretrained, test_label, cosLayer):
         #assert name_dataset == "Disjoint"
 
         list_classes_per_tasks = []
-        heads_dim = []
         for task_set in scenario:
             classes = task_set.get_classes()
             list_classes_per_tasks.append(classes)
-            heads_dim.append(len(classes))
 
         model = MultiHead_Model(num_classes=scenario.nb_classes,
                                 classes_per_tasks=list_classes_per_tasks,

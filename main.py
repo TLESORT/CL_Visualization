@@ -30,8 +30,6 @@ parser.add_argument('--nb_epochs', default=5, type=int,
 parser.add_argument('--batch_size', default=264, type=int, help='batch size')
 parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
-parser.add_argument('--expert', action='store_true', default=False,
-                    help='define if we use expert model who has access to all data')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--cosLayer', action='store_true', default=False, help='test the new layer')
 parser.add_argument('--pretrained', action='store_true', default=False, help='dev flag')
