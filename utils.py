@@ -33,7 +33,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 def get_model(name_dataset, scenario, pretrained, test_label, cosLayer):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
-        assert name_dataset == "Disjoint"
+        #assert name_dataset == "Disjoint"
 
         list_classes_per_tasks = []
         heads_dim = []
