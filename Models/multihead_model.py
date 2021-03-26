@@ -14,6 +14,7 @@ class MultiHead_Model(Model):
 
         self.num_head=len(classes_per_tasks)
 
+        # vector that for each class gives the correct head index
         self.classes_heads=torch.zeros(num_classes)
         self.heads_mask=torch.zeros(self.num_head, num_classes).cuda()
 

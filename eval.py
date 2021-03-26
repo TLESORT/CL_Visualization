@@ -131,25 +131,23 @@ class Continual_Evaluation(abc.ABC):
         self.vector_labels_epoch_te = np.zeros(0)
 
     def _multihead_predictions(self, output, labels, task_labels):
-        #TODO: faire ca proprement pour que ca marche pour tout type de scenario
 
         list_preds = []
         for x,y,t in zip(output, labels, task_labels):
+            # / ! \ data are processed one by one here
 
             label=y.cpu().item()
 
-            # 4 POC we test in only on Split MNist 5 tasks
-            assert self.dataset == "MNIST"
-            assert self.num_tasks == 5
-
-            head_ind = label // 2
-            assert 0 <= head_ind < 5
-
-            ind_start=2*head_ind
-            ind_end= 2*(head_ind+1)
-
-            binary_pred = x[ind_start:ind_end].argmax().item()
-            pred= 2*head_ind + binary_pred
+            # the output is a vector of size equal to the total number of classes
+            # all value are zeros exept those corresponding to the correct head
+            if max(x)>0:
+                # the prediction here is simple
+                pred = x.argmax().item()
+            else:
+                head_mask = self.model.heads_mask[label]
+                inds_mask = torch.nonzero(head_mask)
+                local_pred=x[inds_mask].argmax().item()
+                pred= inds_mask[local_pred].item()
             list_preds.append(pred)
 
         assert len(list_preds) == len(labels)
