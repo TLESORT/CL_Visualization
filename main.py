@@ -49,7 +49,12 @@ torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
 args.data_dir = os.path.join(args.root_dir, "Datasets")
-args.root_dir = os.path.join(args.root_dir, args.dataset, f"seed-{args.seed}")
+args.root_dir = os.path.join(args.root_dir, args.dataset)
+if args.test_label:
+    args.root_dir = os.path.join(args.root_dir, "MultiH")
+else:
+    args.root_dir = os.path.join(args.root_dir, "SingleH")
+args.root_dir = os.path.join(args.root_dir, f"seed-{args.seed}")
 
 if not os.path.exists(args.root_dir):
     os.makedirs(args.root_dir)
