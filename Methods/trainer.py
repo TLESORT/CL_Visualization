@@ -46,8 +46,8 @@ class Trainer(Continual_Evaluation):
         self.cosLayer = args.cosLayer
         self.nb_epochs = args.nb_epochs
 
-        dataset_train = get_dataset(self.dir_data, args.dataset, self.scenario_name, train=True)
-        dataset_test = get_dataset(self.dir_data, args.dataset, self.scenario_name, train=False)
+        dataset_train = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=True)
+        dataset_test = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=False)
 
         scenario = None
         if self.scenario_name == "Rotations":
