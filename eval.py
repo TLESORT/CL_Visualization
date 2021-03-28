@@ -18,7 +18,9 @@ class Continual_Evaluation(abc.ABC):
     def __init__(self, args):
 
         self.dataset = args.dataset
+        self.load_first_task=True
         self.first_task_loaded=False
+        self.name_algo=args.name_algo
 
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
@@ -37,6 +39,11 @@ class Continual_Evaluation(abc.ABC):
         self.list_weights_dist = {}
         self.list_Fisher = []
 
+    def _can_load_first_task(self):
+        model_weights_path = os.path.join(self.log_dir, f"Model_Task_0.pth")
+        opt_weights_path = os.path.join(self.log_dir, f"Opt_Task_0.pth")
+        return os.path.isfile(model_weights_path) and os.path.isfile(opt_weights_path)
+
     def init_log(self, ind_task_log):
 
         self.list_grad[ind_task_log] = []
@@ -49,9 +56,10 @@ class Continual_Evaluation(abc.ABC):
         self.ref_model = deepcopy(self.model)
 
         if ind_task_log==0 and self.load_first_task:
-            model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task_log}.pth")
-            opt_weights_path = os.path.join(self.log_dir, f"Opt_Task_{ind_task_log}.pth")
-            if os.path.isfile(model_weights_path) and os.path.isfile(opt_weights_path):
+            if self._can_load_first_task():
+                model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task_log}.pth")
+                opt_weights_path = os.path.join(self.log_dir, f"Opt_Task_{ind_task_log}.pth")
+
                 pretrained_weights = torch.load(model_weights_path)
                 self.model.load_state_dict(pretrained_weights)
 
@@ -65,7 +73,7 @@ class Continual_Evaluation(abc.ABC):
 
 
     def log_task(self, ind_task, model):
-        torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.algo_name}_Task_{ind_task}.pth"))
+        torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth"))
         if not self.fast:
             self.log_latent(ind_task)
 
@@ -176,7 +184,7 @@ class Continual_Evaluation(abc.ABC):
                 pred = x.argmax().item()
             else:
                 ind_mask = self.model.classes_heads[label]
-                head_mask = self.model.heads_mask[ind_mask]
+                head_mask = self.model.heads_mask[ind_mask.long()]
                 inds_mask = torch.nonzero(head_mask)
                 local_pred = x[inds_mask].argmax().item()
                 pred = inds_mask[local_pred].item()
@@ -275,9 +283,6 @@ class Continual_Evaluation(abc.ABC):
             with open(file_name, 'rb') as fp:
                 self.list_weights_dist = pickle.load(fp)
 
-            file_name = os.path.join(self.log_dir, f"{name}_Fishers.pkl")
-            with open(file_name, 'rb') as fp:
-                self.list_Fisher = pickle.load(fp)
 
             file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
             with open(file_name, 'rb') as fp:
@@ -286,10 +291,11 @@ class Continual_Evaluation(abc.ABC):
     def post_training_log(self, ind_task=None):
 
         if ind_task is None:
-            name = self.algo_name
+            name = self.name_algo
         else:
             assert ind_task==0, print("The code is not made yet for ind task <> 0")
             name = f"checkpoint_{ind_task}"
+
         file_name = os.path.join(self.log_dir, f"{name}_loss.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_loss, f, pickle.HIGHEST_PROTOCOL)
@@ -315,9 +321,6 @@ class Continual_Evaluation(abc.ABC):
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_weights_dist, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, f"{name}_Fishers.pkl")
-            with open(file_name, 'wb') as f:
-                pickle.dump(self.list_Fisher, f, pickle.HIGHEST_PROTOCOL)
 
             file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
             with open(file_name, 'wb') as f:
