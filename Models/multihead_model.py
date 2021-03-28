@@ -55,5 +55,5 @@ class MultiHead_Model(Model):
             for head in self.list_heads:
                 list_out.append(head(x))
             x = torch.cat(list_out, dim=1)
-        assert x.shape[1]==self.global_num_classes
+            assert x.shape[1]==self.global_num_classes
         return x
