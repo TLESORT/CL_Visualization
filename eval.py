@@ -49,7 +49,7 @@ class Continual_Evaluation(abc.ABC):
 
     def log_task(self, ind_task, model):
         model2save = deepcopy(model).cpu().state_dict()
-        torch.save(model2save, os.path.join(self.log_dir, "Model_Task_{}.pth".format(ind_task)))
+        torch.save(model2save, os.path.join(self.log_dir, f"Model_{self.algo_name}_Task_{ind_task}.pth"))
         if not self.fast:
             self.log_latent(ind_task)
 
@@ -111,15 +111,16 @@ class Continual_Evaluation(abc.ABC):
         class_infos_te = self._process_classes_logs(train=False)
 
         if print_acc:
-            print("Train Accuracy: {} %".format(100.0 * correct_tr / nb_instances_tr))
-            print("Test Accuracy: {} %".format(100.0 * correct_te / nb_instances_te))
+            acc_tr = 100.0 * correct_tr / nb_instances_tr
+            acc_te = 100.0 * correct_te / nb_instances_te
+            print(f"Train Accuracy: {acc_tr} %")
+            print(f"Test Accuracy: {acc_te} %")
 
         if self.verbose:
             classe_prediction, classe_wrong, classe_total = class_infos_te
             for i in range(self.scenario_tr.nb_classes):
-                print("Task " + str(i) + "- Prediction :" + str(
-                    classe_prediction[i] / classe_total[i]) + "% - Total :" + str(
-                    classe_total[i]) + "- Wrong :" + str(classe_wrong[i]))
+                print(f"Task {i} - Prediction : {classe_prediction[i] / classe_total[i]} % "
+                      f"- Total :{classe_total[i]}- Wrong :{classe_wrong[i]}")
 
         self.list_accuracies_per_classes[ind_task].append(np.array([class_infos_tr, class_infos_te]))
         # Reinit log vector
@@ -215,36 +216,36 @@ class Continual_Evaluation(abc.ABC):
         self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
     def post_training_log(self):
-        file_name = os.path.join(self.log_dir, "{}_loss.pkl".format(self.algo_name))
+        file_name = os.path.join(self.log_dir, f"{self.algo_name}_loss.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_loss, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_accuracies.pkl".format(self.algo_name))
+        file_name = os.path.join(self.log_dir, f"{self.algo_name}_accuracies.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_accuracies, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, "{}_accuracies_per_class.pkl".format(self.algo_name))
+        file_name = os.path.join(self.log_dir, f"{self.algo_name}_accuracies_per_class.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_accuracies_per_classes, f, pickle.HIGHEST_PROTOCOL)
 
         if not self.fast:
-            file_name = os.path.join(self.log_dir, "{}_grad.pkl".format(self.algo_name))
+            file_name = os.path.join(self.log_dir, f"{self.algo_name}_grad.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_grad, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, "{}_weights.pkl".format(self.algo_name))
+            file_name = os.path.join(self.log_dir, f"{self.algo_name}_weights.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_weights, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, "{}_dist.pkl".format(self.algo_name))
+            file_name = os.path.join(self.log_dir, f"{self.algo_name}_dist.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_weights_dist, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, "{}_Fishers.pkl".format(self.algo_name))
+            file_name = os.path.join(self.log_dir, f"{self.algo_name}_Fishers.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_Fisher, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, "{}_Latent.pkl".format(self.algo_name))
+            file_name = os.path.join(self.log_dir, f"{self.algo_name}_Latent.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
 
