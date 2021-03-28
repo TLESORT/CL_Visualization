@@ -61,7 +61,7 @@ class Memory(Storage):
 class OGD(Trainer):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
-        self.algo_name = "ogd"
+        self.name_algo = "ogd"
 
         # author comment: # Leave it to 0, this is for the case when using Lenet, projecting orthogonally only against the linear layers seems to work better
         self.all_features = 0
@@ -77,6 +77,7 @@ class OGD(Trainer):
         self.task_grad_mem_cache = {}
 
     def callback_task(self, ind_task, task_set):
+        super().callback_task(ind_task, task_set)
         self.ogd_basis.cuda()
         self.update_mem(task_set, ind_task + 1)
 

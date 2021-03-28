@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from copy import deepcopy
+import os
+import pickle
 from torch.utils.data import DataLoader
 
 from nngeometry.metrics import FIM
@@ -41,8 +43,30 @@ class EWC(Trainer):
 
         return fim, v0
 
+
+    def init_log(self, ind_task_log):
+        super().init_log(ind_task_log)
+
+        # temporar, we can not load FIM yet
+        # and FIM computation will be skipped if first_task_loader is true
+        if self.first_task_loaded and ind_task_log==0:
+            self.list_Fishers[ind_task_log] = self.compute_fisher(ind_task_log, self.scenario_tr[ind_task_log], self.model)
+
+
+    def init_task(self, ind_task, task_set):
+        assert len(self.list_Fishers) == ind_task, print(f"{len(self.list_Fishers)} vs {ind_task}")
+        return super().init_task(ind_task, task_set)
+
+    def _can_load_first_task(self):
+        #todo
+        #path_fisher=os.path.join(self.log_dir, f"checkpoint_0_Fishers.pkl")
+
+        #return os.path.isfile(path_fisher) and super()._can_load_first_task()
+        return super()._can_load_first_task()
+
     def callback_task(self, ind_task, task_set):
         self.list_Fishers[ind_task] = self.compute_fisher(ind_task, task_set, self.model)
+        super().callback_task(ind_task, task_set)
 
     def regularize_loss(self, model, loss):
         v = PVector.from_model(model)
@@ -58,10 +82,39 @@ class EWC(Trainer):
             assert not np.isnan(loss_regul.item()), "Unfortunately, the loss is NaN"  # sanity check to detect nan
 
         return loss_regul+loss
+
+    def load_log(self, ind_task=None):
+        super().load_log(ind_task)
+        #todo
+
+        # file_name = os.path.join(self.log_dir, f"checkpoint_{ind_task}_Fishers.pkl")
+        # with open(file_name, 'rb') as fp:
+        #     list_Fishers_data = pickle.load(fp)
+        #
+        # for i, (fim_data, v0) in self.list_Fishers.items():
+        #     fisher =
+        #     list_Fishers_data[i] = [fim.data, v0]
+
+    def post_training_log(self, ind_task=None):
+        super().post_training_log(ind_task)
+        #todo
+
+        # list_Fishers_data = {}
+        #
+        # if (not self.fast) or ("ewc" in self.name_algo):
+        #     # saving Fisher is slow but we need it for ewc
+        #     file_name = os.path.join(self.log_dir, f"checkpoint_{ind_task}_Fishers.pkl")
+        #     for i, (fim, v0) in self.list_Fishers.items():
+        #         list_Fishers_data[i]=[fim.data, v0]
+        #
+        #     with open(file_name, 'wb') as f:
+        #         pickle.dump(self.list_Fishers_data, f, pickle.HIGHEST_PROTOCOL)
+        #
+        # super().post_training_log(ind_task)
+
 class EWC_id(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, representation, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, representation, verbose, dev)
-        self.algo_name = "ewc_id"
 
     def compute_fisher(self, ind_task, fisher_set, model):
         fim, v0 = super().compute_fisher(ind_task, fisher_set, model)
@@ -91,21 +144,17 @@ class EWC_id(EWC):
 class EWC_Diag(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
-        self.algo_name = "ewc_diag"
 
 class EWC_Diag_id(EWC_id):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
-        self.algo_name = "ewc_diag_id"
 
 
 class EWC_KFAC(EWC):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
-        self.algo_name = "ewc_kfac"
 
 class EWC_KFAC_id(EWC_id):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
-        self.algo_name = "ewc_kfac_id"
 

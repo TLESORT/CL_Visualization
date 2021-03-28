@@ -15,7 +15,7 @@ from Methods.trainer import Trainer
 class Rehearsal(Trainer):
     def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
         super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
-        self.algo_name = "rehearsal"
+        self.name_algo = "rehearsal"
         self.data_memory = None
         self.num_classes_per_task = 2
         self.nb_samples_rehearsal_per_class = 100
@@ -23,9 +23,6 @@ class Rehearsal(Trainer):
         self.sample_num = 100
         self.input_size = 1
         self.image_size = 28
-
-    def callback_task(self, ind_task: int, task_set: TaskSet):
-        pass
 
     def sample_task(self, task_set):
         """

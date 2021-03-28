@@ -29,7 +29,6 @@ class Trainer(Continual_Evaluation):
         self.batch_size = args.batch_size
         self.test_label = args.test_label
         self.masked_out = args.masked_out
-        self.load_first_task=True
 
         self.data_dir = args.data_dir
         if not os.path.exists(self.data_dir):
