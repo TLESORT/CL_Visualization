@@ -33,6 +33,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--cosLayer', action='store_true', default=False, help='test the new layer')
 parser.add_argument('--pretrained', action='store_true', default=False, help='dev flag')
+parser.add_argument('--load_first_task', type=bool, default=True, help='dev flag')
 parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
@@ -59,7 +60,7 @@ if not os.path.exists(args.root_dir):
 
 
 # save args parameters and date
-file_name = os.path.join(args.root_dir, f"args.txt")
+file_name = os.path.join(args.root_dir, f"args_{args.name_algo}.txt")
 print(f"Save args in {file_name}")
 with open(file_name, 'w') as fp:
     fp.write(f'{datetime.datetime.now()} \n')
