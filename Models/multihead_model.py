@@ -7,12 +7,13 @@ from Models.model import Model
 from Models.layer import CosineLayer
 
 class MultiHead_Model(Model):
-    def __init__(self, num_classes=10, classes_per_tasks=None, cosLayer=False):
+    def __init__(self, num_classes=10, classes_per_tasks=None, cosLayer=False, method='baseline'):
         super(MultiHead_Model, self).__init__(num_classes)
 
         assert len(np.unique(classes_per_tasks))==num_classes
 
         self.num_head=len(classes_per_tasks)
+        self.method=method
 
         # vector that for each class gives the correct head index
         self.classes_heads=torch.zeros(num_classes)
@@ -34,9 +35,12 @@ class MultiHead_Model(Model):
                     self.classes_heads[_class]=i
                     self.heads_mask[i, _class]=1
                 dim = len(classes)
-                self.list_heads.append(last_layer_type(50, dim).cuda())
-            del self.last
-            self.last = self.list_heads  # for ogd
+                if self.method=="ogd":
+                    self.list_heads.append(last_layer_type(50, dim).cuda())
+
+            if method == "ogd":
+                del self.last
+                self.last = self.list_heads  # for ogd
         else:
             raise AssertionError("You should use a normal model if you do not define heads_dim")
 
@@ -51,9 +55,12 @@ class MultiHead_Model(Model):
         x = self.feature_extractor(x)
 
         if not latent_vector:
-            list_out = []
-            for head in self.list_heads:
-                list_out.append(head(x))
-            x = torch.cat(list_out, dim=1)
+            if self.method=='ogd':
+                list_out = []
+                for head in self.list_heads:
+                    list_out.append(head(x))
+                x = torch.cat(list_out, dim=1)
+            else:
+                x = self.last(x)
             assert x.shape[1]==self.global_num_classes
         return x

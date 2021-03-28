@@ -66,7 +66,7 @@ class Trainer(Continual_Evaluation):
         self.num_classes = self.scenario_tr.nb_classes
         self.classes_mask = torch.eye(self.num_classes).cuda()
 
-        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained, self.test_label, self.cosLayer)
+        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained, self.test_label, self.cosLayer, self.name_algo)
         self.model.cuda()
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
 

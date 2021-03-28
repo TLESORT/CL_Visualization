@@ -30,7 +30,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 
 
-def get_model(name_dataset, scenario, pretrained, test_label, cosLayer):
+def get_model(name_dataset, scenario, pretrained, test_label, cosLayer, method):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         #assert name_dataset == "Disjoint"
@@ -42,7 +42,8 @@ def get_model(name_dataset, scenario, pretrained, test_label, cosLayer):
 
         model = MultiHead_Model(num_classes=scenario.nb_classes,
                                 classes_per_tasks=list_classes_per_tasks,
-                                cosLayer=cosLayer).cuda()
+                                cosLayer=cosLayer,
+                                method=method).cuda()
     else:
 
         if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":

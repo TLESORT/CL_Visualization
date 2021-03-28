@@ -179,15 +179,11 @@ class Continual_Evaluation(abc.ABC):
 
             # the output is a vector of size equal to the total number of classes
             # all value are zeros exept those corresponding to the correct head
-            if max(x) > 0:
-                # the prediction here is simple
-                pred = x.argmax().item()
-            else:
-                ind_mask = self.model.classes_heads[label]
-                head_mask = self.model.heads_mask[ind_mask.long()]
-                inds_mask = torch.nonzero(head_mask)
-                local_pred = x[inds_mask].argmax().item()
-                pred = inds_mask[local_pred].item()
+            ind_mask = self.model.classes_heads[label]
+            head_mask = self.model.heads_mask[ind_mask.long()]
+            inds_mask = torch.nonzero(head_mask)
+            local_pred = x[inds_mask].argmax().item()
+            pred = inds_mask[local_pred].item()
             list_preds.append(pred)
 
         assert len(list_preds) == len(labels)
