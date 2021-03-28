@@ -60,6 +60,7 @@ if not os.path.exists(args.root_dir):
 
 # save args parameters and date
 file_name = os.path.join(args.root_dir, f"args.txt")
+print(f"Save args in {file_name}")
 with open(file_name, 'w') as fp:
     fp.write(f'{datetime.datetime.now()} \n')
     fp.write(str(args).replace(",",",\n"))

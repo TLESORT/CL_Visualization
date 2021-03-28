@@ -12,6 +12,7 @@ import os
 from utils import get_dataset, get_model
 from continuum import ClassIncremental, InstanceIncremental
 from continuum import Rotations
+import numpy as np
 
 from eval import Continual_Evaluation
 
@@ -22,11 +23,13 @@ class Trainer(Continual_Evaluation):
         super().__init__(args)
 
         self.lr = args.lr
+        self.seed = args.seed
         self.root_dir = root_dir
         self.verbose = verbose
         self.batch_size = args.batch_size
         self.test_label = args.test_label
         self.masked_out = args.masked_out
+        self.load_first_task=True
 
         self.data_dir = args.data_dir
         if not os.path.exists(self.data_dir):
@@ -76,6 +79,11 @@ class Trainer(Continual_Evaluation):
         return loss
 
     def init_task(self, ind_task, task_set):
+
+        # reset seed for consistency in results
+        torch.manual_seed(self.seed)
+        np.random.seed(self.seed)
+
         data_loader_tr = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
         if ind_task == 0:
             # log before training
@@ -86,7 +94,7 @@ class Trainer(Continual_Evaluation):
         return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
-        pass
+        self.post_task_log(ind_task)
 
     def test(self, ind_task_log, data_loader=None, train=False):
 
@@ -163,6 +171,9 @@ class Trainer(Continual_Evaluation):
 
             data_loader = self.init_task(task_id, task_set)
             self.init_log(task_id + 1)  # after init task!
+            if task_id==0 and self.first_task_loaded:
+                # we loaded model and log from another exprience for task 0
+                continue
             self.log_task(task_id, self.model)  # before training
             self.one_task_training(task_id, data_loader)
             self.callback_task(task_id, task_set)

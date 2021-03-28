@@ -18,6 +18,7 @@ class Continual_Evaluation(abc.ABC):
     def __init__(self, args):
 
         self.dataset = args.dataset
+        self.first_task_loaded=False
 
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
@@ -47,14 +48,43 @@ class Continual_Evaluation(abc.ABC):
 
         self.ref_model = deepcopy(self.model)
 
+        if ind_task_log==0 and self.load_first_task:
+            model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task_log}.pth")
+            opt_weights_path = os.path.join(self.log_dir, f"Opt_Task_{ind_task_log}.pth")
+            if os.path.isfile(model_weights_path) and os.path.isfile(opt_weights_path):
+                pretrained_weights = torch.load(model_weights_path)
+                self.model.load_state_dict(pretrained_weights)
+
+                opt_dict = torch.load(opt_weights_path)
+                self.opt.load_state_dict(opt_dict)
+                self.load_log(ind_task_log)
+                self.first_task_loaded=True
+                print(" EVERYTHING HAVE BEEN LOADED SUCCESSFULLY")
+            else:
+                print("No file to load continue training normally")
+
+
     def log_task(self, ind_task, model):
-        model2save = deepcopy(model).cpu().state_dict()
-        torch.save(model2save, os.path.join(self.log_dir, f"Model_{self.algo_name}_Task_{ind_task}.pth"))
+        torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.algo_name}_Task_{ind_task}.pth"))
         if not self.fast:
             self.log_latent(ind_task)
 
             F_diag, v0 = self.compute_last_layer_fisher(model, self.eval_tr_loader)
             self.list_Fisher.append(F_diag.get_diag().detach().cpu())
+
+
+    def post_task_log(self, ind_task):
+        if ind_task==0:
+            # we will save the state of the training to save time for other experiments
+
+            torch.save(self.model.state_dict(), os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth"))
+            # log optimizer
+            torch.save(self.opt.state_dict(), os.path.join(self.log_dir, f"Opt_Task_{ind_task}.pth"))
+
+            # save log from first tasks
+            self.post_training_log(ind_task)
+
+
 
     def log_weights_dist(self, ind_task):
 
@@ -156,6 +186,8 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array(list_preds)
 
+
+
     def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
 
         if not self.test_label:
@@ -215,37 +247,79 @@ class Continual_Evaluation(abc.ABC):
         t_vectors = t_vectors[:200]
         self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
-    def post_training_log(self):
-        file_name = os.path.join(self.log_dir, f"{self.algo_name}_loss.pkl")
+    def load_log(self, ind_task=None):
+        assert ind_task==0, print("The code is not made yet for ind task <> 0")
+        name = f"checkpoint_{ind_task}"
+        file_name = os.path.join(self.log_dir, f"{name}_loss.pkl")
+        with open(file_name, 'rb') as fp:
+            self.list_los = pickle.load(fp)
+
+        file_name = os.path.join(self.log_dir, f"{name}_accuracies.pkl")
+        with open(file_name, 'rb') as fp:
+            self.list_accuracies = pickle.load(fp)
+
+        file_name = os.path.join(self.log_dir, f"{name}_accuracies_per_class.pkl")
+        with open(file_name, 'rb') as fp:
+            self.list_accuracies_per_classes = pickle.load(fp)
+
+        if not self.fast:
+            file_name = os.path.join(self.log_dir, f"{name}_grad.pkl")
+            with open(file_name, 'rb') as fp:
+                self.list_grad = pickle.load(fp)
+
+            file_name = os.path.join(self.log_dir, f"{name}_weights.pkl")
+            with open(file_name, 'rb') as fp:
+                self.list_weights = pickle.load(fp)
+
+            file_name = os.path.join(self.log_dir, f"{name}_dist.pkl")
+            with open(file_name, 'rb') as fp:
+                self.list_weights_dist = pickle.load(fp)
+
+            file_name = os.path.join(self.log_dir, f"{name}_Fishers.pkl")
+            with open(file_name, 'rb') as fp:
+                self.list_Fisher = pickle.load(fp)
+
+            file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
+            with open(file_name, 'rb') as fp:
+                self.list_latent = pickle.load(fp)
+
+    def post_training_log(self, ind_task=None):
+
+        if ind_task is None:
+            name = self.algo_name
+        else:
+            assert ind_task==0, print("The code is not made yet for ind task <> 0")
+            name = f"checkpoint_{ind_task}"
+        file_name = os.path.join(self.log_dir, f"{name}_loss.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_loss, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, f"{self.algo_name}_accuracies.pkl")
+        file_name = os.path.join(self.log_dir, f"{name}_accuracies.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_accuracies, f, pickle.HIGHEST_PROTOCOL)
 
-        file_name = os.path.join(self.log_dir, f"{self.algo_name}_accuracies_per_class.pkl")
+        file_name = os.path.join(self.log_dir, f"{name}_accuracies_per_class.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_accuracies_per_classes, f, pickle.HIGHEST_PROTOCOL)
 
         if not self.fast:
-            file_name = os.path.join(self.log_dir, f"{self.algo_name}_grad.pkl")
+            file_name = os.path.join(self.log_dir, f"{name}_grad.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_grad, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, f"{self.algo_name}_weights.pkl")
+            file_name = os.path.join(self.log_dir, f"{name}_weights.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_weights, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, f"{self.algo_name}_dist.pkl")
+            file_name = os.path.join(self.log_dir, f"{name}_dist.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_weights_dist, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, f"{self.algo_name}_Fishers.pkl")
+            file_name = os.path.join(self.log_dir, f"{name}_Fishers.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_Fisher, f, pickle.HIGHEST_PROTOCOL)
 
-            file_name = os.path.join(self.log_dir, f"{self.algo_name}_Latent.pkl")
+            file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
             with open(file_name, 'wb') as f:
                 pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
 
