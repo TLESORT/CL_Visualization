@@ -7,10 +7,6 @@ import datetime
 
 from Methods.trainer import Trainer
 
-# le gradient depend de la couche de sortie (pas toujours)
-# mais surtout de la loss function
-# c'est l'occasion de trouver des loss / couche de sortie plus adaptées aux continual learning
-
 parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd'],
