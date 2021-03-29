@@ -28,7 +28,8 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--cosLayer', action='store_true', default=False, help='test the new layer')
-parser.add_argument('--pretrained', action='store_true', default=False, help='dev flag')
+parser.add_argument('--pretrained', default=None, type=str,
+                    choices=['CIFAR10', 'CIFAR100'], help='dataset source of a pretrained model')
 parser.add_argument('--load_first_task', type=bool, default=True, help='dev flag')
 parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
