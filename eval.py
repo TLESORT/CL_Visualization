@@ -42,7 +42,7 @@ class Continual_Evaluation(abc.ABC):
     def _can_load_first_task(self):
         model_weights_path = os.path.join(self.log_dir, f"Model_Task_0.pth")
         opt_weights_path = os.path.join(self.log_dir, f"Opt_Task_0.pth")
-        return os.path.isfile(model_weights_path) and os.path.isfile(opt_weights_path)
+        return os.path.isfile(model_weights_path) and os.path.isfile(opt_weights_path) and self.name_algo != "ogd"
 
     def init_log(self, ind_task_log):
 
@@ -82,7 +82,7 @@ class Continual_Evaluation(abc.ABC):
 
 
     def post_task_log(self, ind_task):
-        if ind_task==0:
+        if ind_task==0 and self.name_algo != "ogd":
             # we will save the state of the training to save time for other experiments
 
             torch.save(self.model.state_dict(), os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth"))
