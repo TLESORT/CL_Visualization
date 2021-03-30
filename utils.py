@@ -48,8 +48,8 @@ def get_model(name_dataset, scenario, pretrained, test_label, cosLayer, method):
 
         if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":
 
-            if pretrained:
-                model = cifar_resnet20(pretrained="CIFAR100")
+            if pretrained is not None:
+                model = cifar_resnet20(pretrained=pretrained)
                 model.num_classes = 10 # manual correction
                 for param in model.parameters():
                     param.requires_grad = False

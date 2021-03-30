@@ -87,9 +87,11 @@ class Trainer(Continual_Evaluation):
         if ind_task == 0:
             # log before training
             self.init_log(ind_task_log=ind_task)
-            self.test(ind_task_log=ind_task, train=False)
-            self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
-            self.log_post_epoch_processing(0)
+            # if self.first_task_loaded -> we have already loaded test accuracy and train accuracy
+            if not self.first_task_loaded:
+                self.test(ind_task_log=ind_task, train=False)
+                self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
+                self.log_post_epoch_processing(0)
         return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
@@ -169,10 +171,10 @@ class Trainer(Continual_Evaluation):
             print("Task {}: Start".format(task_id))
 
             data_loader = self.init_task(task_id, task_set)
-            self.init_log(task_id + 1)  # after init task!
             if task_id==0 and self.first_task_loaded:
-                # we loaded model and log from another exprience for task 0
+                # we loaded model and log from another experience for task 0
                 continue
+            self.init_log(task_id + 1)  # after init task!
             self.log_task(task_id, self.model)  # before training
             self.one_task_training(task_id, data_loader)
             self.callback_task(task_id, task_set)

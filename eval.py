@@ -229,6 +229,8 @@ class Continual_Evaluation(abc.ABC):
     def log_latent(self, ind_task):
         self.model.eval()
 
+        nb_latent_vector = 200
+
         latent_vectors = np.zeros([0, 50])
         y_vectors = np.zeros([0])
         t_vectors = np.zeros([0])
@@ -244,11 +246,11 @@ class Continual_Evaluation(abc.ABC):
             y_vectors = np.concatenate([y_vectors, np.array(y_)], axis=0)
             t_vectors = np.concatenate([t_vectors, np.array(t_)], axis=0)
 
-            if len(y_vectors) >= 200:
+            if len(y_vectors) >= nb_latent_vector:
                 break
-        latent_vectors = latent_vectors[:200]
-        y_vectors = y_vectors[:200]
-        t_vectors = t_vectors[:200]
+        latent_vectors = latent_vectors[:nb_latent_vector]
+        y_vectors = y_vectors[:nb_latent_vector]
+        t_vectors = t_vectors[:nb_latent_vector]
         self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
     def load_log(self, ind_task=None):
