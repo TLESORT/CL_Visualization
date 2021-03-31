@@ -11,7 +11,9 @@ import pandas as pd
 import seaborn as sn
 from numpy import linalg as LA
 
-from plot_utils import animate_heat_map, flatten_results, angle_between
+import sys
+sys.path.append("..")
+from Plot.plot_utils import animate_heat_map, flatten_results, angle_between
 
 
 def plot_Fisher(log_dir, Fig_dir, algo_name):

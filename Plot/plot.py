@@ -15,8 +15,10 @@ import matplotlib.animation as animation
 writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=1800)
 
 import matplotlib.pyplot as plt
+import sys
+sys.path.append("..")
 
-from plot_logs import plot_accuracies, \
+from Plot.plot_logs import plot_accuracies, \
     plot_angles_latent_output, \
     plot_accuracies_per_classes,\
     plot_loss,\
@@ -30,7 +32,9 @@ from plot_logs import plot_accuracies, \
     plot_orthogonal_output_layers, \
     plot_norm_bias_output_layers
 
-from comparative_plots import plot_comparative_accuracies, plot_comparative_tsne_tasks
+from Plot.comparative_plots import plot_comparative_accuracies, \
+    plot_comparative_tsne_tasks, \
+    plot_comparative_accuracies_per_classes
 
 
 class Continual_Plot(object):
@@ -51,18 +55,19 @@ class Continual_Plot(object):
 
     def plot_figures(self, method):
 
-        plot_accuracies(self.log_dir, self.Fig_dir, method)
-        plot_accuracies_per_classes(self.log_dir, self.Fig_dir, method)
-        plot_orthogonal_output_layers(self.log_dir, self.Fig_dir, method)
-        plot_tsne_tasks(self.log_dir, self.Fig_dir, method)
-        plot_tsne_classes(self.log_dir, self.Fig_dir, method)
-        plot_weights_diff(self.log_dir, self.Fig_dir, method)
-        plot_mean_weights_dist(self.log_dir, self.Fig_dir, method)
-        plot_Fisher(self.log_dir, self.Fig_dir, method)
-        plot_loss(self.log_dir, self.Fig_dir, method)
-        plot_grad(self.log_dir, self.Fig_dir, method)
-        plot_angles_latent_output(self.log_dir, self.Fig_dir, method)
-        plot_norm_bias_output_layers(self.log_dir, self.Fig_dir, method)
+        new_log_dir = self.log_dir.replace("Logs","seed-1/Logs")
+        plot_accuracies(new_log_dir, self.Fig_dir, method)
+        plot_accuracies_per_classes(new_log_dir, self.Fig_dir, method)
+        plot_orthogonal_output_layers(new_log_dir, self.Fig_dir, method)
+        plot_tsne_tasks(new_log_dir, self.Fig_dir, method)
+        plot_tsne_classes(new_log_dir, self.Fig_dir, method)
+        plot_weights_diff(new_log_dir, self.Fig_dir, method)
+        plot_mean_weights_dist(new_log_dir, self.Fig_dir, method)
+        plot_Fisher(new_log_dir, self.Fig_dir, method)
+        plot_loss(new_log_dir, self.Fig_dir, method)
+        plot_grad(new_log_dir, self.Fig_dir, method)
+        plot_angles_latent_output(new_log_dir, self.Fig_dir, method)
+        plot_norm_bias_output_layers(new_log_dir, self.Fig_dir, method)
 
 
 
@@ -72,10 +77,13 @@ class Continual_Plot(object):
         # plot_grad_gif(log_dir, Fig_dir, fast)
 
 
-    def plot_comparison(self, list_methods):
+    def plot_comparison(self, list_methods, seed_list):
 
-        #plot_comparative_accuracies(self.log_dir, self.Fig_dir, list_methods)
-        plot_comparative_tsne_tasks(self.log_dir, self.Fig_dir, list_methods)
+        plot_comparative_accuracies(self.log_dir, self.Fig_dir, list_methods, seed_list)
+        plot_comparative_accuracies_per_classes(self.log_dir, self.Fig_dir, list_methods, seed_list)
+
+        new_log_dir = self.log_dir.replace("Logs", "seed-0/Logs")
+        #plot_comparative_tsne_tasks(new_log_dir, self.Fig_dir, list_methods)
 
         #todo
         print("in progress")
@@ -87,22 +95,29 @@ if __name__ == "__main__":
                         help='continual scenario')
     parser.add_argument('--root_dir', default="./Archives", type=str,
                         help='data directory name')
+    parser.add_argument('--test_label', action='store_true', default=False,
+                        help='define if we use task label at test')
     parser.add_argument('--dataset', default="MNIST", type=str, choices=["MNIST","mnist_fellowship"],
                         help='dataset name')
 
     args = parser.parse_args()
-
+    args.root_dir = os.path.join(args.root_dir, args.dataset)
+    if args.test_label:
+        args.root_dir = os.path.join(args.root_dir, "MultiH")
+    else:
+        args.root_dir = os.path.join(args.root_dir, "SingleH")
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
-    seed_list = [1664]
-    args.root_dir = os.path.join(args.root_dir, args.dataset, f"seed-{seed_list[0]}") # TEMPORARY
+    method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac","ogd"]
+    #method_list = ["ewc_kfac"]
+    seed_list = [0,2,3,4,5,6,7]
     #method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["rehearsal"]
 
 
-    # for method in method_list:
-    #     plot_object.plot_figures(method)
 
 
     plot_object = Continual_Plot(args)
-    plot_object.plot_comparison(method_list)
+    # for method in method_list:
+    #     plot_object.plot_figures(method)
+    plot_object.plot_comparison(method_list, seed_list)
