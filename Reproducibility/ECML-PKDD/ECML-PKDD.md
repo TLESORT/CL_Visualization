@@ -3,15 +3,25 @@
 # Regulatization Shortcomings for Continual Learning
 
 To reproduce the experiments of the paper:
+you need pytorch and torchvision.
 
-You can copy past the experiments.sh script and run it in the main folder of this repository.
-with:
+you need to install an anaconda environment:
+
+``
+conda env create -f ECML_PKDD.yml
+``
+
+Then, you can run the experiments in a terminal with: (it might be several hours long maybe 24h)
 
 ``
 chmod +x experiment.sh
 ./experiment.sh
 ``
 
-To plot the Figures:
+Once the experiments are done you can plot figures with: (tested with python 3.8)
 
-you can run the following python script (tested with python 3.8)
+``
+python Plot_Figures_ECML_PKDD.py
+``
+
+The figures will be in "SingleH" and "MultiH" folders.
