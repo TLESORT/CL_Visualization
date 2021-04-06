@@ -16,14 +16,13 @@ from Methods.trainer import Trainer
 
 
 class EWC(Trainer):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, representation, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
+    def __init__(self, config):
+        super().__init__(config)
         self.layer_collection = LayerCollection.from_model(self.model)
-        self.representation = representation
+        self.representation = config.representation
 
-        self.importance = args.importance
+        self.importance = config.importance
         self.list_Fishers = {}
-        self.representation = representation
 
     def compute_fisher(self, ind_task, fisher_set, model):
         fisher_loader = DataLoader(fisher_set, batch_size=264, shuffle=True, num_workers=6)
@@ -113,8 +112,8 @@ class EWC(Trainer):
         # super().post_training_log(ind_task)
 
 class EWC_id(EWC):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, representation, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, representation, verbose, dev)
+    def __init__(self, config):
+        super().__init__(config)
 
     def compute_fisher(self, ind_task, fisher_set, model):
         fim, v0 = super().compute_fisher(ind_task, fisher_set, model)
@@ -142,19 +141,19 @@ class EWC_id(EWC):
         return loss
 
 class EWC_Diag(EWC):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
+    def __init__(self, config):
+        super().__init__(config)
 
 class EWC_Diag_id(EWC_id):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, PMatDiag, verbose, dev)
+    def __init__(self, config):
+        super().__init__(config)
 
 
 class EWC_KFAC(EWC):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
+    def __init__(self, config):
+        super().__init__(config)
 
 class EWC_KFAC_id(EWC_id):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, PMatKFAC, verbose, dev)
+    def __init__(self, config):
+        super().__init__(config)
 

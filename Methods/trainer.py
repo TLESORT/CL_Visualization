@@ -18,22 +18,25 @@ from eval import Continual_Evaluation
 
 
 class Trainer(Continual_Evaluation):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
+    def __init__(self, args):
 
         super().__init__(args)
 
         self.lr = args.lr
         self.seed = args.seed
-        self.root_dir = root_dir
-        self.verbose = verbose
+        self.root_dir = args.root_dir
+        self.verbose = args.verbose
+        self.dev = args.dev
         self.batch_size = args.batch_size
         self.test_label = args.test_label
         self.masked_out = args.masked_out
+        self.num_tasks = args.num_tasks
+        self.scenario_name = args.scenario_name
 
         self.data_dir = args.data_dir
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
-        self.log_dir = os.path.join(self.root_dir, "Logs", scenario_name)
+        self.log_dir = os.path.join(self.root_dir, "Logs", self.scenario_name)
         if not os.path.exists(self.log_dir):
             os.makedirs(self.log_dir)
         self.sample_dir = os.path.join(self.root_dir, "Samples")
@@ -41,8 +44,6 @@ class Trainer(Continual_Evaluation):
             os.makedirs(self.sample_dir)
 
         self.algo_name = "baseline"
-        self.scenario_name = scenario_name
-        self.dev = dev
         self.fast = args.fast
         self.pretrained = args.pretrained
         self.cosLayer = args.cosLayer
@@ -53,16 +54,15 @@ class Trainer(Continual_Evaluation):
 
         scenario = None
         if self.scenario_name == "Rotations":
-            self.scenario_tr = Rotations(dataset_train, nb_tasks=num_tasks)
+            self.scenario_tr = Rotations(dataset_train, nb_tasks=self.num_tasks)
             # NO SATISFYING SOLUTION YET HERE
         elif self.scenario_name == "Disjoint":
-            self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=num_tasks)
-            self.scenario_te = ClassIncremental(dataset_test, nb_tasks=num_tasks)
+            self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=self.num_tasks)
+            self.scenario_te = ClassIncremental(dataset_test, nb_tasks=self.num_tasks)
         elif self.scenario_name == "Domain":
-            self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=num_tasks)
-            self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=num_tasks)
+            self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=self.num_tasks)
+            self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=self.num_tasks)
 
-        self.num_tasks = num_tasks
         self.num_classes = self.scenario_tr.nb_classes
         self.classes_mask = torch.eye(self.num_classes).cuda()
 

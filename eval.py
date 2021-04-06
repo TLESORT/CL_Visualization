@@ -2,10 +2,6 @@ import pickle
 import os
 import torch
 import numpy as np
-from torch.utils import data
-from nngeometry.layercollection import LayerCollection
-from nngeometry.metrics import FIM
-from nngeometry.object import PMatDiag
 import abc
 
 from copy import deepcopy
@@ -18,8 +14,8 @@ class Continual_Evaluation(abc.ABC):
     def __init__(self, args):
 
         self.dataset = args.dataset
-        self.load_first_task=True
-        self.first_task_loaded=False
+        self.load_first_task=False
+        self.first_task_loaded=False  #flag
         self.name_algo=args.name_algo
 
         self.vector_predictions_epoch_tr = np.zeros(0)
@@ -74,11 +70,6 @@ class Continual_Evaluation(abc.ABC):
 
     def log_task(self, ind_task, model):
         torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth"))
-        if not self.fast:
-            self.log_latent(ind_task)
-
-            F_diag, v0 = self.compute_last_layer_fisher(model, self.eval_tr_loader)
-            self.list_Fisher.append(F_diag.get_diag().detach().cpu())
 
 
     def post_task_log(self, ind_task):
@@ -211,12 +202,11 @@ class Continual_Evaluation(abc.ABC):
                     # useful for first log before training
                     grad = torch.zeros(model.fc2.weight.shape)
 
+                self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
                 self.list_grad[ind_task].append(grad)
 
                 w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
                 b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
-
-                self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
                 self.list_weights[ind_task].append([w, b])
 
                 self.log_weights_dist(ind_task)
@@ -226,32 +216,7 @@ class Continual_Evaluation(abc.ABC):
             self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, labels.cpu().numpy()])
             self.vector_task_labels_epoch_te = np.concatenate([self.vector_task_labels_epoch_te, task_labels])
 
-    def log_latent(self, ind_task):
-        self.model.eval()
 
-        nb_latent_vector = 200
-
-        latent_vectors = np.zeros([0, 50])
-        y_vectors = np.zeros([0])
-        t_vectors = np.zeros([0])
-
-        for i_, (x_, y_, t_) in enumerate(self.eval_tr_loader):
-
-            # data does not fit to the model if size<=1
-            if x_.size(0) <= 1:
-                continue
-            x_ = x_.cuda()
-            latent_vector = self.model(x_, latent_vector=True).detach().cpu()
-            latent_vectors = np.concatenate([latent_vectors, latent_vector], axis=0)
-            y_vectors = np.concatenate([y_vectors, np.array(y_)], axis=0)
-            t_vectors = np.concatenate([t_vectors, np.array(t_)], axis=0)
-
-            if len(y_vectors) >= nb_latent_vector:
-                break
-        latent_vectors = latent_vectors[:nb_latent_vector]
-        y_vectors = y_vectors[:nb_latent_vector]
-        t_vectors = t_vectors[:nb_latent_vector]
-        self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
     def load_log(self, ind_task=None):
         assert ind_task==0, print("The code is not made yet for ind task <> 0")
@@ -281,10 +246,6 @@ class Continual_Evaluation(abc.ABC):
             with open(file_name, 'rb') as fp:
                 self.list_weights_dist = pickle.load(fp)
 
-
-            file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
-            with open(file_name, 'rb') as fp:
-                self.list_latent = pickle.load(fp)
 
     def post_training_log(self, ind_task=None):
 
@@ -320,21 +281,5 @@ class Continual_Evaluation(abc.ABC):
                 pickle.dump(self.list_weights_dist, f, pickle.HIGHEST_PROTOCOL)
 
 
-            file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
-            with open(file_name, 'wb') as f:
-                pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
 
-    def compute_last_layer_fisher(self, model, fisher_loader):
 
-        layer_collection_all_layers = LayerCollection.from_model(model)
-        layer_collection_last_layer = LayerCollection()
-        layer_collection_last_layer.add_layer(*list(layer_collection_all_layers.layers.items())[-1])
-
-        F_diag = FIM(layer_collection=layer_collection_last_layer,
-                     model=model,
-                     loader=fisher_loader,
-                     representation=PMatDiag,
-                     n_output=self.scenario_tr.nb_classes,
-                     variant='classif_logits',
-                     device='cuda')
-        return F_diag, None

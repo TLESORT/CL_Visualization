@@ -40,60 +40,60 @@ parser.add_argument('--dataset', default="MNIST", type=str,
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
-args = parser.parse_args()
-torch.manual_seed(args.seed)
-np.random.seed(args.seed)
+config = parser.parse_args()
+torch.manual_seed(config.seed)
+np.random.seed(config.seed)
 
-args.data_dir = os.path.join(args.root_dir, "Datasets")
-args.root_dir = os.path.join(args.root_dir, args.dataset)
-if args.test_label:
-    args.root_dir = os.path.join(args.root_dir, "MultiH")
+config.data_dir = os.path.join(config.root_dir, "Datasets")
+config.root_dir = os.path.join(config.root_dir, config.dataset)
+if config.test_label:
+    config.root_dir = os.path.join(config.root_dir, "MultiH")
 else:
-    args.root_dir = os.path.join(args.root_dir, "SingleH")
-args.root_dir = os.path.join(args.root_dir, f"seed-{args.seed}")
+    config.root_dir = os.path.join(config.root_dir, "SingleH")
+config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}")
 
-if not os.path.exists(args.root_dir):
-    os.makedirs(args.root_dir)
+if not os.path.exists(config.root_dir):
+    os.makedirs(config.root_dir)
 
 
 # save args parameters and date
-file_name = os.path.join(args.root_dir, f"args_{args.name_algo}.txt")
+file_name = os.path.join(config.root_dir, f"config_{config.name_algo}.txt")
 print(f"Save args in {file_name}")
 with open(file_name, 'w') as fp:
     fp.write(f'{datetime.datetime.now()} \n')
-    fp.write(str(args).replace(",",",\n"))
+    fp.write(str(config).replace(",",",\n"))
 
-if args.name_algo == "baseline":
-    Algo = Trainer(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
-elif args.name_algo == "rehearsal":
+if config.name_algo == "baseline":
+    Algo = Trainer(config)
+elif config.name_algo == "rehearsal":
     from Methods.rehearsal import Rehearsal
-    Algo = Rehearsal(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
-elif args.name_algo == "ewc_diag":
+    Algo = Rehearsal(config)
+elif config.name_algo == "ewc_diag":
     from Methods.Ewc import EWC_Diag
-    Algo = EWC_Diag(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
-elif args.name_algo == "ewc_diag_id":
+    Algo = EWC_Diag(config)
+elif config.name_algo == "ewc_diag_id":
     from Methods.Ewc import EWC_Diag_id
-    Algo = EWC_Diag_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
-elif args.name_algo == "ewc_kfac_id":
+    Algo = EWC_Diag_id(config)
+elif config.name_algo == "ewc_kfac_id":
     from Methods.Ewc import EWC_KFAC_id
-    Algo = EWC_KFAC_id(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
-elif args.name_algo == "ewc_kfac":
+    Algo = EWC_KFAC_id(config)
+elif config.name_algo == "ewc_kfac":
     from Methods.Ewc import EWC_KFAC
-    Algo = EWC_KFAC(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
-elif args.name_algo == "ogd":
+    Algo = EWC_KFAC(config)
+elif config.name_algo == "ogd":
     from Methods.OGD import OGD
-    Algo = OGD(args, args.root_dir, args.scenario_name, args.num_tasks, args.verbose, args.dev)
+    Algo = OGD(config)
 else:
     print("wrong name")
 
 print("*********  START TRAINING *********")
-print(args)
+print(config)
 
 # Algo.eval()
 
-if not args.no_train:
+if not config.no_train:
     Algo.continual_training()
 
-if not args.fast:
+if not config.fast:
     from Plot.plot import Continual_Plot
-    Continual_Plot(args).plot_figures(method=args.name_algo)
+    Continual_Plot(config).plot_figures(method=config.name_algo)

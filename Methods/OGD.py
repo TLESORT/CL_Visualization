@@ -59,8 +59,8 @@ class Memory(Storage):
 
 
 class OGD(Trainer):
-    def __init__(self, args, root_dir, scenario_name, num_tasks, verbose, dev):
-        super().__init__(args, root_dir, scenario_name, num_tasks, verbose, dev)
+    def __init__(self, args):
+        super().__init__(args)
         self.name_algo = "ogd"
 
         # author comment: # Leave it to 0, this is for the case when using Lenet, projecting orthogonally only against the linear layers seems to work better
