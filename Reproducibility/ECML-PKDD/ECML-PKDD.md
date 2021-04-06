@@ -5,6 +5,9 @@
 To reproduce the experiments of the paper:
 you need pytorch and torchvision.
 
+version:
+commit ee535aef6a98562fe1aca4b15bd70eec28f7094e 
+
 you need to install an anaconda environment:
 
 ``
