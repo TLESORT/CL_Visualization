@@ -8,6 +8,8 @@ from nngeometry.object import PMatDiag
 matplotlib.use('agg')
 
 import os
+import torch
+from torch.utils.data import DataLoader
 import pickle
 from itertools import cycle
 import numpy as np
@@ -21,24 +23,27 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("..")
+from utils import get_dataset, get_model
+from Methods.trainer import Trainer
 
-
-class Continual_Analysis(object):
+class Continual_Analysis(Trainer):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
 
     def __init__(self, args):
-        self.log_dir = os.path.join(args.root_dir, "Logs", args.scenario_name)
-        self.Fig_dir = os.path.join(args.root_dir, "Figures", args.scenario_name)
+        super().__init__(args)
+        self.list_Fisher = []
 
-        if not os.path.exists(self.log_dir):
-            os.makedirs(self.log_dir)
+    def analysis(self):
 
-        if not os.path.exists(self.Fig_dir):
-            os.makedirs(self.Fig_dir)
 
-        fast = True
+        for ind_task, task_set in enumerate(self.scenario_tr):
+            data_loader_tr = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
+            self.model = self.load_model(ind_task)
+            self.compute_Fishers(data_loader_tr, self.model, ind_task)
+            self.log_latent(ind_task)
 
-    def compute_last_layer_fisher(self, model, fisher_loader):
+
+    def compute_last_layer_fisher(self, loader, model):
 
         layer_collection_all_layers = LayerCollection.from_model(model)
         layer_collection_last_layer = LayerCollection()
@@ -46,20 +51,25 @@ class Continual_Analysis(object):
 
         F_diag = FIM(layer_collection=layer_collection_last_layer,
                      model=model,
-                     loader=fisher_loader,
+                     loader=loader,
                      representation=PMatDiag,
                      n_output=self.scenario_tr.nb_classes,
                      variant='classif_logits',
                      device='cuda')
         return F_diag, None
 
-    def compute_Fishers(self, method):
-        # todo
-        F_diag, v0 = self.compute_last_layer_fisher(model, self.eval_tr_loader)
+    def load_model(self, ind_task):
+
+        model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth")
+        pretrained_weights = torch.load(model_weights_path)
+        self.model.load_state_dict(pretrained_weights)
+
+    def compute_Fishers(self,loader, model, ind_task):
+        F_diag, v0 = self.compute_last_layer_fisher(loader, model)
         self.list_Fisher.append(F_diag.get_diag().detach().cpu())
 
-    def log_latent(self, ind_task):
-        self.model.eval()
+    def log_latent(self, model, ind_task):
+        model.eval()
 
         nb_latent_vector = 200
 
@@ -73,7 +83,7 @@ class Continual_Analysis(object):
             if x_.size(0) <= 1:
                 continue
             x_ = x_.cuda()
-            latent_vector = self.model(x_, latent_vector=True).detach().cpu()
+            latent_vector = model(x_, latent_vector=True).detach().cpu()
             latent_vectors = np.concatenate([latent_vectors, latent_vector], axis=0)
             y_vectors = np.concatenate([y_vectors, np.array(y_)], axis=0)
             t_vectors = np.concatenate([t_vectors, np.array(t_)], axis=0)
@@ -86,9 +96,7 @@ class Continual_Analysis(object):
         self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
     def save_latent(self, list_methods, seed_list):
-        #todo
-
-        file_name = os.path.join(self.log_dir, f"{name}_Latent.pkl")
+        file_name = os.path.join(self.log_dir, f"{self.name_algo}_Latent.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
 
