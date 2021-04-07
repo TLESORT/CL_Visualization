@@ -27,6 +27,7 @@ class Trainer(Continual_Evaluation):
         self.root_dir = args.root_dir
         self.verbose = args.verbose
         self.dev = args.dev
+        self.load_first_task = args.load_first_task
         self.batch_size = args.batch_size
         self.test_label = args.test_label
         self.masked_out = args.masked_out

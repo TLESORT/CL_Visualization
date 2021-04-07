@@ -32,6 +32,7 @@ parser.add_argument('--pretrained', default=None, type=str,
                     choices=['CIFAR10', 'CIFAR100'], help='dataset source of a pretrained model')
 parser.add_argument('--load_first_task', type=bool, default=True, help='dev flag')
 parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
+parser.add_argument('--analysis', action='store_true', default=False, help='dev flag')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
@@ -57,11 +58,12 @@ if not os.path.exists(config.root_dir):
 
 
 # save args parameters and date
-file_name = os.path.join(config.root_dir, f"config_{config.name_algo}.txt")
-print(f"Save args in {file_name}")
-with open(file_name, 'w') as fp:
-    fp.write(f'{datetime.datetime.now()} \n')
-    fp.write(str(config).replace(",",",\n"))
+if not config.no_train:
+    file_name = os.path.join(config.root_dir, f"config_{config.name_algo}.txt")
+    print(f"Save args in {file_name}")
+    with open(file_name, 'w') as fp:
+        fp.write(f'{datetime.datetime.now()} \n')
+        fp.write(str(config).replace(",",",\n"))
 
 if config.name_algo == "baseline":
     Algo = Trainer(config)
@@ -93,6 +95,11 @@ print(config)
 
 if not config.no_train:
     Algo.continual_training()
+
+if config.analysis:
+    from Plot.Analysis import Continual_Analysis
+    analysis_tool=Continual_Analysis(config)
+    analysis_tool.analysis()
 
 if not config.fast:
     from Plot.plot import Continual_Plot
