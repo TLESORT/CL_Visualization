@@ -42,6 +42,10 @@ class Continual_Evaluation(abc.ABC):
 
     def init_log(self, ind_task_log):
 
+        print("THIS IS A TEST")
+        print(ind_task_log)
+        print(self.list_loss)
+
         self.list_grad[ind_task_log] = []
         self.list_loss[ind_task_log] = []
         self.list_accuracies[ind_task_log] = []
@@ -215,7 +219,7 @@ class Continual_Evaluation(abc.ABC):
         name = f"checkpoint_{ind_task}"
         file_name = os.path.join(self.log_dir, f"{name}_loss.pkl")
         with open(file_name, 'rb') as fp:
-            self.list_los = pickle.load(fp)
+            self.list_loss = pickle.load(fp)
 
         file_name = os.path.join(self.log_dir, f"{name}_accuracies.pkl")
         with open(file_name, 'rb') as fp:
