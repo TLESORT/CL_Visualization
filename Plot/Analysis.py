@@ -64,6 +64,13 @@ class Continual_Analysis(Trainer):
     def load_model(self, ind_task):
 
         model_weights_path = os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth")
+        if ind_task==0:
+            if not os.path.isfile(model_weights_path):
+                # the model 0 might have been directly loaded from another training
+                model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth")
+            assert os.path.isfile(model_weights_path), print(f"Model is missing for tasks {ind_task}")
+
+
         pretrained_weights = torch.load(model_weights_path)
         self.model.load_state_dict(pretrained_weights)
 
