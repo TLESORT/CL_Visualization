@@ -32,15 +32,18 @@ class Continual_Analysis(Trainer):
     def __init__(self, args):
         super().__init__(args)
         self.list_Fisher = []
+        self.list_latent = []
 
     def analysis(self):
 
+        # todo use init task to get a the good loader (4 example for rehearsal)
 
         for ind_task, task_set in enumerate(self.scenario_tr):
             data_loader_tr = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
-            self.model = self.load_model(ind_task)
+            self.load_model(ind_task)
             self.compute_Fishers(data_loader_tr, self.model, ind_task)
-            self.log_latent(ind_task)
+            self.log_latent(self.model, ind_task)
+        self.save_analysis()
 
 
     def compute_last_layer_fisher(self, loader, model):
@@ -60,7 +63,7 @@ class Continual_Analysis(Trainer):
 
     def load_model(self, ind_task):
 
-        model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth")
+        model_weights_path = os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth")
         pretrained_weights = torch.load(model_weights_path)
         self.model.load_state_dict(pretrained_weights)
 
@@ -95,10 +98,15 @@ class Continual_Analysis(Trainer):
         t_vectors = t_vectors[:nb_latent_vector]
         self.list_latent.append([latent_vectors, y_vectors, t_vectors])
 
-    def save_latent(self, list_methods, seed_list):
+    def save_analysis(self):
         file_name = os.path.join(self.log_dir, f"{self.name_algo}_Latent.pkl")
         with open(file_name, 'wb') as f:
             pickle.dump(self.list_latent, f, pickle.HIGHEST_PROTOCOL)
+
+
+        file_name = os.path.join(self.log_dir, f"{self.name_algo}_Analysis_Fishers.pkl")
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.list_Fisher, f, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -123,5 +131,4 @@ if __name__ == "__main__":
     seed_list = [0]
 
     analysis = Continual_Analysis(args)
-    analysis.save_latent()
-    analysis.compute_Fishers()
+    analysis.analysis()

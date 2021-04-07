@@ -53,21 +53,23 @@ class Continual_Plot(object):
         fast = True
 
 
-    def plot_figures(self, method):
+    def plot_figures(self, method, log_dir=None):
 
-        new_log_dir = self.log_dir.replace("Logs","seed-1/Logs")
-        plot_accuracies(new_log_dir, self.Fig_dir, method)
-        plot_accuracies_per_classes(new_log_dir, self.Fig_dir, method)
-        plot_orthogonal_output_layers(new_log_dir, self.Fig_dir, method)
-        plot_tsne_tasks(new_log_dir, self.Fig_dir, method)
-        plot_tsne_classes(new_log_dir, self.Fig_dir, method)
-        plot_weights_diff(new_log_dir, self.Fig_dir, method)
-        plot_mean_weights_dist(new_log_dir, self.Fig_dir, method)
-        plot_Fisher(new_log_dir, self.Fig_dir, method)
-        plot_loss(new_log_dir, self.Fig_dir, method)
-        plot_grad(new_log_dir, self.Fig_dir, method)
-        plot_angles_latent_output(new_log_dir, self.Fig_dir, method)
-        plot_norm_bias_output_layers(new_log_dir, self.Fig_dir, method)
+        if log_dir is None:
+            log_dir=self.log_dir
+
+        plot_accuracies(log_dir, self.Fig_dir, method)
+        plot_accuracies_per_classes(log_dir, self.Fig_dir, method)
+        plot_orthogonal_output_layers(log_dir, self.Fig_dir, method)
+        plot_tsne_tasks(log_dir, self.Fig_dir, method)
+        plot_tsne_classes(log_dir, self.Fig_dir, method)
+        plot_weights_diff(log_dir, self.Fig_dir, method)
+        plot_mean_weights_dist(log_dir, self.Fig_dir, method)
+        plot_Fisher(log_dir, self.Fig_dir, method)
+        plot_loss(log_dir, self.Fig_dir, method)
+        plot_grad(log_dir, self.Fig_dir, method)
+        plot_angles_latent_output(log_dir, self.Fig_dir, method)
+        plot_norm_bias_output_layers(log_dir, self.Fig_dir, method)
 
 
 
@@ -116,8 +118,8 @@ if __name__ == "__main__":
 
 
 
-
+    single_plot_seed=1
     plot_object = Continual_Plot(args)
     # for method in method_list:
-    #     plot_object.plot_figures(method)
+    #     plot_object.plot_figures(method, log_dir=plot_object.log_dir.replace("Logs",f"seed-{single_plot_seed}/Logs"))
     plot_object.plot_comparison(method_list, seed_list)

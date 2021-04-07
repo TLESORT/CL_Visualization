@@ -24,7 +24,7 @@ def plot_Fisher(log_dir, Fig_dir, algo_name):
     with open(file_name, 'rb') as fp:
         list_weight = pickle.load(fp)
 
-    file_name = os.path.join(log_dir, "{}_Fishers.pkl".format(algo_name))
+    file_name = os.path.join(log_dir, "{}_Analysis_Fishers.pkl".format(algo_name))
     list_Fisher = None
     with open(file_name, 'rb') as fp:
         list_Fisher = pickle.load(fp)
