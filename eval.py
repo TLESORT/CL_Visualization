@@ -190,19 +190,26 @@ class Continual_Evaluation(abc.ABC):
             self.vector_task_labels_epoch_tr = np.concatenate([self.vector_task_labels_epoch_tr, task_labels])
 
             if not self.fast:
-                if model.head.layer.weight.grad is not None:
-                    grad = model.head.layer.weight.grad.clone().detach().cpu()
-                else:
-                    # useful for first log before training
-                    grad = torch.zeros(model.head.layer.weight.shape)
+
 
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
-                self.list_grad[ind_task].append(grad)
 
-                w = np.array(model.head.layer.weight.data.detach().cpu().clone(), dtype=np.float16)
-                b = np.array(model.head.layer.bias.data.detach().cpu().clone(), dtype=np.float16)
-                self.list_weights[ind_task].append([w, b])
+                if self.name_algo is not "ogd":
+                    if model.head.layer.weight.grad is not None:
+                        grad = model.head.layer.weight.grad.clone().detach().cpu()
+                    else:
+                        # useful for first log before training
+                        grad = torch.zeros(model.head.layer.weight.shape)
 
+                    self.list_grad[ind_task].append(grad)
+
+                    w = np.array(model.head.layer.weight.data.detach().cpu().clone(), dtype=np.float16)
+                    b = np.array(model.head.layer.bias.data.detach().cpu().clone(), dtype=np.float16)
+                    self.list_weights[ind_task].append([w, b])
+                else:
+                    # todo
+                    # the weights of the output layer are split, it's complicated
+                    pass
                 self.log_weights_dist(ind_task)
         else:
             ## / ! \ we do not log loss for test, maybe one day....
