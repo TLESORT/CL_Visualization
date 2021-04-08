@@ -104,6 +104,6 @@ if config.analysis:
     analysis_tool=Continual_Analysis(config)
     analysis_tool.analysis()
 
-if not config.fast:
+if not (config.fast or config.dev):
     from Plot.plot import Continual_Plot
     Continual_Plot(config).plot_figures(method=config.name_algo)

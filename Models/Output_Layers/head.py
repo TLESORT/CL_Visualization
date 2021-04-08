@@ -39,6 +39,10 @@ class NNHead(nn.Module):
                     dim = len(classes)
                     if self.method=="ogd":
                         self.list_heads.append(layer_type(50, dim).cuda())
+                    else:
+                        # Normal Output Layer
+                        self.layer = layer_type(50, self.num_classes).cuda()
+
         else:
             # Normal Output Layer
             self.layer = layer_type(50, self.num_classes).cuda()

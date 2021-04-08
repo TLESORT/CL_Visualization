@@ -5,7 +5,7 @@ from Models.Output_Layers.head import NNHead
 
 
 class Model(nn.Module):
-    def __init__(self, num_classes=10, OutLayer="Linear", classes_per_head=None, method="baseline"):
+    def __init__(self, num_classes=10, OutLayer="Linear", classes_per_head=None, method="baseline", pretrained_on=None):
         super(Model, self).__init__()
         self.num_classes = num_classes
 

@@ -166,8 +166,8 @@ class Continual_Evaluation(abc.ABC):
 
             # the output is a vector of size equal to the total number of classes
             # all value are zeros exept those corresponding to the correct head
-            ind_mask = self.model.classes_heads[label]
-            head_mask = self.model.heads_mask[ind_mask.long()]
+            ind_mask = self.model.head.classes_heads[label]
+            head_mask = self.model.head.heads_mask[ind_mask.long()]
             inds_mask = torch.nonzero(head_mask)
             local_pred = x[inds_mask].argmax().item()
             pred = inds_mask[local_pred].item()
