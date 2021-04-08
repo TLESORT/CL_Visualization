@@ -5,7 +5,7 @@ from Models.Output_Layers.head import NNHead
 
 
 class Model(nn.Module):
-    def __init__(self, num_classes=10, OutLayer="Linear"):
+    def __init__(self, num_classes=10, OutLayer="Linear", classes_per_head=None, method="baseline"):
         super(Model, self).__init__()
         self.num_classes = num_classes
 
@@ -22,9 +22,9 @@ class Model(nn.Module):
                                     )  # for ogd
         self.head = NNHead(input_size=50,
                            num_classes=self.num_classes,
-                           classes_per_tasks=None,
+                           classes_per_tasks=classes_per_head,
                            LayerType=OutLayer,
-                           method='baseline')
+                           method=method)
 
 
     def feature_extractor(self, x):
@@ -34,13 +34,15 @@ class Model(nn.Module):
         return self.linear(x)
 
     def forward_task(self, x, ind_task):
-        #todo
-        pass
+        x = x.view(-1, 1, 28, 28)
+        x = self.feature_extractor(x)
+        x = self.head.forward_task(x, ind_task)
+        return x
 
     def forward(self, x, latent_vector=False):
         x = x.view(-1, 1, 28, 28)
         x = self.feature_extractor(x)
         if not latent_vector:
-            x = self.last(x)
+            x = self.head(x)
 
         return x
