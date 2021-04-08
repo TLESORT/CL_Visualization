@@ -1,26 +1,36 @@
 
 import torch
-from torchvision.datasets import SVHN
-
-from continuum.datasets import PyTorchDataset
-from continuum.datasets import MNIST
-from continuum.datasets import CIFAR10
-from continuum.datasets import MNISTFellowship
-
 
 from Models.model import Model
-from Models.multihead_model import MultiHead_Model
 from Models.resnet import cifar_resnet20
-from Models.layer import CosineLayer
+
+
+def get_scenario(dataset, scenario_name, nb_tasks):
+    if scenario_name == "Rotations":
+        from continuum import Rotations
+        scenario = Rotations(dataset, nb_tasks=nb_tasks)
+    elif scenario_name == "Disjoint":
+        from continuum import ClassIncremental
+        scenario = ClassIncremental(dataset, nb_tasks=nb_tasks)
+    elif scenario_name == "Domain":
+        from continuum import InstanceIncremental
+        scenario = InstanceIncremental(dataset, nb_tasks=nb_tasks)
+
+    return scenario
 
 def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     if name_dataset == "MNIST":
+        from continuum.datasets import MNIST
         dataset = MNIST(path_dir, download=True, train=train)
     elif name_dataset == "CIFAR10":
+        from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
     elif name_dataset == "SVHN":
+        from torchvision.datasets import SVHN
+        from continuum.datasets import PyTorchDataset
         dataset = PyTorchDataset("path_dir", dataset_type=SVHN, train=True, download=True)
     elif name_dataset == "mnist_fellowship" and name_scenario=="Disjoint":
+        from continuum.datasets import MNISTFellowship
         dataset = MNISTFellowship(path_dir, download=True, train=train)
     elif name_dataset == "mnist_fellowship" and name_scenario=="Domain":
         dataset = MNISTFellowship(path_dir, download=True, train=train, update_labels=False)
@@ -30,7 +40,8 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 
 
-def get_model(name_dataset, scenario, pretrained, test_label, cosLayer, method):
+def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method):
+
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         #assert name_dataset == "Disjoint"
@@ -40,16 +51,16 @@ def get_model(name_dataset, scenario, pretrained, test_label, cosLayer, method):
             classes = task_set.get_classes()
             list_classes_per_tasks.append(classes)
 
-        model = MultiHead_Model(num_classes=scenario.nb_classes,
-                                classes_per_tasks=list_classes_per_tasks,
-                                cosLayer=cosLayer,
-                                method=method).cuda()
+        model = Model(num_classes=scenario.nb_classes,
+                    classes_per_head=list_classes_per_tasks,
+                    OutLayer=OutLayer,
+                    method=method).cuda()
     else:
 
         if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":
 
-            if pretrained is not None:
-                model = cifar_resnet20(pretrained=pretrained)
+            if pretrained_on is not None:
+                model = cifar_resnet20(pretrained=pretrained_on)
                 model.num_classes = 10 # manual correction
                 for param in model.parameters():
                     param.requires_grad = False
@@ -59,12 +70,12 @@ def get_model(name_dataset, scenario, pretrained, test_label, cosLayer, method):
 
             latent_dim = model.fc.in_features
 
-            if cosLayer:
+            if OutLayer=="CosLayer":
                 # We replace the output layer by a cosine layer
                 model.fc = CosineLayer(latent_dim, 10)
             else:
                 model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
 
         else:
-            model = Model(num_classes=scenario.nb_classes, cosLayer=cosLayer)
+            model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
     return model
