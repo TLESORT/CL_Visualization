@@ -238,7 +238,7 @@ class OGD(Trainer):
 
         if self.test_label:
             if last:
-                return self.model.list_heads[ind_task].parameters()
+                return self.model.head.list_heads[ind_task].parameters()
             else:
 
                 if self.all_features:

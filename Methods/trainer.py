@@ -9,9 +9,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 import os
 
-from utils import get_dataset, get_model
-from continuum import ClassIncremental, InstanceIncremental
-from continuum import Rotations
+from utils import get_dataset, get_model, get_scenario
+
 import numpy as np
 
 from eval import Continual_Evaluation
@@ -46,28 +45,20 @@ class Trainer(Continual_Evaluation):
 
         self.algo_name = "baseline"
         self.fast = args.fast
-        self.pretrained = args.pretrained
-        self.cosLayer = args.cosLayer
+        self.pretrained_on = args.pretrained_on
+        self.OutLayer = args.OutLayer
         self.nb_epochs = args.nb_epochs
 
         dataset_train = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=False)
 
-        scenario = None
-        if self.scenario_name == "Rotations":
-            self.scenario_tr = Rotations(dataset_train, nb_tasks=self.num_tasks)
-            # NO SATISFYING SOLUTION YET HERE
-        elif self.scenario_name == "Disjoint":
-            self.scenario_tr = ClassIncremental(dataset_train, nb_tasks=self.num_tasks)
-            self.scenario_te = ClassIncremental(dataset_test, nb_tasks=self.num_tasks)
-        elif self.scenario_name == "Domain":
-            self.scenario_tr = InstanceIncremental(dataset_train, nb_tasks=self.num_tasks)
-            self.scenario_te = InstanceIncremental(dataset_test, nb_tasks=self.num_tasks)
+        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks)
+        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks)
 
         self.num_classes = self.scenario_tr.nb_classes
         self.classes_mask = torch.eye(self.num_classes).cuda()
 
-        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained, self.test_label, self.cosLayer, self.name_algo)
+        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained_on, self.test_label, self.OutLayer, self.name_algo)
         self.model.cuda()
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
 

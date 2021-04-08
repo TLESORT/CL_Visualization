@@ -42,10 +42,6 @@ class Continual_Evaluation(abc.ABC):
 
     def init_log(self, ind_task_log):
 
-        print("THIS IS A TEST")
-        print(ind_task_log)
-        print(self.list_loss)
-
         self.list_grad[ind_task_log] = []
         self.list_loss[ind_task_log] = []
         self.list_accuracies[ind_task_log] = []
@@ -194,17 +190,17 @@ class Continual_Evaluation(abc.ABC):
             self.vector_task_labels_epoch_tr = np.concatenate([self.vector_task_labels_epoch_tr, task_labels])
 
             if not self.fast:
-                if model.fc2.weight.grad is not None:
-                    grad = model.fc2.weight.grad.clone().detach().cpu()
+                if model.head.layer.weight.grad is not None:
+                    grad = model.head.layer.weight.grad.clone().detach().cpu()
                 else:
                     # useful for first log before training
-                    grad = torch.zeros(model.fc2.weight.shape)
+                    grad = torch.zeros(model.head.layer.weight.shape)
 
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
                 self.list_grad[ind_task].append(grad)
 
-                w = np.array(model.fc2.weight.data.detach().cpu().clone(), dtype=np.float16)
-                b = np.array(model.fc2.bias.data.detach().cpu().clone(), dtype=np.float16)
+                w = np.array(model.head.layer.weight.data.detach().cpu().clone(), dtype=np.float16)
+                b = np.array(model.head.layer.bias.data.detach().cpu().clone(), dtype=np.float16)
                 self.list_weights[ind_task].append([w, b])
 
                 self.log_weights_dist(ind_task)
