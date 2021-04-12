@@ -17,6 +17,7 @@ writer = animation.FFMpegFileWriter(fps=15, metadata=dict(artist='Me'), bitrate=
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("..")
+print(sys.path)
 
 from Plot.plot_logs import plot_accuracies, \
     plot_angles_latent_output, \
@@ -34,7 +35,8 @@ from Plot.plot_logs import plot_accuracies, \
 
 from Plot.comparative_plots import plot_comparative_accuracies, \
     plot_comparative_tsne_tasks, \
-    plot_comparative_accuracies_per_classes
+    plot_comparative_accuracies_per_classes, \
+    plot_comparative_loss
 
 
 class Continual_Plot(object):
@@ -58,16 +60,19 @@ class Continual_Plot(object):
         if log_dir is None:
             log_dir=self.log_dir
 
+        # fast
         plot_accuracies(log_dir, self.Fig_dir, method)
         plot_accuracies_per_classes(log_dir, self.Fig_dir, method)
+
+        # not fast
         plot_orthogonal_output_layers(log_dir, self.Fig_dir, method)
         plot_tsne_tasks(log_dir, self.Fig_dir, method)
         plot_tsne_classes(log_dir, self.Fig_dir, method)
-        plot_weights_diff(log_dir, self.Fig_dir, method)
         plot_mean_weights_dist(log_dir, self.Fig_dir, method)
         plot_Fisher(log_dir, self.Fig_dir, method)
         plot_loss(log_dir, self.Fig_dir, method)
         plot_grad(log_dir, self.Fig_dir, method)
+        plot_weights_diff(log_dir, self.Fig_dir, method)
         plot_angles_latent_output(log_dir, self.Fig_dir, method)
         plot_norm_bias_output_layers(log_dir, self.Fig_dir, method)
 
@@ -83,11 +88,11 @@ class Continual_Plot(object):
 
         plot_comparative_accuracies(self.log_dir, self.Fig_dir, list_methods, seed_list)
         plot_comparative_accuracies_per_classes(self.log_dir, self.Fig_dir, list_methods, seed_list)
+        plot_comparative_loss(self.log_dir, self.Fig_dir, list_methods, seed_list)
 
         new_log_dir = self.log_dir.replace("Logs", "seed-0/Logs")
-        #plot_comparative_tsne_tasks(new_log_dir, self.Fig_dir, list_methods)
+        plot_comparative_tsne_tasks(new_log_dir, self.Fig_dir, list_methods)
 
-        #todo
         print("in progress")
 
 
@@ -111,14 +116,16 @@ if __name__ == "__main__":
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac","ogd"]
+    method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["ewc_kfac"]
     seed_list = [0,2,3,4,5,6,7]
+    seed_list = [0,1]
     #method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["rehearsal"]
 
 
 
-    single_plot_seed=1
+    single_plot_seed=0
     plot_object = Continual_Plot(args)
     # for method in method_list:
     #     plot_object.plot_figures(method, log_dir=plot_object.log_dir.replace("Logs",f"seed-{single_plot_seed}/Logs"))

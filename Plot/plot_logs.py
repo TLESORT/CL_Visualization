@@ -11,8 +11,6 @@ import pandas as pd
 import seaborn as sn
 from numpy import linalg as LA
 
-import sys
-sys.path.append("..")
 from Plot.plot_utils import animate_heat_map, flatten_results, angle_between
 
 
@@ -259,7 +257,7 @@ def plot_weights_diff(log_dir, Fig_dir, algo_name):
     print(f"Weight diff {algo_name}")
 
     file_name = os.path.join(log_dir, "{}_weights.pkl".format(algo_name))
-    list_loss = None
+    list_weight = None
     with open(file_name, 'rb') as fp:
         list_weight = pickle.load(fp)
 
