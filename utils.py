@@ -4,24 +4,30 @@ import torch
 from Models.model import Model
 from Models.resnet import cifar_resnet20
 
+import torchvision.transforms as trsf
 
-def get_scenario(dataset, scenario_name, nb_tasks):
+
+def get_scenario(dataset, scenario_name, nb_tasks, transform=None):
     if scenario_name == "Rotations":
         from continuum import Rotations
-        scenario = Rotations(dataset, nb_tasks=nb_tasks)
+        scenario = Rotations(dataset, nb_tasks=nb_tasks,  transformations=transform)
     elif scenario_name == "Disjoint":
         from continuum import ClassIncremental
-        scenario = ClassIncremental(dataset, nb_tasks=nb_tasks)
+        scenario = ClassIncremental(dataset, nb_tasks=nb_tasks,  transformations=transform)
     elif scenario_name == "Domain":
         from continuum import InstanceIncremental
-        scenario = InstanceIncremental(dataset, nb_tasks=nb_tasks)
+        scenario = InstanceIncremental(dataset, nb_tasks=nb_tasks,  transformations=transform)
 
     return scenario
 
 def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
+
     if name_dataset == "MNIST":
         from continuum.datasets import MNIST
         dataset = MNIST(path_dir, download=True, train=train)
+    if name_dataset == "Core50":
+        from continuum.datasets import Core50
+        dataset = Core50(path_dir, download=False, train=train)
     elif name_dataset == "CIFAR10":
         from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
@@ -37,6 +43,14 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     else:
         print("Dataset unKnown")
     return dataset
+
+def get_transform(name_dataset, train="True"):
+
+    if name_dataset == "Core50":
+        transform=trsf.Resize(size=227)
+    else:
+        transform=None
+    return transform
 
 
 
@@ -82,7 +96,10 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                 model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
             else:
                 model.fc = torch.nn.Linear(latent_dim, 10, bias=True)
-
+        elif name_dataset == "Core50":
+            from Models.imagenet import ImageNetModel
+            model = ImageNetModel(num_classes=10, pretrained=pretrained_on == "ImageNet", name_model="resnet")
         else:
             model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
+
     return model.cuda()

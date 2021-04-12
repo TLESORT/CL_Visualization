@@ -9,7 +9,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import os
 
-from utils import get_dataset, get_model, get_scenario
+from utils import get_dataset, get_model, get_scenario, get_transform
 
 import numpy as np
 
@@ -49,8 +49,12 @@ class Trainer(Continual_Evaluation):
         self.OutLayer = args.OutLayer
         self.nb_epochs = args.nb_epochs
 
+
         dataset_train = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=False)
+
+        self.transform_train = get_transform("Core50", train=True)
+        self.transform_test = get_transform("Core50", train=True)
 
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks)
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks)
@@ -75,7 +79,10 @@ class Trainer(Continual_Evaluation):
         torch.manual_seed(self.seed)
         np.random.seed(self.seed)
 
-        data_loader_tr = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
+        data_loader_tr = DataLoader(task_set,
+                                    batch_size=self.batch_size,
+                                    shuffle=True,
+                                    num_workers=6)
         if ind_task == 0:
             # log before training
             self.init_log(ind_task_log=ind_task)

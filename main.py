@@ -31,7 +31,7 @@ parser.add_argument('--OutLayer', default="Linear", type=str,
                     choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default="None", type=str,
-                    choices=[None, "CIFAR10", "CIFAR100"],
+                    choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
                     help='dataset source of a pretrained model')
 parser.add_argument('--load_first_task', action='store_true', default=False, help='dev flag')
 parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
@@ -40,7 +40,7 @@ parser.add_argument('--fast', action='store_true', default=False, help='if fast 
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST','mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN'], help='dataset name')
+                    choices=['MNIST','mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50'], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
@@ -48,7 +48,7 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
-config.data_dir = os.path.join(config.root_dir, "Datasets")
+#config.data_dir = os.path.join(config.root_dir, "Datasets")
 config.root_dir = os.path.join(config.root_dir, config.dataset)
 if config.test_label:
     config.root_dir = os.path.join(config.root_dir, "MultiH")
