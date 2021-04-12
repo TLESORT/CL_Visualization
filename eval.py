@@ -195,16 +195,16 @@ class Continual_Evaluation(abc.ABC):
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
 
                 if self.name_algo is not "ogd":
-                    if model.head.layer.weight.grad is not None:
-                        grad = model.head.layer.weight.grad.clone().detach().cpu()
+                    if model.get_last_layer().weight.grad is not None:
+                        grad = model.get_last_layer().weight.grad.clone().detach().cpu()
                     else:
                         # useful for first log before training
-                        grad = torch.zeros(model.head.layer.weight.shape)
+                        grad = torch.zeros(model.get_last_layer().weight.shape)
 
                     self.list_grad[ind_task].append(grad)
 
-                    w = np.array(model.head.layer.weight.data.detach().cpu().clone(), dtype=np.float16)
-                    b = np.array(model.head.layer.bias.data.detach().cpu().clone(), dtype=np.float16)
+                    w = np.array(model.get_last_layer().weight.data.detach().cpu().clone(), dtype=np.float16)
+                    b = np.array(model.get_last_layer().bias.data.detach().cpu().clone(), dtype=np.float16)
                     self.list_weights[ind_task].append([w, b])
                 else:
                     # todo

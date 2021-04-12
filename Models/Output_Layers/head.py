@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 
-from Models.Output_Layers.layer import CosineLayer
+from Models.Output_Layers.layer import CosineLayer, SLDALayer
 
 class NNHead(nn.Module):
     def __init__(self, input_size, num_classes=10, classes_per_tasks=None, LayerType="Linear", method='baseline'):
@@ -13,6 +13,8 @@ class NNHead(nn.Module):
 
         if LayerType=="CosLayer":
             layer_type=CosineLayer
+        if LayerType=="SLDA":
+            layer_type=SLDALayer
         else:
             layer_type=nn.Linear
 

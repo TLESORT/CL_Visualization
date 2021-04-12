@@ -28,7 +28,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer'],
+                    choices=['Linear', 'CosLayer', 'SLDA'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default="None", type=str,
                     choices=[None, "CIFAR10", "CIFAR100"],

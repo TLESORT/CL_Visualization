@@ -71,8 +71,13 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
             latent_dim = model.fc.in_features
 
             if OutLayer=="CosLayer":
+                from Models.Output_Layers.layer import CosineLayer
                 # We replace the output layer by a cosine layer
                 model.fc = CosineLayer(latent_dim, 10)
+            elif OutLayer=="SLDA":
+                from Models.Output_Layers.layer import SLDALayer
+                # We replace the output layer by a cosine layer
+                model.fc = SLDALayer(latent_dim, 10)
             else:
                 model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
 

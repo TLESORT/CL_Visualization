@@ -111,6 +111,9 @@ class CifarResNet(nn.Module):
 
         return nn.Sequential(*layers)
 
+    def get_last_layer(self):
+        return self.fc
+
     def forward(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
@@ -123,7 +126,7 @@ class CifarResNet(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-
+        print(x.shape)
         assert x.shape[1]==self.num_classes, print(f"{x.shape[1]} vs {self.num_classes}")
 
         return x

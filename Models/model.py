@@ -26,6 +26,8 @@ class Model(nn.Module):
                            LayerType=OutLayer,
                            method=method)
 
+    def get_last_layer(self):
+        return self.head.layer
 
     def feature_extractor(self, x):
         x = self.relu(self.maxpool2(self.conv1(x)))
