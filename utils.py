@@ -78,9 +78,11 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                 from Models.Output_Layers.layer import SLDALayer
                 # We replace the output layer by a cosine layer
                 model.fc = SLDALayer(latent_dim, 10)
-            else:
+            elif OutLayer=="Linear_no_bias":
                 model.fc = torch.nn.Linear(latent_dim, 10, bias=False)
+            else:
+                model.fc = torch.nn.Linear(latent_dim, 10, bias=True)
 
         else:
             model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
-    return model
+    return model.cuda()

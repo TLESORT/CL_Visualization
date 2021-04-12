@@ -194,7 +194,7 @@ class Continual_Evaluation(abc.ABC):
 
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
 
-                if self.name_algo is not "ogd":
+                if not (self.name_algo=="ogd" or self.OutLayer=="SLDA"):
                     if model.get_last_layer().weight.grad is not None:
                         grad = model.get_last_layer().weight.grad.clone().detach().cpu()
                     else:
@@ -204,8 +204,11 @@ class Continual_Evaluation(abc.ABC):
                     self.list_grad[ind_task].append(grad)
 
                     w = np.array(model.get_last_layer().weight.data.detach().cpu().clone(), dtype=np.float16)
-                    b = np.array(model.get_last_layer().bias.data.detach().cpu().clone(), dtype=np.float16)
-                    self.list_weights[ind_task].append([w, b])
+                    if self.OutLayer=="Linear":
+                        b = np.array(model.get_last_layer().bias.data.detach().cpu().clone(), dtype=np.float16)
+                        self.list_weights[ind_task].append([w, b])
+                    else:
+                        self.list_weights[ind_task].append(w)
                 else:
                     # todo
                     # the weights of the output layer are split, it's complicated

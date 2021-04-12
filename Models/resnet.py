@@ -114,7 +114,7 @@ class CifarResNet(nn.Module):
     def get_last_layer(self):
         return self.fc
 
-    def forward(self, x):
+    def feature_extractor(self, x):
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -124,12 +124,21 @@ class CifarResNet(nn.Module):
         x = self.layer3(x)
 
         x = self.avgpool(x)
+        return x
+
+    def forward(self, x):
+        x = self.feature_extractor(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
-        print(x.shape)
         assert x.shape[1]==self.num_classes, print(f"{x.shape[1]} vs {self.num_classes}")
 
         return x
+
+    def update_head(self, batch, labels):
+        # for SLDA
+
+        batch = self.feature_extractor(batch)
+        self.get_last_layer().update(batch, labels)
 
 
 def cifar_resnet20(pretrained=None, **kwargs):

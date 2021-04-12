@@ -45,8 +45,9 @@ class StreamingLDA(nn.Module):
         :param y: a torch tensor of the input label
         :return: None
         """
-        x = x.to(self.device)
-        y = y.long().to(self.device)
+
+        x = x.view(-1).cuda()
+        y = y.long().cuda()
 
         # make sure things are the right shape
         if len(x.shape) < 2:
@@ -86,7 +87,7 @@ class StreamingLDA(nn.Module):
             # compute/load Lambda matrix
             if self.prev_num_updates != self.num_updates:
                 # there have been updates to the model, compute Lambda
-                print('\nFirst predict since model update...computing Lambda matrix...')
+                #print('\nFirst predict since model update...computing Lambda matrix...')
                 Lambda = torch.pinverse(
                     (1 - self.shrinkage_param) * self.Sigma + self.shrinkage_param * torch.eye(self.input_shape).to(
                         self.device))

@@ -43,6 +43,7 @@ class Continual_Plot(object):
     """ this class gives function to plot continual algorithms evaluation and metrics"""
 
     def __init__(self, args):
+        self.OutLayer = args.OutLayer
         self.log_dir = os.path.join(args.root_dir, "Logs", args.scenario_name)
         self.Fig_dir = os.path.join(args.root_dir, "Figures", args.scenario_name)
 
@@ -71,10 +72,12 @@ class Continual_Plot(object):
         plot_mean_weights_dist(log_dir, self.Fig_dir, method)
         plot_Fisher(log_dir, self.Fig_dir, method)
         plot_loss(log_dir, self.Fig_dir, method)
-        plot_grad(log_dir, self.Fig_dir, method)
-        plot_weights_diff(log_dir, self.Fig_dir, method)
-        plot_angles_latent_output(log_dir, self.Fig_dir, method)
-        plot_norm_bias_output_layers(log_dir, self.Fig_dir, method)
+
+        if not self.OutLayer=="SLDA":
+            plot_grad(log_dir, self.Fig_dir, method)
+            plot_weights_diff(log_dir, self.Fig_dir, method)
+            plot_angles_latent_output(log_dir, self.Fig_dir, method)
+            plot_norm_bias_output_layers(log_dir, self.Fig_dir, method)
 
 
 
@@ -106,6 +109,9 @@ if __name__ == "__main__":
                         help='define if we use task label at test')
     parser.add_argument('--dataset', default="MNIST", type=str, choices=["MNIST","mnist_fellowship"],
                         help='dataset name')
+    parser.add_argument('--OutLayer', default="Linear", type=str,
+                    choices=['Linear', 'CosLayer', 'SLDA'],
+                    help='type of ouput layer used for the NN')
 
     args = parser.parse_args()
     args.root_dir = os.path.join(args.root_dir, args.dataset)

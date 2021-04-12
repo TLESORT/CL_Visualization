@@ -140,9 +140,12 @@ class Trainer(Continual_Evaluation):
 
                 loss = self.regularize_loss(self.model, loss)
 
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
-                self.optimizer_step(ind_task)
+                if self.OutLayer != "SLDA":
+                    loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
+                    self.optimizer_step(ind_task)
+                else:
+                    self.model.update_head(x_, y_)
                 self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
 
                 if self.dev: break

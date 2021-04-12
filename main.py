@@ -28,7 +28,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', 'SLDA'],
+                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default="None", type=str,
                     choices=[None, "CIFAR10", "CIFAR100"],
@@ -104,6 +104,6 @@ if config.analysis:
     analysis_tool=Continual_Analysis(config)
     analysis_tool.analysis()
 
-if not (config.fast or config.dev):
-    from Plot.plot import Continual_Plot
-    Continual_Plot(config).plot_figures(method=config.name_algo)
+# if not (config.fast or config.dev):
+#     from Plot.plot import Continual_Plot
+#     Continual_Plot(config).plot_figures(method=config.name_algo)
