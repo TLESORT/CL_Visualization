@@ -28,7 +28,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN'],
+                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default="None", type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
@@ -48,13 +48,12 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
-#config.data_dir = os.path.join(config.root_dir, "Datasets")
 config.root_dir = os.path.join(config.root_dir, config.dataset)
 if config.test_label:
     config.root_dir = os.path.join(config.root_dir, "MultiH")
 else:
     config.root_dir = os.path.join(config.root_dir, "SingleH")
-config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}")
+config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}", config.OutLayer)
 
 if not os.path.exists(config.root_dir):
     os.makedirs(config.root_dir)
