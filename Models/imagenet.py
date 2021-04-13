@@ -18,19 +18,21 @@ class ImageNetModel(nn.Module):
             raise Exception("Ca va pas la")
 
         self.last = nn.Linear(list(model.children())[-1][-1].in_features, num_classes)
-        block = nn.Sequential(*list(model.children())[-1][:-1])
-
-        self.features = nn.Sequential(*list(model.children())[:-1], block)
+        self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
+        self.features = nn.Sequential(*list(model.children())[:-1])
 
 
     def get_last_layer(self):
         return self.last
 
     def feature_extractor(self, x):
-        return self.features(x)
+        x=self.features(x)
+        x=x.view(-1, 9216)
+        return self.classifier(x)
 
     def forward(self, x):
-        self.feature_extractor(x)
+        x=x.view(-1,3,224,224)
+        x=self.feature_extractor(x)
         return self.last(x)
 
     def update_head(self, batch, labels):
