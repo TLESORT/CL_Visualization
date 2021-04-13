@@ -83,7 +83,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
         model = Model(num_classes=scenario.nb_classes,
                       classes_per_head=list_classes_per_tasks,
                       OutLayer=OutLayer,
-                      method=method).cuda()
+                      method=method)
     else:
 
         if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":

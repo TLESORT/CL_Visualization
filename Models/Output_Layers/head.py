@@ -2,7 +2,7 @@ import torch.nn as nn
 import torch
 import numpy as np
 
-from Models.Output_Layers.layer import CosineLayer, SLDALayer
+from Models.model_utils import get_Output_layer
 
 class NNHead(nn.Module):
     def __init__(self, input_size, num_classes=10, classes_per_tasks=None, LayerType="Linear", method='baseline'):
@@ -10,13 +10,7 @@ class NNHead(nn.Module):
         self.input_size = input_size
         self.method=method
         self.num_classes = num_classes
-
-        if LayerType=="CosLayer":
-            layer_type=CosineLayer
-        if LayerType=="SLDA":
-            layer_type=SLDALayer
-        else:
-            layer_type=nn.Linear
+        self.LayerType=LayerType
 
         if not (classes_per_tasks is None):
             assert len(np.unique(classes_per_tasks))==self.num_classes
@@ -40,14 +34,14 @@ class NNHead(nn.Module):
                         self.heads_mask[i, _class]=1
                     dim = len(classes)
                     if self.method=="ogd":
-                        self.list_heads.append(layer_type(50, dim).cuda())
+                        self.list_heads.append(get_Output_layer(self.LayerType, 50, dim))
                     else:
                         # Normal Output Layer
-                        self.layer = layer_type(50, self.num_classes).cuda()
+                        self.layer = get_Output_layer(self.LayerType, 50, dim)
 
         else:
             # Normal Output Layer
-            self.layer = layer_type(50, self.num_classes).cuda()
+            self.layer = get_Output_layer(self.LayerType, 50, self.num_classes)
 
     def forward_task(self, x, task_ids):
         # we recreate a prediction tensor of size [batch_size, self.global_num_classes]

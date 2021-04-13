@@ -19,3 +19,4 @@ def get_Output_layer(LayerName, in_dim, out_dim):
 def freeze_model(model):
     for param in model.parameters():
         param.requires_grad = False
+    return model
