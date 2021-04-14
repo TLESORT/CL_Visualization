@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import os
 
 from utils import get_dataset, get_model, get_scenario, get_transform
+from Encode.encode_utils import encode_scenario
 
 import numpy as np
 
@@ -61,11 +62,25 @@ class Trainer(Continual_Evaluation):
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_train)
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_test)
 
+        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained_on, self.test_label, self.OutLayer, self.name_algo)
+        self.model.cuda()
+
+        self.finetuning = False
+        if (self.pretrained_on is not None) and self.finetuning==False:
+            # we replace the scenario data by feature vector from the pretrained model to save training time
+            self.scenario_tr = encode_scenario(self.data_dir,
+                                               self.scenario_tr,
+                                               self.model,
+                                               name=f"encode_{args.dataset}_{self.scenario_tr.nb_tasks}_train")
+            self.scenario_te = encode_scenario(self.data_dir,
+                                               self.scenario_te,
+                                               self.model,
+                                               name=f"encode_{args.dataset}_{self.scenario_te.nb_tasks}_test")
+
+
         self.num_classes = self.scenario_tr.nb_classes
         self.classes_mask = torch.eye(self.num_classes).cuda()
 
-        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained_on, self.test_label, self.OutLayer, self.name_algo)
-        self.model.cuda()
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
 
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)

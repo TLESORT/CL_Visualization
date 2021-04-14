@@ -1,5 +1,7 @@
 import os
 import pickle
+import torch
+from torch.utils.data import DataLoader
 from continuum.datasets import InMemoryDataset
 from continuum.scenarios import ContinualScenario
 
@@ -13,41 +15,50 @@ def encode(model, scenario):
     list_tasks_labels = []
     
     for taskset in scenario:
-        for i, (x,y,t) in taskset:
+        loader = DataLoader(taskset)
+        i=0
+        for x,y,t in loader:
+            i+=1
             features = model.feature_extractor(x)
             list_features.append(features)
             list_labels.append(y)
             list_tasks_labels.append(t)
 
+            if i > 10:
+                print("EARLY BREAK FOR TEST")
+                break
+
+    # convert into torch tensor
+    feature_vector  = torch.cat(list_features)
+    label_vector  = torch.cat(list_labels)
+    tasks_labels_vector  = torch.cat(list_tasks_labels)
+
     # create new scenario with encoded data
-    cl_dataset = InMemoryDataset(x, y, t)
+    cl_dataset = InMemoryDataset(feature_vector, label_vector, tasks_labels_vector)
     encoded_scenario = ContinualScenario(cl_dataset)
     return encoded_scenario
 
 def load_encoded(file_name):
+    print("Load encoded data")
     with open(file_name, 'rb') as fp:
         data = pickle.load(fp)
     encoded_scenario = ContinualScenario(data)
     return encoded_scenario
 
 def save_encoded_data(file_name, encoded_data):
+    print("Save encoded data")
     with open(file_name, 'wb') as f:
         pickle.dump(encoded_data, f, pickle.HIGHEST_PROTOCOL)
     pass
 
-def encode_scenario(data_dir, model, scenario, dataset_name, force_encode=False, save=True):
+def encode_scenario(data_dir, model, scenario, name, force_encode=False, save=True):
 
-
-    if dataset_name in ["MNIST", "Fashion-MNIST", "KMNIST", "MNIST-Fellowship"]:
-        #nothing happen here
-        encoded_scenario = scenario
+    data_path = os.path.join(data_dir, f"{name}.pkl")
+    if os.path.isfile(data_path) and not force_encode:
+        encoded_scenario = load_encoded(data_path)
     else:
-        data_name = os.path.join(data_dir, f"encode_{dataset_name}_{scenario.nb_tasks}.pkl")
-        if os.path.isfile(data_name) and not force_encode:
-            encoded_scenario = load_encoded(data_name)
-        else:
-            encoded_scenario = encode(model, scenario, dataset_name)
-            if save:
-                save_encoded_data(encoded_scenario.cl_dataset)
+        encoded_scenario = encode(model, scenario, data_path)
+        if save:
+            save_encoded_data(encoded_scenario.cl_dataset)
 
     return encoded_scenario
