@@ -44,11 +44,13 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 
 def get_transform(name_dataset, train="True"):
+    list_transform=None
     if name_dataset == "Core50":
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
         resize = trsf.Resize(size=224)
         transform = trsf.Compose([resize, trsf.ToTensor(), normalize])
+        list_transform = [transform]
     elif name_dataset == "CIFAR10":
         transform = trsf.Compose([
             trsf.ToTensor(),
@@ -57,6 +59,7 @@ def get_transform(name_dataset, train="True"):
                 std=[0.2023, 0.1994, 0.2010],  # std=[0.2009, 0.1984, 0.2023] for cifar100
             ),
         ])
+        list_transform = [transform]
     elif name_dataset == "CIFAR100":
         transform = trsf.Compose([
             trsf.ToTensor(),
@@ -65,9 +68,9 @@ def get_transform(name_dataset, train="True"):
                 std=[0.2009, 0.1984, 0.2023],
             ),
         ])
-    else:
-        transform = None
-    return [transform]
+        list_transform = [transform]
+
+    return list_transform
 
 
 def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method):

@@ -53,9 +53,11 @@ class Trainer(Continual_Evaluation):
         dataset_train = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=False)
 
-        self.transform_train = get_transform("Core50", train=True)
-        self.transform_test = get_transform("Core50", train=True)
+        self.transform_train = get_transform(self.dataset, train=True)
+        self.transform_test = get_transform(self.dataset, train=True)
 
+
+        print()
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_train)
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_test)
 
@@ -105,7 +107,6 @@ class Trainer(Continual_Evaluation):
             # data does not fit to the model if size<=1
             if x_.size(0) <= 1:
                 continue
-
             y_ = y_.cuda()
             x_ = x_.cuda()
 
@@ -114,9 +115,7 @@ class Trainer(Continual_Evaluation):
                 output = self.model.forward_task(x_, t_)
             else:
                 output = self.model(x_)
-
             loss = F.cross_entropy(output, y_)
-
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
     def one_task_training(self, ind_task, data_loader):
