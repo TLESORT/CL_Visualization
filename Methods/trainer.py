@@ -57,8 +57,6 @@ class Trainer(Continual_Evaluation):
         self.transform_train = get_transform(self.dataset, train=True)
         self.transform_test = get_transform(self.dataset, train=True)
 
-
-        print()
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_train)
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_test)
 
@@ -76,6 +74,12 @@ class Trainer(Continual_Evaluation):
                                                self.scenario_te,
                                                self.model,
                                                name=f"encode_{args.dataset}_{self.scenario_te.nb_tasks}_test")
+            self.data_encoded=True
+            self.model.set_data_encoded(True)
+            self.transform_train=None
+            self.transform_test=None
+
+            assert self.scenario_tr.nb_tasks == self.num_tasks
 
 
         self.num_classes = self.scenario_tr.nb_classes
