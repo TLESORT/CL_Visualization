@@ -34,14 +34,14 @@ class NNHead(nn.Module):
                         self.heads_mask[i, _class]=1
                     dim = len(classes)
                     if self.method=="ogd":
-                        self.list_heads.append(get_Output_layer(self.LayerType, 50, dim))
+                        self.list_heads.append(get_Output_layer(self.LayerType, self.input_size, dim))
                     else:
                         # Normal Output Layer
-                        self.layer = get_Output_layer(self.LayerType, 50, dim)
+                        self.layer = get_Output_layer(self.LayerType, self.input_size, dim)
 
         else:
             # Normal Output Layer
-            self.layer = get_Output_layer(self.LayerType, 50, self.num_classes)
+            self.layer = get_Output_layer(self.LayerType, self.input_size, self.num_classes)
 
     def forward_task(self, x, task_ids):
         # we recreate a prediction tensor of size [batch_size, self.global_num_classes]
