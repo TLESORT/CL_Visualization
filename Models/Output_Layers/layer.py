@@ -90,13 +90,9 @@ class MeanLayer(nn.Module):
 
     def forward(self, x):
 
-        #dist_out = []
-        # for i in range(self.size_out):
-        #     dist_out.append(x - self.mean[i])
-        #     print(dist_out[i].shape)
-        # x = torch.cat(dist_out, dim=1)
-        # print(x.shape)
         x = torch.cdist(x, self.mean)
+        #convert smaller is better into bigger in better
+        x = x * -1
         return x
 
     # def accumulate(self, x, y):
@@ -112,12 +108,12 @@ class MeanLayer(nn.Module):
             indexes = torch.where(self.labels==i)[0]
             self.mean[i]=(self.mean[i] * (1.0 * self.weight[i]) + self.data[indexes].sum(0))
             self.weight[i] += len(indexes)
-            self.mean[i] =self.mean[i] / (1.0 * self.weight[i])
+            if self.weight[i]!=0:
+                self.mean[i] =self.mean[i] / (1.0 * self.weight[i])
 
             # remove accounted latent vector
             #indexes2keep = torch.where(self.labels!=i)
             #self.data = self.data[indexes2keep]
-
         self.data = torch.zeros(0, self.size_in).cuda()
         self.labels = torch.zeros(0).cuda()
 
