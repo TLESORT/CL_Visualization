@@ -80,6 +80,7 @@ class CifarResNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(16)
         self.relu = nn.ReLU(inplace=True)
         self.num_classes = num_classes
+        self.data_encoded = False
 
         self.layer1 = self._make_layer(block, 16, layers[0])
         self.layer2 = self._make_layer(block, 32, layers[1], stride=2)
@@ -113,6 +114,9 @@ class CifarResNet(nn.Module):
 
     def get_last_layer(self):
         return self.fc
+
+    def set_data_encoded(self, flag):
+        self.data_encoded = flag
 
     def feature_extractor(self, x):
         x = self.conv1(x)
