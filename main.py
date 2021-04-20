@@ -1,4 +1,3 @@
-
 import os
 import torch
 import numpy as np
@@ -28,7 +27,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO'],
+                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO', 'MeanLayer'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default="None", type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
@@ -40,7 +39,7 @@ parser.add_argument('--fast', action='store_true', default=False, help='if fast 
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST','mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50'], help='dataset name')
+                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50'], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
@@ -58,34 +57,39 @@ config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}", config.Ou
 if not os.path.exists(config.root_dir):
     os.makedirs(config.root_dir)
 
-
 # save args parameters and date
 if not config.no_train:
     file_name = os.path.join(config.root_dir, f"config_{config.name_algo}.txt")
     print(f"Save args in {file_name}")
     with open(file_name, 'w') as fp:
         fp.write(f'{datetime.datetime.now()} \n')
-        fp.write(str(config).replace(",",",\n"))
+        fp.write(str(config).replace(",", ",\n"))
 
 if config.name_algo == "baseline":
     Algo = Trainer(config)
 elif config.name_algo == "rehearsal":
     from Methods.rehearsal import Rehearsal
+
     Algo = Rehearsal(config)
 elif config.name_algo == "ewc_diag":
     from Methods.Ewc import EWC_Diag
+
     Algo = EWC_Diag(config)
 elif config.name_algo == "ewc_diag_id":
     from Methods.Ewc import EWC_Diag_id
+
     Algo = EWC_Diag_id(config)
 elif config.name_algo == "ewc_kfac_id":
     from Methods.Ewc import EWC_KFAC_id
+
     Algo = EWC_KFAC_id(config)
 elif config.name_algo == "ewc_kfac":
     from Methods.Ewc import EWC_KFAC
+
     Algo = EWC_KFAC(config)
 elif config.name_algo == "ogd":
     from Methods.OGD import OGD
+
     Algo = OGD(config)
 else:
     print("wrong name")
@@ -100,7 +104,8 @@ if not config.no_train:
 
 if config.analysis:
     from Plot.Analysis import Continual_Analysis
-    analysis_tool=Continual_Analysis(config)
+
+    analysis_tool = Continual_Analysis(config)
     analysis_tool.analysis()
 
 # if not (config.fast or config.dev):
