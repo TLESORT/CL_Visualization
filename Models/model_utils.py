@@ -12,6 +12,15 @@ def get_Output_layer(LayerName, in_dim, out_dim):
         outlayer = SLDALayer(in_dim, out_dim)
     elif LayerName == "Linear_no_bias":
         outlayer = torch.nn.Linear(in_dim, out_dim, bias=False)
+    elif LayerName == "MIMO":
+        from Models.Output_Layers.layer import MIMO
+        outlayer = MIMO(in_dim, out_dim, num_layer=3, layer_type="Linear")
+    elif LayerName == "MeanLayer":
+        from Models.Output_Layers.layer import MeanLayer
+        outlayer = MeanLayer(in_dim, out_dim)
+    elif LayerName == "KNN":
+        from Models.Output_Layers.layer import KNN
+        outlayer = KNN(in_dim, out_dim, K=5)
     else:
         outlayer = torch.nn.Linear(in_dim, out_dim, bias=True)
     return outlayer
