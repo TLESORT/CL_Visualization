@@ -179,6 +179,10 @@ class Continual_Evaluation(abc.ABC):
 
     def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
 
+        if "MIMO_" in self.OutLayer:
+            # the prediction average output
+            output=output.mean(1)
+
         if not self.test_label:
             predictions = np.array(output.max(dim=1)[1].cpu())
         else:
@@ -194,7 +198,7 @@ class Continual_Evaluation(abc.ABC):
 
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
 
-                if not (self.name_algo=="ogd" or self.OutLayer=="SLDA"):
+                if not (self.name_algo=="ogd" or self.OutLayer=="SLDA" or  self.OutLayer=="KNN" or "MIMO" in self.OutLayer):
                     if model.get_last_layer().weight.grad is not None:
                         grad = model.get_last_layer().weight.grad.clone().detach().cpu()
                     else:

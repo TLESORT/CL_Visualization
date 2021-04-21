@@ -48,3 +48,6 @@ class Model(nn.Module):
             x = self.head(x)
 
         return x
+
+    def get_loss(self, out, labels, loss_func):
+        return self.get_last_layer().get_loss(out, labels, loss_func)

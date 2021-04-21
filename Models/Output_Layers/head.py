@@ -61,3 +61,11 @@ class NNHead(nn.Module):
             x = self.layer(x)
             assert x.shape[1]==self.num_classes
         return x
+
+
+    def get_loss(self, out, labels, loss_func):
+        if "MIMO_" in self.LayerType:
+            loss=self.layer.get_loss(out, labels, loss_func)
+        else:
+            loss = loss_func(out, labels)
+        return loss

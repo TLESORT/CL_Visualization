@@ -134,7 +134,7 @@ class Trainer(Continual_Evaluation):
                 output = self.model.forward_task(x_, t_)
             else:
                 output = self.model(x_)
-            loss = F.cross_entropy(output, y_)
+            loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
     def one_task_training(self, ind_task, data_loader):
@@ -160,13 +160,13 @@ class Trainer(Continual_Evaluation):
                     masked_output = torch.mul(output, self.classes_mask[y_])
                     loss = F.cross_entropy(masked_output, y_)
                 else:
-                    loss = F.cross_entropy(output, y_)
+                    loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
 
                 assert output.shape[0] == y_.shape[0]
 
                 loss = self.regularize_loss(self.model, loss)
 
-                if self.OutLayer != "SLDA":
+                if not self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
                     self.optimizer_step(ind_task)

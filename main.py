@@ -27,14 +27,14 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO', 'MeanLayer'],
+                    choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default="None", type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
                     help='dataset source of a pretrained model')
 parser.add_argument('--load_first_task', action='store_true', default=False, help='dev flag')
-parser.add_argument('--no_train', action='store_true', default=False, help='dev flag')
-parser.add_argument('--analysis', action='store_true', default=False, help='dev flag')
+parser.add_argument('--no_train', action='store_true', default=False, help='flag to only analyse or plot figures')
+parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
