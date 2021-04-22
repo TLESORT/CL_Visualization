@@ -47,7 +47,7 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
-config.root_dir = os.path.join(config.root_dir, config.dataset)
+config.root_dir = os.path.join(config.root_dir, config.dataset, f"{config.num_tasks}-tasks")
 if config.test_label:
     config.root_dir = os.path.join(config.root_dir, "MultiH")
 else:
