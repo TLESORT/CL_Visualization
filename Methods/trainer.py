@@ -83,7 +83,6 @@ class Trainer(Continual_Evaluation):
 
 
         self.num_classes = self.scenario_tr.nb_classes
-        self.classes_mask = torch.eye(self.num_classes).cuda()
 
         self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
 
@@ -156,11 +155,11 @@ class Trainer(Continual_Evaluation):
                 else:
                     output = self.model(x_)
 
-                if self.masked_out and ind_task > 0:
-                    masked_output = torch.mul(output, self.classes_mask[y_])
-                    loss = F.cross_entropy(masked_output, y_)
-                else:
-                    loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
+                loss = self.model.get_loss(output,
+                                           y_,
+                                           loss_func=F.cross_entropy,
+                                           masked= (self.masked_out and ind_task > 0) # we apply mask from task 1 because before there is no risk of forgetting
+                                            )
 
                 assert output.shape[0] == y_.shape[0]
 

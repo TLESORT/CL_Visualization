@@ -59,13 +59,17 @@ class NNHead(nn.Module):
             x = torch.cat(list_out, dim=1)
         else:
             x = self.layer(x)
-            assert x.shape[1]==self.num_classes
+            assert x.shape[-1]==self.num_classes
         return x
 
 
-    def get_loss(self, out, labels, loss_func):
+    def get_loss(self, out, labels, loss_func, masked=False):
+
         if "MIMO_" in self.LayerType:
-            loss=self.layer.get_loss(out, labels, loss_func)
+            loss=self.layer.get_loss(out, labels, loss_func, masked)
         else:
+            if masked:
+                classes_mask = torch.eye(self.num_classes).cuda()
+                out = torch.mul(out, classes_mask[labels])
             loss = loss_func(out, labels)
         return loss

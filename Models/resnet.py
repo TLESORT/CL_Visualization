@@ -113,7 +113,7 @@ class CifarResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def get_last_layer(self):
-        return self.fc
+        return self.head.layer
 
     def set_data_encoded(self, flag):
         self.data_encoded = flag
@@ -133,7 +133,7 @@ class CifarResNet(nn.Module):
     def forward(self, x):
         x = self.feature_extractor(x)
         x = x.view(x.size(0), -1)
-        x = self.fc(x)
+        x = self.head(x)
         assert x.shape[-1]==self.num_classes, print(f"{x.shape[-1]} vs {self.num_classes}")
 
         return x
@@ -144,8 +144,8 @@ class CifarResNet(nn.Module):
         batch = self.feature_extractor(batch)
         self.get_last_layer().update(batch, labels)
 
-    def get_loss(self, out, labels, loss_func):
-        return self.get_last_layer().get_loss(out, labels, loss_func)
+    def get_loss(self, out, labels, loss_func, masked=False):
+        return self.head.get_loss(out, labels, loss_func, masked)
 
 
 def cifar_resnet20(pretrained=None, **kwargs):

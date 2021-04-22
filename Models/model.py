@@ -45,9 +45,9 @@ class Model(nn.Module):
         x = x.view(-1, 1, 28, 28)
         x = self.feature_extractor(x)
         if not latent_vector:
-            x = self.head(x)
+            x = self.get_last_layer(x)
 
         return x
 
-    def get_loss(self, out, labels, loss_func):
-        return self.get_last_layer().get_loss(out, labels, loss_func)
+    def get_loss(self, out, labels, loss_func, masked=False):
+        return self.head.get_loss(out, labels, loss_func, masked)

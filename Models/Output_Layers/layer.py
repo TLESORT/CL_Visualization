@@ -38,6 +38,8 @@ class MIMO(nn.Module):
         self.num_layer = num_layer
         self.layer_type = layer_type.replace("MIMO_", "")
         self.size_in, self.size_out = size_in, size_out
+        self.classes_mask = torch.eye(self.size_out).cuda()
+
 
         self.layer = get_Output_layer(self.layer_type, self.size_in, self.size_out*self.num_layer).cuda()
 
@@ -46,11 +48,16 @@ class MIMO(nn.Module):
         x = x.view(-1, self.num_layer, self.size_out)
         return x
 
-    def get_loss(self, out, labels, loss_func):
+    def get_loss(self, out, labels, loss_func, masked=False):
         # out: batch, num_layer, self.size_out
         loss=0
+        # for each layer we compute the loss and we sum
         for i in range(self.num_layer):
-            loss += loss_func(out[:,i,:], labels)
+            if masked:
+                masked_out = torch.mul(out[:,i,:], self.classes_mask[labels])
+                loss += loss_func(masked_out, labels)
+            else:
+                loss += loss_func(out[:,i,:], labels)
         return loss
 
 

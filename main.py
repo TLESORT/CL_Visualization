@@ -52,7 +52,13 @@ if config.test_label:
     config.root_dir = os.path.join(config.root_dir, "MultiH")
 else:
     config.root_dir = os.path.join(config.root_dir, "SingleH")
-config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}", config.OutLayer)
+
+if config.masked_out:
+    name_out = f"{config.OutLayer}_Masked"
+else:
+    name_out = config.OutLayer
+
+config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}", name_out)
 
 if not os.path.exists(config.root_dir):
     os.makedirs(config.root_dir)
