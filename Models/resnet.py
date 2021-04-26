@@ -70,6 +70,7 @@ class BasicBlock(nn.Module):
 
         return out
 
+
 class CifarResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=10):
@@ -130,10 +131,11 @@ class CifarResNet(nn.Module):
         return x
 
     def forward(self, x):
-        x = self.feature_extractor(x)
+        if not self.data_encoded:
+            x = self.feature_extractor(x)
         x = x.view(x.size(0), -1)
         x = self.head(x)
-        assert x.shape[-1]==self.num_classes, print(f"{x.shape[-1]} vs {self.num_classes}")
+        assert x.shape[-1] == self.num_classes, print(f"{x.shape[-1]} vs {self.num_classes}")
 
         return x
 
@@ -151,8 +153,6 @@ def cifar_resnet20(pretrained=None, model_dir=None, **kwargs):
     if pretrained is None:
         model = CifarResNet(BasicBlock, [3, 3, 3], **kwargs)
     else:
-        print("HAALLLLLLLLO")
-        print(pretrained_settings[pretrained]['resnet20'])
         model = CifarResNet(BasicBlock, [3, 3, 3], num_classes=pretrained_settings[pretrained]['num_classes'])
         model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet20'], model_dir=model_dir))
     return model
