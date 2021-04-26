@@ -14,15 +14,14 @@ def encode(model, scenario, batch_size):
     list_features = []
     list_labels = []
     list_tasks_labels = []
-    
-    for taskset in scenario:
-        loader = DataLoader(taskset, shuffle=False, batch_size=batch_size)
-        for x,y,t in loader:
-            print("oui")
-            features = model.feature_extractor(x.cuda())
-            list_features.append(features.detach().cpu())
-            list_labels.append(y)
-            list_tasks_labels.append(t)
+    with torch.no_grad():
+        for taskset in scenario:
+            loader = DataLoader(taskset, shuffle=False, batch_size=batch_size)
+            for x,y,t in loader:
+                features = model.feature_extractor(x.cuda())
+                list_features.append(features.detach().cpu())
+                list_labels.append(y)
+                list_tasks_labels.append(t)
 
     # convert into torch tensor
     feature_vector  = torch.cat(list_features).numpy()
@@ -30,22 +29,21 @@ def encode(model, scenario, batch_size):
     tasks_labels_vector  = torch.cat(list_tasks_labels).numpy()
 
     # create new scenario with encoded data
-    cl_dataset = InMemoryDataset(feature_vector, label_vector, tasks_labels_vector)
+    cl_dataset = InMemoryDataset(feature_vector, label_vector, tasks_labels_vector, data_type="tensor")
     encoded_scenario = ContinualScenario(cl_dataset)
     return encoded_scenario
 
 def load_encoded(file_name):
     print("Load encoded data")
     with open(file_name, 'rb') as fp:
-        data = pickle.load(fp)
-    encoded_scenario = ContinualScenario(data)
+        cl_dataset = pickle.load(fp)
+    encoded_scenario = ContinualScenario(cl_dataset)
     return encoded_scenario
 
 def save_encoded_data(file_name, encoded_data):
     print("Save encoded data")
     with open(file_name, 'wb') as f:
         pickle.dump(encoded_data, f, pickle.HIGHEST_PROTOCOL)
-    pass
 
 def encode_scenario(data_dir, scenario, model, batch_size, name, force_encode=False, save=True):
 
