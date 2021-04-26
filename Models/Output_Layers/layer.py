@@ -1,5 +1,8 @@
 import torch
 import torch.nn as nn
+
+import numpy as np
+
 from Models.Output_Layers.StreamingSLDA import StreamingLDA
 from Models.model_utils import get_Output_layer
 
@@ -116,28 +119,42 @@ class SLDALayer(nn.Module):
 
         return x.cuda()
 
-    def update(self, batch, labels):
-        for i in range(len(labels)):
-            self.slda.fit(batch[i], labels[i])
+    def update(self, batch, labels, epoch=0):
+        if epoch==0:
+            for i in range(len(labels)):
+                self.slda.fit(batch[i], labels[i])
 
-class KNN(object):
+class KNN(nn.Module):
     """ Custom Linear layer but mimics a standard linear layer """
 
     def __init__(self, size_in, size_out, K=5):
         super().__init__()
         from sklearn.neighbors import KNeighborsClassifier
         self.neigh = KNeighborsClassifier(n_neighbors=K)
-        self.data = torch.zeros(0, size_in)
-        self.labels = torch.zeros(0)
+        self.data = np.zeros((0, size_in))
+        self.labels = np.zeros(0)
+        self.size_out=size_out
+        self.size_in=size_in
+        self.initiated = False
+        self.classes_mask = torch.eye(self.size_out).cuda()
 
     def forward(self, x):
-        x = self.neigh.predict(x)
+        if self.initiated:
+            classes = self.neigh.predict(x.cpu().numpy())
+            x = self.classes_mask[classes]
+        else:
+            x = torch.randn((x.shape[0],self.size_out)).cuda()
+        return x
 
-        return x.cuda()
+    # def accumulate(self, x, y):
+    #     self.data = torch.concatenate((self.data, x))
+    #     self.labels = torch.concatenate((self.labels, y))
 
-    def accumulate(self, x, y):
-        self.data = torch.concatenate((self.data, x))
-        self.labels = torch.concatenate((self.labels, y))
+    def update(self, x, y, epoch=0):
 
-    def update(self):
-        self.neigh.fit(self.data, self.labels)
+        if epoch==0:
+            x=x.view(-1, self.size_in)
+            self.data = np.concatenate([self.data, x.cpu().numpy()])
+            self.labels = np.concatenate([self.labels, y.cpu().numpy()])
+            self.neigh.fit(self.data, self.labels)
+            self.initiated=True
