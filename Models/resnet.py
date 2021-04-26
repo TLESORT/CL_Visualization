@@ -138,11 +138,11 @@ class CifarResNet(nn.Module):
 
         return x
 
-    def update_head(self, batch, labels):
+    def update_head(self, batch, labels, epoch=0):
         # for SLDA
 
         batch = self.feature_extractor(batch)
-        self.get_last_layer().update(batch, labels)
+        self.get_last_layer().update(batch, labels, epoch)
 
     def get_loss(self, out, labels, loss_func, masked=False):
         return self.head.get_loss(out, labels, loss_func, masked)

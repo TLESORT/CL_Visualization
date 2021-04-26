@@ -73,7 +73,7 @@ def get_transform(name_dataset, train="True"):
     return list_transform
 
 
-def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method):
+def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         # assert name_dataset == "Disjoint"
@@ -91,7 +91,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
 
         if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":
             from Models.cifar_models import CIFARModel
-            model = CIFARModel(num_classes=10, OutLayer=OutLayer, pretrained_on=pretrained_on)
+            model = CIFARModel(num_classes=10, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
 
         elif name_dataset == "Core50":
             from Models.imagenet import ImageNetModel

@@ -35,6 +35,7 @@ class Trainer(Continual_Evaluation):
         self.scenario_name = args.scenario_name
 
         self.data_dir = args.data_dir
+        self.pmodel_dir = args.pmodel_dir
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
         self.log_dir = os.path.join(self.root_dir, "Logs", self.scenario_name)
@@ -60,7 +61,13 @@ class Trainer(Continual_Evaluation):
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_train)
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_test)
 
-        self.model = get_model(self.dataset, self.scenario_tr, self.pretrained_on, self.test_label, self.OutLayer, self.name_algo)
+        self.model = get_model(self.dataset,
+                               self.scenario_tr,
+                               self.pretrained_on,
+                               self.test_label,
+                               self.OutLayer,
+                               self.name_algo,
+                               model_dir=self.pmodel_dir)
         self.model.cuda()
 
         self.finetuning = False

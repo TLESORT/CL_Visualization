@@ -17,6 +17,8 @@ parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
 parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
                     help='data directory name')
+parser.add_argument('--pmodel_dir', default="Pretrained", type=str,
+                    help='data directory name')
 parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
@@ -46,6 +48,10 @@ parser.add_argument('--seed', default="1664", type=int,
 config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
+
+config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
+if not os.path.exists(config.pmodel_dir):
+    os.makedirs(config.pmodel_dir)
 
 config.root_dir = os.path.join(config.root_dir, config.dataset, f"{config.num_tasks}-tasks")
 if config.test_label:
