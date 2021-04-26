@@ -120,9 +120,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.root_dir = os.path.join(args.root_dir, args.dataset)
     if args.test_label:
-        args.root_dir = os.path.join(args.root_dir, "MultiH")
+        args.root_dir = os.path.join(args.root_dir, "2-tasks", "MultiH")
     else:
-        args.root_dir = os.path.join(args.root_dir, "SingleH")
+        args.root_dir = os.path.join(args.root_dir, "2-tasks", "SingleH")
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac","ogd"]
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     #method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["rehearsal"]
 
-    head_list = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", 'MIMO_Linear', "MIMO_CosLayer", "MIMO_Linear_no_bias",
+    head_list = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", "KNN", 'MIMO_Linear', "MIMO_CosLayer", "MIMO_Linear_no_bias",
                  "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", 'MIMO_Linear_Masked', "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
 
 
