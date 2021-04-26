@@ -64,22 +64,24 @@ class Trainer(Continual_Evaluation):
         self.model.cuda()
 
         self.finetuning = False
-        # if (self.pretrained_on is not None) and self.finetuning==False:
-        #     # we replace the scenario data by feature vector from the pretrained model to save training time
-        #     self.scenario_tr = encode_scenario(self.data_dir,
-        #                                        self.scenario_tr,
-        #                                        self.model,
-        #                                        name=f"encode_{args.dataset}_{self.scenario_tr.nb_tasks}_train")
-        #     self.scenario_te = encode_scenario(self.data_dir,
-        #                                        self.scenario_te,
-        #                                        self.model,
-        #                                        name=f"encode_{args.dataset}_{self.scenario_te.nb_tasks}_test")
-        #     self.data_encoded=True
-        #     self.model.set_data_encoded(True)
-        #     self.transform_train=None
-        #     self.transform_test=None
-        #
-        #     assert self.scenario_tr.nb_tasks == self.num_tasks
+        if (self.pretrained_on is not None) and self.finetuning==False:
+            # we replace the scenario data by feature vector from the pretrained model to save training time
+            self.scenario_tr = encode_scenario(self.data_dir,
+                                               self.scenario_tr,
+                                               self.model,
+                                               self.batch_size,
+                                               name=f"encode_{args.dataset}_{self.scenario_tr.nb_tasks}_train")
+            self.scenario_te = encode_scenario(self.data_dir,
+                                               self.scenario_te,
+                                               self.model,
+                                               self.batch_size,
+                                               name=f"encode_{args.dataset}_{self.scenario_te.nb_tasks}_test")
+            self.data_encoded=True
+            self.model.set_data_encoded(True)
+            self.transform_train=None
+            self.transform_test=None
+
+            assert self.scenario_tr.nb_tasks == self.num_tasks
 
 
         self.num_classes = self.scenario_tr.nb_classes
@@ -170,7 +172,7 @@ class Trainer(Continual_Evaluation):
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
                     self.optimizer_step(ind_task)
                 else:
-                    self.model.update_head(x_, y_)
+                    self.model.update_head(x_, y_, epoch)
                 self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
 
                 if self.dev: break

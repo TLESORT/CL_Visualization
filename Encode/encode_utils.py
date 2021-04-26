@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from continuum.datasets import InMemoryDataset
 from continuum.scenarios import ContinualScenario
 
-def encode(model, scenario):
+def encode(model, scenario, batch_size):
 
     # we save feature in eval mode
     model.eval()
@@ -16,10 +16,9 @@ def encode(model, scenario):
     list_tasks_labels = []
     
     for taskset in scenario:
-        loader = DataLoader(taskset, shuffle=True)
-        i=0
+        loader = DataLoader(taskset, shuffle=False, batch_size=batch_size)
         for x,y,t in loader:
-            i+=1
+            print("oui")
             features = model.feature_extractor(x.cuda())
             list_features.append(features.detach().cpu())
             list_labels.append(y)
@@ -48,13 +47,13 @@ def save_encoded_data(file_name, encoded_data):
         pickle.dump(encoded_data, f, pickle.HIGHEST_PROTOCOL)
     pass
 
-def encode_scenario(data_dir, scenario, model, name, force_encode=False, save=True):
+def encode_scenario(data_dir, scenario, model, batch_size, name, force_encode=False, save=True):
 
     data_path = os.path.join(data_dir, f"{name}.pkl")
     if os.path.isfile(data_path) and not force_encode:
         encoded_scenario = load_encoded(data_path)
     else:
-        encoded_scenario = encode(model, scenario)
+        encoded_scenario = encode(model, scenario, batch_size)
         if save:
             save_encoded_data(data_path, encoded_scenario.cl_dataset)
 
