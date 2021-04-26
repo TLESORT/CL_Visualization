@@ -12,22 +12,21 @@ __all__ = ['CifarResNet', 'cifar_resnet20', 'cifar_resnet32', 'cifar_resnet44', 
 
 pretrained_settings = {
     "CIFAR10": {
-        'resnet20': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet20-30abc31d.pth',
-        'resnet32': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet32-e96f90cf.pth',
-        'resnet44': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet44-f2c66da5.pth',
-        'resnet56': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar10-resnet56-f5939a66.pth',
+        'resnet20': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar10_resnet20-4118986f.pt',
+        'resnet32': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar10_resnet32-ef93fc4d.pt',
+        'resnet44': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar10_resnet44-2a3cabcb.pt',
+        'resnet56': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar10_resnet56-187c023a.pt',
         'num_classes': 10
     },
     "CIFAR100": {
-        'resnet20': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet20-8412cc70.pth',
-        'resnet32': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet32-6568a0a0.pth',
-        'resnet44': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet44-20aaa8cf.pth',
-        'resnet56': 'https://github.com/chenyaofo/CIFAR-pretrained-models/releases/download/resnet/cifar100-resnet56-2f147f26.pth',
+        'resnet20': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar100_resnet20-23dac2f1.pt',
+        'resnet32': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar100_resnet32-84213ce6.pt',
+        'resnet44': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar100_resnet44-ffe32858.pt',
+        'resnet56': 'https://github.com/chenyaofo/pytorch-cifar-models/releases/download/resnet/cifar100_resnet56-f2eff4c8.pt',
         'num_classes': 100
     }
 
 }
-
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -148,37 +147,39 @@ class CifarResNet(nn.Module):
         return self.head.get_loss(out, labels, loss_func, masked)
 
 
-def cifar_resnet20(pretrained=None, **kwargs):
+def cifar_resnet20(pretrained=None, model_dir=None, **kwargs):
     if pretrained is None:
         model = CifarResNet(BasicBlock, [3, 3, 3], **kwargs)
     else:
+        print("HAALLLLLLLLO")
+        print(pretrained_settings[pretrained]['resnet20'])
         model = CifarResNet(BasicBlock, [3, 3, 3], num_classes=pretrained_settings[pretrained]['num_classes'])
-        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet20']))
+        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet20'], model_dir=model_dir))
     return model
 
 
-def cifar_resnet32(pretrained=None, **kwargs):
+def cifar_resnet32(pretrained=None, model_dir=None, **kwargs):
     if pretrained is None:
         model = CifarResNet(BasicBlock, [5, 5, 5], **kwargs)
     else:
         model = CifarResNet(BasicBlock, [5, 5, 5], num_classes=pretrained_settings[pretrained]['num_classes'])
-        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet32']))
+        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet32'], model_dir=model_dir))
     return model
 
 
-def cifar_resnet44(pretrained=None, **kwargs):
+def cifar_resnet44(pretrained=None, model_dir=None, **kwargs):
     if pretrained is None:
         model = CifarResNet(BasicBlock, [7, 7, 7], **kwargs)
     else:
         model = CifarResNet(BasicBlock, [7, 7, 7], num_classes=pretrained_settings[pretrained]['num_classes'])
-        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet44']))
+        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet44'], model_dir=model_dir))
     return model
 
 
-def cifar_resnet56(pretrained=None, **kwargs):
+def cifar_resnet56(pretrained=None, model_dir=None, **kwargs):
     if pretrained is None:
         model = CifarResNet(BasicBlock, [9, 9, 9], **kwargs)
     else:
         model = CifarResNet(BasicBlock, [9, 9, 9], num_classes=pretrained_settings[pretrained]['num_classes'])
-        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet56']))
+        model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet56'], model_dir=model_dir))
     return model
