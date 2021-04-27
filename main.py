@@ -32,7 +32,7 @@ parser.add_argument('--subset', type=int, default=None, help='we can replace the
 parser.add_argument('--OutLayer', default="Linear", type=str,
                     choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer'],
                     help='type of ouput layer used for the NN')
-parser.add_argument('--pretrained_on', default="None", type=str,
+parser.add_argument('--pretrained_on', default=None, type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
                     help='dataset source of a pretrained model')
 parser.add_argument('--load_first_task', action='store_true', default=False, help='dev flag')

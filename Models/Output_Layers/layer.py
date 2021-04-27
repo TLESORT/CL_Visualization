@@ -88,22 +88,23 @@ class MeanLayer(nn.Module):
     #     self.data = torch.cat([self.data, x])
     #     self.labels = torch.cat([self.labels, y])
 
-    def update(self, x, y):
-        # self.accumulate(x, y)
-        self.data = x.view(-1, 64)
-        self.labels = y
-        for i in range(self.size_out):
-            indexes = torch.where(self.labels == i)[0]
-            self.mean[i] = (self.mean[i] * (1.0 * self.weight[i]) + self.data[indexes].sum(0))
-            self.weight[i] += len(indexes)
-            if self.weight[i] != 0:
-                self.mean[i] = self.mean[i] / (1.0 * self.weight[i])
+    def update(self, x, y, epoch=0):
 
-            # remove accounted latent vector
-            # indexes2keep = torch.where(self.labels!=i)
-            # self.data = self.data[indexes2keep]
-        self.data = torch.zeros(0, self.size_in).cuda()
-        self.labels = torch.zeros(0).cuda()
+        if epoch==0:
+            self.data = x.view(-1, 64)
+            self.labels = y
+            for i in range(self.size_out):
+                indexes = torch.where(self.labels == i)[0]
+                self.mean[i] = (self.mean[i] * (1.0 * self.weight[i]) + self.data[indexes].sum(0))
+                self.weight[i] += len(indexes)
+                if self.weight[i] != 0:
+                    self.mean[i] = self.mean[i] / (1.0 * self.weight[i])
+
+                # remove accounted latent vector
+                # indexes2keep = torch.where(self.labels!=i)
+                # self.data = self.data[indexes2keep]
+            self.data = torch.zeros(0, self.size_in).cuda()
+            self.labels = torch.zeros(0).cuda()
 
 
 class SLDALayer(nn.Module):
