@@ -18,24 +18,25 @@ from eval import Continual_Evaluation
 
 
 class Trainer(Continual_Evaluation):
-    def __init__(self, args):
+    def __init__(self, config):
 
-        super().__init__(args)
+        super().__init__(config)
 
-        self.lr = args.lr
-        self.seed = args.seed
-        self.root_dir = args.root_dir
-        self.verbose = args.verbose
-        self.dev = args.dev
-        self.load_first_task = args.load_first_task
-        self.batch_size = args.batch_size
-        self.test_label = args.test_label
-        self.masked_out = args.masked_out
-        self.num_tasks = args.num_tasks
-        self.scenario_name = args.scenario_name
+        self.lr = config.lr
+        self.seed = config.seed
+        self.root_dir = config.root_dir
+        self.verbose = config.verbose
+        self.dev = config.dev
+        self.load_first_task = config.load_first_task
+        self.batch_size = config.batch_size
+        self.test_label = config.test_label
+        self.masked_out = config.masked_out
+        self.num_tasks = config.num_tasks
+        self.scenario_name = config.scenario_name
+        self.subset = config.subset
 
-        self.data_dir = args.data_dir
-        self.pmodel_dir = args.pmodel_dir
+        self.data_dir = config.data_dir
+        self.pmodel_dir = config.pmodel_dir
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
         self.log_dir = os.path.join(self.root_dir, "Logs", self.scenario_name)
@@ -46,14 +47,14 @@ class Trainer(Continual_Evaluation):
             os.makedirs(self.sample_dir)
 
         self.algo_name = "baseline"
-        self.fast = args.fast
-        self.pretrained_on = args.pretrained_on
-        self.OutLayer = args.OutLayer
-        self.nb_epochs = args.nb_epochs
+        self.fast = config.fast
+        self.pretrained_on = config.pretrained_on
+        self.OutLayer = config.OutLayer
+        self.nb_epochs = config.nb_epochs
 
 
-        dataset_train = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=True)
-        dataset_test = get_dataset(self.data_dir, args.dataset, self.scenario_name, train=False)
+        dataset_train = get_dataset(self.data_dir, config.dataset, self.scenario_name, train=True)
+        dataset_test = get_dataset(self.data_dir, config.dataset, self.scenario_name, train=False)
 
         self.transform_train = get_transform(self.dataset, train=True)
         self.transform_test = get_transform(self.dataset, train=True)
@@ -77,12 +78,12 @@ class Trainer(Continual_Evaluation):
                                                self.scenario_tr,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{args.dataset}_{self.scenario_tr.nb_tasks}_train")
+                                               name=f"encode_{config.dataset}_{self.scenario_tr.nb_tasks}_train")
             self.scenario_te = encode_scenario(self.data_dir,
                                                self.scenario_te,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{args.dataset}_{self.scenario_te.nb_tasks}_test")
+                                               name=f"encode_{config.dataset}_{self.scenario_te.nb_tasks}_test")
             self.data_encoded=True
             self.model.set_data_encoded(True)
             self.transform_train=None
@@ -93,7 +94,7 @@ class Trainer(Continual_Evaluation):
 
         self.num_classes = self.scenario_tr.nb_classes
 
-        self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=args.momentum)
+        self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=config.momentum)
 
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
 

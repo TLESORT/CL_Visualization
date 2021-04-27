@@ -28,6 +28,7 @@ parser.add_argument('--batch_size', default=264, type=int, help='batch size')
 parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
+parser.add_argument('--subset', type=int, default=None, help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--OutLayer', default="Linear", type=str,
                     choices=['Linear', 'CosLayer', 'SLDA', "Linear_no_bias", 'KNN', 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer'],
                     help='type of ouput layer used for the NN')
