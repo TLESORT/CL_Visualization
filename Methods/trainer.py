@@ -9,6 +9,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 import os
 
+from continuum.tasks import TaskSet
+
 from utils import get_dataset, get_model, get_scenario, get_transform
 from Encode.encode_utils import encode_scenario
 
@@ -85,7 +87,7 @@ class Trainer(Continual_Evaluation):
                                                self.batch_size,
                                                name=f"encode_{config.dataset}_{self.scenario_te.nb_tasks}_test")
             self.data_encoded=True
-            self.model.set_data_encoded(True)
+            self.model.set_data_encoded(flag=True)
             self.transform_train=None
             self.transform_test=None
 
@@ -108,6 +110,13 @@ class Trainer(Continual_Evaluation):
         # reset seed for consistency in results
         torch.manual_seed(self.seed)
         np.random.seed(self.seed)
+
+        if self.subset is not None:
+            # replace the full taskset by a subset of samples ramdomly selected
+            nb_tot_samples =len(task_set)
+            indexes = np.random.randint(0, nb_tot_samples, self.subset)
+            x, y, t = task_set.get_raw_samples(indexes=indexes)
+            task_set = TaskSet(x, y, t, trsf=task_set.trsf, data_type=task_set.data_type)
 
         data_loader_tr = DataLoader(task_set,
                                     batch_size=self.batch_size,
