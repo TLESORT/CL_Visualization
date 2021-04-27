@@ -29,6 +29,9 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "CIFAR10":
         from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
+    elif name_dataset == "ImageNet":
+        from continuum.datasets import CIFAR10
+        dataset = CIFAR10(path_dir, download=True, train=train)
     elif name_dataset == "SVHN":
         from torchvision.datasets import SVHN
         from continuum.datasets import PyTorchDataset
@@ -91,11 +94,11 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
 
         if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":
             from Models.cifar_models import CIFARModel
-            model = CIFARModel(num_classes=10, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
+            model = CIFARModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
 
         elif name_dataset == "Core50":
             from Models.imagenet import ImageNetModel
-            model = ImageNetModel(num_classes=10, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
+            model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
                                   name_model="alexnet")
         else:
             model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
