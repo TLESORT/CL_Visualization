@@ -1,22 +1,17 @@
 #!/bin/bash
 
+list_heads="SLDA KNN MeanLayer Linear CosLayer Linear_no_bias"
+list_heads_masked="Linear CosLayer Linear_no_bias MIMO_Linear_no_bias MIMO_Linear MIMO_CosLayer"
 list_subsets="100 200 500 1000 10000"
 seed=1
 
 for subset in $list_subsets ;do
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer Linear --seed $seed --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer Linear --seed $seed --masked --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer MIMO_Linear --seed $seed --masked --subset $subset
 
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer CosLayer --seed $seed --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer CosLayer --seed $seed --masked --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer MIMO_CosLayer --seed $seed --masked --subset $subset
+for masked_head in list_heads_masked ;do
+python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer $masked_head --seed $seed --masked --subset $subset
+done #list_heads_masked
 
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer Linear_no_bias --seed $seed --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer Linear_no_bias --seed $seed --masked --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer MIMO_Linear_no_bias --seed $seed --masked --subset $subset
-
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer SLDA --seed $seed --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer KNN --seed $seed --subset $subset
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer MeanLayer --seed $seed --subset $subset
-done #subset
+for head in list_heads ;do
+python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer $head --seed $seed --subset $subset
+done #list_heads
+done #list_subsets
