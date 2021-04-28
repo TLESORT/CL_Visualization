@@ -78,8 +78,9 @@ class Continual_Evaluation(abc.ABC):
             # we will save the state of the training to save time for other experiments
 
             torch.save(self.model.state_dict(), os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth"))
-            # log optimizer
-            torch.save(self.opt.state_dict(), os.path.join(self.log_dir, f"Opt_Task_{ind_task}.pth"))
+            # log optimizer if one
+            if self.opt is not None:
+                torch.save(self.opt.state_dict(), os.path.join(self.log_dir, f"Opt_Task_{ind_task}.pth"))
 
             # save log from first tasks
             self.post_training_log(ind_task)
