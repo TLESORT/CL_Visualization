@@ -36,7 +36,8 @@ from Plot.comparative_plots import plot_comparative_accuracies, \
     plot_comparative_tsne_tasks, \
     plot_comparative_accuracies_per_classes, \
     plot_comparative_loss, \
-    plot_comparative_accuracies_head
+    plot_comparative_accuracies_head, \
+    plot_comparative_accuracies_subsets
 
 
 class Continual_Plot(object):
@@ -87,12 +88,13 @@ class Continual_Plot(object):
         # plot_grad_gif(log_dir, Fig_dir, fast)
 
 
-    def plot_comparison(self, list_methods, seed_list, head_list):
+    def plot_comparison(self, list_methods, seed_list, head_list, list_subsets):
 
         #plot_comparative_accuracies(self.log_dir, self.Fig_dir, list_methods, seed_list)
         #plot_comparative_accuracies_per_classes(self.log_dir, self.Fig_dir, list_methods, seed_list)
         #plot_comparative_loss(self.log_dir, self.Fig_dir, list_methods, seed_list)
-        plot_comparative_accuracies_head(self.log_dir, self.Fig_dir, "baseline", head_list, seed_list)
+        #plot_comparative_accuracies_head(self.log_dir, self.Fig_dir, "baseline", head_list, seed_list)
+        plot_comparative_accuracies_subsets(self.log_dir, self.Fig_dir, head_list, seed_list, list_subsets)
 
         new_log_dir = self.log_dir.replace("Logs", "seed-0/Logs")
         #plot_comparative_tsne_tasks(new_log_dir, self.Fig_dir, list_methods)
@@ -120,13 +122,17 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args.root_dir = os.path.join(args.root_dir, args.dataset)
     if args.test_label:
-        args.root_dir = os.path.join(args.root_dir, "2-tasks", "MultiH")
+        args.root_dir = os.path.join(args.root_dir, f"{args.num_tasks}-tasks", "MultiH")
     else:
-        args.root_dir = os.path.join(args.root_dir, "2-tasks", "SingleH")
+        args.root_dir = os.path.join(args.root_dir, f"{args.num_tasks}-tasks", "SingleH")
 
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac", "ewc_diag_id","ogd"]
     method_list = ["baseline", "ewc_diag", "rehearsal", "ewc_kfac","ogd"]
     method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
+
+
+    subset_list = [100, 200, 500, 1000, 10000]
+
     #method_list = ["ewc_kfac"]
     seed_list = [0,2,3,4,5,6,7]
     seed_list = [0,1]
@@ -136,9 +142,13 @@ if __name__ == "__main__":
     head_list = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", "KNN", 'MIMO_Linear', "MIMO_CosLayer", "MIMO_Linear_no_bias",
                  "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", 'MIMO_Linear_Masked', "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
 
+    head_list = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", "KNN",
+                 "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", 'MIMO_Linear_Masked',
+                 "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
+
 
     single_plot_seed=0
     plot_object = Continual_Plot(args)
     # for method in method_list:
     #     plot_object.plot_figures(method, log_dir=plot_object.log_dir.replace("Logs",f"seed-{single_plot_seed}/Logs"))
-    plot_object.plot_comparison(method_list, seed_list, head_list)
+    plot_object.plot_comparison(method_list, seed_list, head_list, subset_list)
