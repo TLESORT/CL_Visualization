@@ -50,6 +50,7 @@ class ImageNetModel(nn.Module):
         if not self.data_encoded:
             x=x.view(-1,3,224,224)
             x=self.feature_extractor(x)
+        x = x.view(-1, self.latent_dim)
         return self.head(x)
 
     def update_head(self, batch, labels, epoch):
