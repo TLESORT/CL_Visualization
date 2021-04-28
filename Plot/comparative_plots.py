@@ -156,10 +156,6 @@ def plot_comparative_accuracies_subsets(log_dir, Fig_dir, list_heads, list_seed,
     print(f"Plot Comparative Accuracies subsets")
     print(list_heads)
 
-    #../Archives/CIFAR10/1-tasks/CIFAR10/subset-100/SingleH/seed-0/CosLayer/Logs/Disjoint/
-    print("AVANT")
-    print(log_dir)
-
     for head in list_heads:
         style_c = cycle(['-', '--', ':', '-.'])
         for subset in list_subsets:
