@@ -80,12 +80,14 @@ class Trainer(Continual_Evaluation):
                                                self.scenario_tr,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{config.dataset}_{self.scenario_tr.nb_tasks}_train")
+                                               name=f"encode_{config.dataset}_{self.scenario_tr.nb_tasks}_train",
+                                               dataset=self.dataset)
             self.scenario_te = encode_scenario(self.data_dir,
                                                self.scenario_te,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{config.dataset}_{self.scenario_te.nb_tasks}_test")
+                                               name=f"encode_{config.dataset}_{self.scenario_te.nb_tasks}_test",
+                                               dataset=self.dataset)
             self.data_encoded=True
             self.model.set_data_encoded(flag=True)
             self.transform_train=None
@@ -95,9 +97,10 @@ class Trainer(Continual_Evaluation):
 
 
         self.num_classes = self.scenario_tr.nb_classes
-
-        self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=config.momentum)
-
+        if not self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
+            self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=config.momentum)
+        else:
+            self.opt = None
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
 
         self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
@@ -151,6 +154,7 @@ class Trainer(Continual_Evaluation):
                 continue
             y_ = y_.cuda()
             x_ = x_.cuda()
+            if self.verbose: print("test forward")
 
             self.model.eval()
             if self.test_label:
@@ -158,14 +162,55 @@ class Trainer(Continual_Evaluation):
             else:
                 output = self.model(x_)
 
+            if self.verbose: print("test get_loss")
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
+
+    def head_without_grad(self, x_, y_, t_, ind_task, epoch):
+
+        if self.test_label:
+            output = self.model.forward_task(x_, t_)
+        else:
+            output = self.model(x_)
+
+        loss = self.model.get_loss(output,
+                                   y_,
+                                   loss_func=F.cross_entropy,
+                                   masked=(self.masked_out and ind_task > 0)
+                                   # we apply mask from task 1 because before there is no risk of forgetting
+                                   )
+
+        self.model.update_head(x_, y_, epoch)
+        return output, loss
+
+    def head_with_grad(self, x_, y_, t_, ind_task, epoch):
+        self.opt.zero_grad()
+        if self.verbose: print("forward")
+        if self.test_label:
+            output = self.model.forward_task(x_, t_)
+        else:
+            output = self.model(x_)
+        if self.verbose: print("get_loss")
+
+        loss = self.model.get_loss(output,
+                                   y_,
+                                   loss_func=F.cross_entropy,
+                                   masked=(self.masked_out and ind_task > 0)
+                                   # we apply mask from task 1 because before there is no risk of forgetting
+                                   )
+
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
+        loss = self.regularize_loss(self.model, loss)
+        self.optimizer_step(ind_task)
+
+        return output, loss
 
     def one_task_training(self, ind_task, data_loader):
 
         for epoch in range(self.nb_epochs):
+            self.model.train()
             for i_, (x_, y_, t_) in enumerate(data_loader):
-
                 # data does not fit to the model if size<=1
                 if x_.size(0) <= 1:
                     continue
@@ -173,32 +218,12 @@ class Trainer(Continual_Evaluation):
                 y_ = y_.cuda()
                 x_ = x_.cuda()
 
-                self.model.train()
-                self.opt.zero_grad()
-                if self.verbose: print("forwardgit")
-                if self.test_label:
-                    output = self.model.forward_task(x_, t_)
+                if self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
+                    output, loss = self.head_without_grad(x_, y_, t_, ind_task, epoch)
                 else:
-                    output = self.model(x_)
-                if self.verbose: print("get_loss")
-                loss = self.model.get_loss(output,
-                                           y_,
-                                           loss_func=F.cross_entropy,
-                                           masked= (self.masked_out and ind_task > 0) # we apply mask from task 1 because before there is no risk of forgetting
-                                            )
+                    output, loss = self.head_with_grad(x_, y_, t_, ind_task, epoch)
 
-                assert output.shape[0] == y_.shape[0]
-
-                loss = self.regularize_loss(self.model, loss)
-
-                if not self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
-                    self.optimizer_step(ind_task)
-                else:
-                    self.model.update_head(x_, y_, epoch)
                 self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
-
                 if self.dev: break
 
             self.test(ind_task_log=ind_task + 1)
