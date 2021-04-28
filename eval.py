@@ -68,7 +68,10 @@ class Continual_Evaluation(abc.ABC):
                 print("No file to load continue training normally")
 
     def log_task(self, ind_task, model):
-        torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth"))
+        if self.pretrained_on:
+            torch.save(model.get_last_layer().state_dict(), os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pth"))
+        else:
+            torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth"))
 
     def post_task_log(self, ind_task):
         if ind_task == 0 and self.name_algo != "ogd":

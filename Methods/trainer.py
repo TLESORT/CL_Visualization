@@ -111,6 +111,7 @@ class Trainer(Continual_Evaluation):
         torch.manual_seed(self.seed)
         np.random.seed(self.seed)
 
+        if self.verbose: print("prepare subset")
         if self.subset is not None:
             # replace the full taskset by a subset of samples ramdomly selected
             nb_tot_samples =len(task_set)
@@ -122,12 +123,16 @@ class Trainer(Continual_Evaluation):
                                     batch_size=self.batch_size,
                                     shuffle=True,
                                     num_workers=6)
+        x, y, t = task_set.get_random_samples(10)
+        if self.verbose: print("prepare log")
         if ind_task == 0:
             # log before training
             self.init_log(ind_task_log=ind_task)
             # if self.first_task_loaded -> we have already loaded test accuracy and train accuracy
             if not self.first_task_loaded:
+                if self.verbose: print("test test")
                 self.test(ind_task_log=ind_task, train=False)
+                if self.verbose: print("test train")
                 self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
                 self.log_post_epoch_processing(0)
         return data_loader_tr
@@ -152,6 +157,7 @@ class Trainer(Continual_Evaluation):
                 output = self.model.forward_task(x_, t_)
             else:
                 output = self.model(x_)
+
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
@@ -169,11 +175,12 @@ class Trainer(Continual_Evaluation):
 
                 self.model.train()
                 self.opt.zero_grad()
+                if self.verbose: print("forwardgit")
                 if self.test_label:
                     output = self.model.forward_task(x_, t_)
                 else:
                     output = self.model(x_)
-
+                if self.verbose: print("get_loss")
                 loss = self.model.get_loss(output,
                                            y_,
                                            loss_func=F.cross_entropy,
@@ -207,15 +214,20 @@ class Trainer(Continual_Evaluation):
     def continual_training(self):
 
         for task_id, task_set in enumerate(self.scenario_tr):
-            print("Task {}: Start".format(task_id))
+            print(f"Task {task_id}: Start")
 
+            if self.verbose: print("init_task")
             data_loader = self.init_task(task_id, task_set)
             if task_id==0 and self.first_task_loaded:
                 # we loaded model and log from another experience for task 0
                 continue
+            if self.verbose: print("init_log")
             self.init_log(task_id + 1)  # after init task!
+            if self.verbose: print("log_task")
             self.log_task(task_id, self.model)  # before training
+            if self.verbose: print("one_task_training")
             self.one_task_training(task_id, data_loader)
+            if self.verbose: print("callback_task")
             self.callback_task(task_id, task_set)
 
         # last log (we log  at the beginning of each task except for the last one)
