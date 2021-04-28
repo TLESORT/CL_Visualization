@@ -165,7 +165,7 @@ def plot_comparative_accuracies_subsets(log_dir, Fig_dir, list_heads, list_seed,
         for subset in list_subsets:
             list_results = []
             for seed in list_seed:
-                seed_log_dir = log_dir.replace("1-tasks", f"1-tasks/CIFAR10/subset-{subset}")
+                seed_log_dir = log_dir.replace("1-tasks", f"1-tasks/subset-{subset}")
                 seed_log_dir = seed_log_dir.replace("Logs", f"seed-{seed}/{head}/Logs")
                 file_name = os.path.join(seed_log_dir,f"baseline_accuracies.pkl")
                 with open(file_name, 'rb') as fp:
