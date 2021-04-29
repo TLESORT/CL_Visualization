@@ -119,6 +119,8 @@ class SLDALayer(nn.Module):
 
     def __init__(self, size_in, size_out):
         super().__init__()
+        self.size_in = size_in
+        self.size_out = size_out
         self.slda = StreamingLDA(input_shape=size_in, num_classes=size_out, test_batch_size=1024, shrinkage_param=1e-4,
                                  streaming_update_sigma=True).cuda()
         self.initiated = False
