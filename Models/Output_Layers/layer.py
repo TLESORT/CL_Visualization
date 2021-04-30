@@ -112,6 +112,7 @@ class MeanLayer(nn.Module):
 
         assert not torch.isnan(self.mean).any()
 
+
 class SLDALayer(nn.Module):
     """ Custom Linear layer but mimics a standard linear layer """
 
@@ -133,13 +134,11 @@ class SLDALayer(nn.Module):
 
         return x.cuda()
 
-
     def accumulate(self, x, y, epoch=0):
         if epoch == 0:
             x = x.view(-1, self.size_in)
             self.data = torch.cat([self.data, x.detach()])
             self.labels = torch.cat([self.labels, y])
-
 
     def update(self, epoch=0):
         if epoch == 0:
@@ -164,7 +163,7 @@ class KNN(nn.Module):
         self.classes_mask = torch.eye(self.size_out).cuda()
 
     def forward(self, x):
-        data = x.detach() # no backprop possible
+        data = x.detach()  # no backprop possible
         if self.initiated:
             classes = self.neigh.predict(data.cpu().numpy())
             out = self.classes_mask[classes]
@@ -181,5 +180,6 @@ class KNN(nn.Module):
 
     def update(self, epoch=0):
         if epoch == 0:
+            print("UPDATAAAAAAAAAAAAAAAAAAAA")
             self.neigh.fit(self.data, self.labels)
             self.initiated = True

@@ -231,10 +231,10 @@ class Trainer(Continual_Evaluation):
                 self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
                 if self.dev: break
 
+            self.callback_epoch(ind_task, epoch)
             self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
             self.log_post_epoch_processing(ind_task + 1, print_acc=(epoch == self.nb_epochs - 1))
-            self.callback_epoch(ind_task, epoch)
             if self.dev: break
 
         return
