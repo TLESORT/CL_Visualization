@@ -57,7 +57,7 @@ if not os.path.exists(config.pmodel_dir):
 config.root_dir = os.path.join(config.root_dir, config.dataset, f"{config.num_tasks}-tasks")
 
 if config.pretrained_on is not None:
-    config.root_dir = os.path.join(config.root_dir, config.dataset, f"pretrained_on_{config.pretrained_on}")
+    config.root_dir = os.path.join(config.root_dir, f"pretrained_on_{config.pretrained_on}")
 
 config.root_dir = os.path.join(config.root_dir, f"{config.num_tasks}-tasks")
 
