@@ -140,14 +140,16 @@ class CifarResNet(nn.Module):
 
         return x
 
-    def update_head(self, batch, labels, epoch=0):
-        # for SLDA
+    def accumulate(self, batch, labels, epoch=0):
 
         if not self.data_encoded:
             batch = self.feature_extractor(batch)
 
         batch = batch.view(batch.size(0), -1)
-        self.get_last_layer().update(batch, labels, epoch)
+        self.get_last_layer().accumulate(batch, labels, epoch)
+
+    def update_head(self, epoch=0):
+        self.get_last_layer().update(epoch)
 
     def get_loss(self, out, labels, loss_func, masked=False):
         return self.head.get_loss(out, labels, loss_func, masked)

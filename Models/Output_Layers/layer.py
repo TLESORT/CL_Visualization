@@ -89,12 +89,10 @@ class MeanLayer(nn.Module):
             out = torch.randn((data.shape[0], self.size_out)).cuda()
         return out.cuda()
 
-    # def accumulate(self, x, y):
-    #     x=x.view(-1, 64)
-    #     self.data = torch.cat([self.data, x])
-    #     self.labels = torch.cat([self.labels, y])
+    def update(self, epoch=0):
+        pass
 
-    def update(self, x, y, epoch=0):
+    def accumulate(self, x, y, epoch=0):
         if epoch == 0:
             self.data = x.view(-1, self.size_in).detach().cpu()
             self.labels = y
@@ -124,6 +122,8 @@ class SLDALayer(nn.Module):
         self.slda = StreamingLDA(input_shape=size_in, num_classes=size_out, test_batch_size=1024, shrinkage_param=1e-4,
                                  streaming_update_sigma=True).cuda()
         self.initiated = False
+        self.data = torch.zeros((0, size_in)).cuda()
+        self.labels = torch.zeros(0).cuda()
 
     def forward(self, x):
         if self.initiated:
@@ -133,10 +133,18 @@ class SLDALayer(nn.Module):
 
         return x.cuda()
 
-    def update(self, batch, labels, epoch=0):
+
+    def accumulate(self, x, y, epoch=0):
         if epoch == 0:
-            for i in range(len(labels)):
-                self.slda.fit(batch[i].detach(), labels[i])
+            x = x.view(-1, self.size_in)
+            self.data = torch.cat([self.data, x.detach()])
+            self.labels = torch.cat([self.labels, y])
+
+
+    def update(self, epoch=0):
+        if epoch == 0:
+            for i in range(len(self.labels)):
+                self.slda.fit(self.data[i], self.labels[i])
 
             self.initiated = True
 
@@ -164,15 +172,14 @@ class KNN(nn.Module):
             out = torch.randn((x.shape[0], self.size_out)).cuda()
         return out
 
-    # def accumulate(self, x, y):
-    #     self.data = torch.concatenate((self.data, x))
-    #     self.labels = torch.concatenate((self.labels, y))
-
-    def update(self, x, y, epoch=0):
+    def accumulate(self, x, y, epoch=0):
 
         if epoch == 0:
             x = x.view(-1, self.size_in)
-            self.data = np.concatenate([self.data, x.cpu().numpy()])
+            self.data = np.concatenate([self.data, x.detach().cpu().numpy()])
             self.labels = np.concatenate([self.labels, y.cpu().numpy()])
+
+    def update(self, epoch=0):
+        if epoch == 0:
             self.neigh.fit(self.data, self.labels)
             self.initiated = True

@@ -143,6 +143,11 @@ class Trainer(Continual_Evaluation):
     def callback_task(self, ind_task, task_set):
         self.post_task_log(ind_task)
 
+
+    def callback_epoch(self, ind_task, epoch):
+        if self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
+            self.model.update_head(epoch)
+
     def test(self, ind_task_log, data_loader=None, train=False):
 
         if data_loader is None:
@@ -180,7 +185,7 @@ class Trainer(Continual_Evaluation):
                                    # we apply mask from task 1 because before there is no risk of forgetting
                                    )
 
-        self.model.update_head(x_, y_, epoch)
+        self.model.accumulate(x_, y_, epoch)
         return output, loss
 
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
@@ -229,6 +234,7 @@ class Trainer(Continual_Evaluation):
             self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
             self.log_post_epoch_processing(ind_task + 1, print_acc=(epoch == self.nb_epochs - 1))
+            self.callback_epoch(ind_task, epoch)
             if self.dev: break
 
         return
