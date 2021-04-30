@@ -56,8 +56,18 @@ if not os.path.exists(config.pmodel_dir):
 
 config.root_dir = os.path.join(config.root_dir, config.dataset, f"{config.num_tasks}-tasks")
 
+if config.pretrained_on is not None:
+    config.root_dir = os.path.join(config.root_dir, config.dataset, f"pretrained_on_{config.pretrained_on}")
+
+config.root_dir = os.path.join(config.root_dir, f"{config.num_tasks}-tasks")
+
 if config.subset is not None:
     config.root_dir = os.path.join(config.root_dir, f"subset-{config.subset}")
+    if not config.OutLayer in ['MeanLayer', 'KNN', 'SLDA']:
+        config.nb_epochs = int(50000 / config.subset) * config.nb_epochs
+    else:
+        config.nb_epochs = 1 # for layer that does not learn there is not need for more than one epoch
+
 if config.test_label:
     config.root_dir = os.path.join(config.root_dir, "MultiH")
 else:
