@@ -1,6 +1,6 @@
 #!/bin/bash
 
-list_heads="SLDA KNN MeanLayer Linear CosLayer Linear_no_bias"
+list_heads="SLDA KNN MeanLayer MedianLayer Linear CosLayer Linear_no_bias"
 list_heads_masked="Linear CosLayer Linear_no_bias MIMO_Linear_no_bias MIMO_Linear MIMO_CosLayer"
 seed=$1
 
@@ -28,5 +28,5 @@ python main.py --scenario_name Disjoint --num_tasks 10 --name_algo baseline  --d
 done #list_heads_masked
 
 for head in $list_heads ;do
-python main.py --scenario_name Disjoint --num_tasks 10 --name_algo baseline  --dataset CIFAR10 --pretrained_on ImageNet --OutLayer $head --seed $seed --fast
+python main.py --scenario_name Disjoint --num_tasks 10 --name_algo baseline  --dataset Core50 --pretrained_on ImageNet --OutLayer $head --seed $seed --fast
 done #list_heads
