@@ -18,6 +18,9 @@ def get_Output_layer(LayerName, in_dim, out_dim):
     elif LayerName == "MeanLayer":
         from Models.Output_Layers.layer import MeanLayer
         outlayer = MeanLayer(in_dim, out_dim)
+    elif LayerName == "MedianLayer":
+        from Models.Output_Layers.layer import MedianLayer
+        outlayer = MedianLayer(in_dim, out_dim)
     elif LayerName == "KNN":
         from Models.Output_Layers.layer import KNN
         outlayer = KNN(in_dim, out_dim, K=5)
