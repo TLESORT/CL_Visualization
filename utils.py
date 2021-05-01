@@ -29,6 +29,9 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "CIFAR10":
         from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
+    elif name_dataset == "CIFAR100":
+        from continuum.datasets import CIFAR100
+        dataset = CIFAR100(path_dir, download=True, train=train)
     elif name_dataset == "ImageNet":
         from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
