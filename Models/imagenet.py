@@ -64,7 +64,7 @@ class ImageNetModel(nn.Module):
         batch = batch.view(batch.size(0), -1)
         self.get_last_layer().accumulate(batch, labels, epoch)
 
-    def update_head(self, epoch=0):
+    def update_head(self, epoch):
         self.get_last_layer().update(epoch)
 
     def get_loss(self, out, labels, loss_func, masked=False):

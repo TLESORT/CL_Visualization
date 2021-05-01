@@ -53,6 +53,7 @@ class Trainer(Continual_Evaluation):
         self.pretrained_on = config.pretrained_on
         self.OutLayer = config.OutLayer
         self.nb_epochs = config.nb_epochs
+        self.non_differential_heads = ["SLDA", "MeanLayer", "MedianLayer", "KNN"]
 
 
         dataset_train = get_dataset(self.data_dir, config.dataset, self.scenario_name, train=True)
@@ -81,12 +82,14 @@ class Trainer(Continual_Evaluation):
                                                self.model,
                                                self.batch_size,
                                                name=f"encode_{config.dataset}_{self.scenario_tr.nb_tasks}_train",
+                                               train=True,
                                                dataset=self.dataset)
             self.scenario_te = encode_scenario(self.data_dir,
                                                self.scenario_te,
                                                self.model,
                                                self.batch_size,
                                                name=f"encode_{config.dataset}_{self.scenario_te.nb_tasks}_test",
+                                               train=False,
                                                dataset=self.dataset)
             self.data_encoded=True
             self.model.set_data_encoded(flag=True)
@@ -97,7 +100,7 @@ class Trainer(Continual_Evaluation):
 
 
         self.num_classes = self.scenario_tr.nb_classes
-        if not self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
+        if not self.OutLayer in self.non_differential_heads:
             self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=config.momentum)
         else:
             self.opt = None
@@ -122,6 +125,9 @@ class Trainer(Continual_Evaluation):
             x, y, t = task_set.get_raw_samples(indexes=indexes)
             task_set = TaskSet(x, y, t, trsf=task_set.trsf, data_type=task_set.data_type)
 
+        print("len(task_set)")
+        print(len(task_set))
+
         data_loader_tr = DataLoader(task_set,
                                     batch_size=self.batch_size,
                                     shuffle=True,
@@ -145,7 +151,7 @@ class Trainer(Continual_Evaluation):
 
 
     def callback_epoch(self, ind_task, epoch):
-        if self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
+        if self.OutLayer in self.non_differential_heads:
             self.model.update_head(epoch)
 
     def test(self, ind_task_log, data_loader=None, train=False):
@@ -159,7 +165,6 @@ class Trainer(Continual_Evaluation):
                 continue
             y_ = y_.cuda()
             x_ = x_.cuda()
-            if self.verbose: print("test forward")
 
             self.model.eval()
             if self.test_label:
@@ -167,7 +172,6 @@ class Trainer(Continual_Evaluation):
             else:
                 output = self.model(x_)
 
-            if self.verbose: print("test get_loss")
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
@@ -190,12 +194,10 @@ class Trainer(Continual_Evaluation):
 
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
         self.opt.zero_grad()
-        if self.verbose: print("forward")
         if self.test_label:
             output = self.model.forward_task(x_, t_)
         else:
             output = self.model(x_)
-        if self.verbose: print("get_loss")
 
         loss = self.model.get_loss(output,
                                    y_,
@@ -214,6 +216,7 @@ class Trainer(Continual_Evaluation):
     def one_task_training(self, ind_task, data_loader):
 
         for epoch in range(self.nb_epochs):
+            if self.verbose: print(f"Epoch : {epoch}")
             self.model.train()
             for i_, (x_, y_, t_) in enumerate(data_loader):
                 # data does not fit to the model if size<=1
@@ -223,7 +226,7 @@ class Trainer(Continual_Evaluation):
                 y_ = y_.cuda()
                 x_ = x_.cuda()
 
-                if self.OutLayer in ["SLDA", "MeanLayer", "KNN"]:
+                if self.OutLayer in self.non_differential_heads:
                     output, loss = self.head_without_grad(x_, y_, t_, ind_task, epoch)
                 else:
                     output, loss = self.head_with_grad(x_, y_, t_, ind_task, epoch)

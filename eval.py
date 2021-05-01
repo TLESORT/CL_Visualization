@@ -95,7 +95,8 @@ class Continual_Evaluation(abc.ABC):
 
     def _process_classes_logs(self, train):
 
-        assert self.scenario_tr.nb_classes == self.scenario_te.nb_classes
+        assert self.scenario_tr.nb_classes == self.scenario_te.nb_classes, \
+            print(f"Train {self.scenario_tr.nb_classes} - Test {self.scenario_te.nb_classes}")
         nb_classes = self.scenario_tr.nb_classes
 
         if train:

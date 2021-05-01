@@ -30,7 +30,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
 parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
 parser.add_argument('--subset', type=int, default=None, help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer', 'KNN', 'SLDA'],
+                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default=None, type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
@@ -63,7 +63,7 @@ config.root_dir = os.path.join(config.root_dir, f"{config.num_tasks}-tasks")
 
 if config.subset is not None:
     config.root_dir = os.path.join(config.root_dir, f"subset-{config.subset}")
-    if not config.OutLayer in ['MeanLayer', 'KNN', 'SLDA']:
+    if not config.OutLayer in ['MeanLayer','MedianLayer', 'KNN', 'SLDA']:
         config.nb_epochs = int(50000 / config.subset) * config.nb_epochs
     else:
         config.nb_epochs = 1 # for layer that does not learn there is not need for more than one epoch
