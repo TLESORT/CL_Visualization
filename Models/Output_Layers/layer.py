@@ -71,8 +71,8 @@ class MeanLayer(nn.Module):
         self.size_in, self.size_out = size_in, size_out
         self.data = torch.zeros(0, size_in)
         self.labels = torch.zeros(0)
-        self.mean = torch.zeros(size_out, size_in)
-        self.weight = torch.zeros(size_out)
+        self.weight = torch.zeros(size_out, size_in) # mean layer
+        self.nb_inst = torch.zeros(size_out)
         self.initiated = False
 
     def forward(self, x):
@@ -81,7 +81,8 @@ class MeanLayer(nn.Module):
         assert not torch.isnan(data).any()
 
         if self.initiated:
-            out = torch.cdist(data, self.mean)
+            #torch.cdist(c * b, d * b) -> c*d
+            out = torch.cdist(data, self.weight)
             # convert smaller is better into bigger in better
             out = out * -1
         else:
@@ -98,19 +99,56 @@ class MeanLayer(nn.Module):
             self.labels = y
             for i in range(self.size_out):
                 indexes = torch.where(self.labels == i)[0]
-                self.mean[i] = (self.mean[i] * (1.0 * self.weight[i]) + self.data[indexes].sum(0))
-                self.weight[i] += len(indexes)
-                if self.weight[i] != 0:
-                    self.mean[i] = self.mean[i] / (1.0 * self.weight[i])
+                self.weight[i] = (self.weight[i] * (1.0 * self.nb_inst[i]) + self.data[indexes].sum(0))
+                self.nb_inst[i] += len(indexes)
+                if self.nb_inst[i] != 0:
+                    self.weight[i] = self.weight[i] / (1.0 * self.nb_inst[i])
 
-                # remove accounted latent vector
-                # indexes2keep = torch.where(self.labels!=i)
-                # self.data = self.data[indexes2keep]
             self.data = torch.zeros(0, self.size_in)
             self.labels = torch.zeros(0)
             self.initiated = True
 
-        assert not torch.isnan(self.mean).any()
+        assert not torch.isnan(self.weight).any()
+
+
+class MedianLayer(nn.Module):
+    """ Custom Linear layer but mimics a standard linear layer """
+
+    def __init__(self, size_in, size_out):
+        super().__init__()
+        self.size_in, self.size_out = size_in, size_out
+        self.data = torch.zeros(0, size_in)
+        self.labels = torch.zeros(0)
+        self.weight = torch.zeros(size_out, size_in) # median vector
+        self.initiated = False
+
+    def forward(self, x):
+        data = x.detach().cpu()  # no backprop possible
+
+        assert not torch.isnan(data).any()
+
+        if self.initiated:
+            out = torch.cdist(data, self.weight)
+            # convert smaller is better into bigger in better
+            out = out * -1
+        else:
+            # if mean are not initiate we return random predition
+            out = torch.randn((data.shape[0], self.size_out))
+        return out.cuda()
+
+    def update(self, epoch=0):
+        if epoch == 0:
+            for i in range(self.size_out):
+                indexes = torch.where(self.labels == i)[0]
+                if len(indexes)>0:
+                    self.weight[i], _ = torch.median(self.data[indexes], dim=0)
+            self.initiated = True
+
+    def accumulate(self, x, y, epoch=0):
+        if epoch == 0:
+            x = x.view(-1, self.size_in)
+            self.data = torch.cat([self.data, x.cpu() .detach()])
+            self.labels = torch.cat([self.labels, y.cpu() ])
 
 
 class SLDALayer(nn.Module):
@@ -134,18 +172,21 @@ class SLDALayer(nn.Module):
 
         return x.cuda()
 
+
+
+
     def accumulate(self, x, y, epoch=0):
+
         if epoch == 0:
+            self.initiated = True
             x = x.view(-1, self.size_in)
-            self.data = torch.cat([self.data, x.detach()])
-            self.labels = torch.cat([self.labels, y])
+            for i in range(len(y)):
+                self.slda.fit(x[i], y[i])
+
 
     def update(self, epoch=0):
-        if epoch == 0:
-            for i in range(len(self.labels)):
-                self.slda.fit(self.data[i], self.labels[i])
+        pass
 
-            self.initiated = True
 
 
 class KNN(nn.Module):
@@ -155,8 +196,8 @@ class KNN(nn.Module):
         super().__init__()
         from sklearn.neighbors import KNeighborsClassifier
         self.neigh = KNeighborsClassifier(n_neighbors=K)
-        self.data = np.zeros((0, size_in))
-        self.labels = np.zeros(0)
+        self.data = torch.zeros((0, size_in))
+        self.labels = torch.zeros(0)
         self.size_out = size_out
         self.size_in = size_in
         self.initiated = False
@@ -171,15 +212,42 @@ class KNN(nn.Module):
             out = torch.randn((x.shape[0], self.size_out)).cuda()
         return out
 
+
+    def _trim_data(self):
+        new_data = []
+        new_labels = []
+
+        for i in range(self.size_out):
+            indexes = torch.where(self.labels == i)[0]
+            data_classes = self.data[indexes]
+            if len(indexes) > 200:
+                dists = torch.cdist(data_classes, data_classes).sum(axis=0)
+                _, sort_index = dists.sort()
+                # we keep 100 samples
+                indexes2keep = indexes[sort_index[:150]]
+                new_data.append(self.data[indexes2keep])
+                new_labels.append(self.labels[indexes2keep])
+            elif len(indexes) > 0:
+                new_data.append(self.data[indexes])
+                new_labels.append(self.labels[indexes])
+
+        if len(new_labels)>0:
+            self.data = torch.cat(new_data, axis=0)
+            self.labels = torch.cat(new_labels, axis=0)
+
     def accumulate(self, x, y, epoch=0):
 
         if epoch == 0:
             x = x.view(-1, self.size_in)
-            self.data = np.concatenate([self.data, x.detach().cpu().numpy()])
-            self.labels = np.concatenate([self.labels, y.cpu().numpy()])
+            self.data = torch.cat([self.data, x.detach().cpu()], axis=0)
+            self.labels = torch.cat([self.labels, y.cpu()], axis=0)
+
+            if len(self.labels) > 200 * self.size_out:
+                self._trim_data()
+
 
     def update(self, epoch=0):
         if epoch == 0:
-            print("UPDATAAAAAAAAAAAAAAAAAAAA")
-            self.neigh.fit(self.data, self.labels)
+            self._trim_data()
+            self.neigh.fit(self.data.numpy(), self.labels.numpy())
             self.initiated = True
