@@ -63,9 +63,7 @@ config.root_dir = os.path.join(config.root_dir, f"{config.num_tasks}-tasks")
 
 if config.subset is not None:
     config.root_dir = os.path.join(config.root_dir, f"subset-{config.subset}")
-    if not config.OutLayer in ['MeanLayer','MedianLayer', 'KNN', 'SLDA']:
-        config.nb_epochs = int(50000 / config.subset) * config.nb_epochs
-    else:
+    if config.OutLayer in ['MeanLayer','MedianLayer', 'KNN', 'SLDA']:
         config.nb_epochs = 1 # for layer that does not learn there is not need for more than one epoch
 
 if config.test_label:

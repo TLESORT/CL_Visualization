@@ -125,7 +125,7 @@ class Trainer(Continual_Evaluation):
             x, y, t = task_set.get_raw_samples(indexes=indexes)
             task_set = TaskSet(x, y, t, trsf=task_set.trsf, data_type=task_set.data_type)
 
-        print("len(task_set)")
+        print("Size Taskset")
         print(len(task_set))
 
         data_loader_tr = DataLoader(task_set,
@@ -218,21 +218,27 @@ class Trainer(Continual_Evaluation):
         for epoch in range(self.nb_epochs):
             if self.verbose: print(f"Epoch : {epoch}")
             self.model.train()
-            for i_, (x_, y_, t_) in enumerate(data_loader):
-                # data does not fit to the model if size<=1
-                if x_.size(0) <= 1:
-                    continue
+            if (self.subset is not None) and not (self.OutLayer in self.non_differential_heads):
+                # we artificially augment the number of itereation for convergence purposes
+                nb_run = int(50000 / self.subset)
+            else:
+                nb_run = 1
+            for _ in range(nb_run):
+                for i_, (x_, y_, t_) in enumerate(data_loader):
+                    # data does not fit to the model if size<=1
+                    if x_.size(0) <= 1:
+                        continue
 
-                y_ = y_.cuda()
-                x_ = x_.cuda()
+                    y_ = y_.cuda()
+                    x_ = x_.cuda()
 
-                if self.OutLayer in self.non_differential_heads:
-                    output, loss = self.head_without_grad(x_, y_, t_, ind_task, epoch)
-                else:
-                    output, loss = self.head_with_grad(x_, y_, t_, ind_task, epoch)
+                    if self.OutLayer in self.non_differential_heads:
+                        output, loss = self.head_without_grad(x_, y_, t_, ind_task, epoch)
+                    else:
+                        output, loss = self.head_with_grad(x_, y_, t_, ind_task, epoch)
 
-                self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
-                if self.dev: break
+                    self.log_iter(ind_task + 1, self.model, loss, output, y_, t_)
+                    if self.dev: break
 
             self.callback_epoch(ind_task, epoch)
             self.test(ind_task_log=ind_task + 1)
