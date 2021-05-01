@@ -11,12 +11,12 @@ class Continual_Evaluation(abc.ABC):
     """ this class gives function to log for continual algorithms evaluation"""
     """ Log and Figure plotting should be clearly separate we can do on without the other """
 
-    def __init__(self, args):
+    def __init__(self, config):
 
-        self.dataset = args.dataset
-        self.load_first_task = args.load_first_task
+        self.dataset = config.dataset
+        self.load_first_task = config.load_first_task
         self.first_task_loaded = False  # flag
-        self.name_algo = args.name_algo
+        self.name_algo = config.name_algo
 
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)

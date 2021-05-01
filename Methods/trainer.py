@@ -56,8 +56,8 @@ class Trainer(Continual_Evaluation):
         self.non_differential_heads = ["SLDA", "MeanLayer", "MedianLayer", "KNN"]
 
 
-        dataset_train = get_dataset(self.data_dir, config.dataset, self.scenario_name, train=True)
-        dataset_test = get_dataset(self.data_dir, config.dataset, self.scenario_name, train=False)
+        dataset_train = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=True)
+        dataset_test = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=False)
 
         self.transform_train = get_transform(self.dataset, train=True)
         self.transform_test = get_transform(self.dataset, train=True)
