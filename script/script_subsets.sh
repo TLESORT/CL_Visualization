@@ -12,7 +12,7 @@ python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --da
 python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR100 --pretrained_on CIFAR100 --OutLayer $masked_head --seed $seed --masked --subset $subset --fast
 python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR100 --pretrained_on CIFAR10 --OutLayer $masked_head --seed $seed --masked --subset $subset --fast
 python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset CIFAR10 --pretrained_on CIFAR100 --OutLayer $masked_head --seed $seed --masked --subset $subset --fast
-python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset Core50 --batch_size 32 --pretrained_on ImageNet --OutLayer $masked_head --seed $seed --masked --subset $subset --fast
+python main.py --scenario_name Disjoint --num_tasks 1 --name_algo baseline  --dataset Core50 --pretrained_on ImageNet --OutLayer $masked_head --seed $seed --masked --subset $subset --fast
 done #list_heads_masked
 
 for head in $list_heads ;do
