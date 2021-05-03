@@ -93,6 +93,14 @@ if not config.no_train:
 
 
 wandb.init(project='CL_Visualization', entity='tlesort')
+# wandb.init(
+#   project="CL_Visualization",
+#   notes="Experiment {} {} {}",
+#   tags=[config.algo, "whatever"],
+#   config=config,
+# )
+
+
 wandb.config.update(config)
 
 

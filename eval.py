@@ -18,6 +18,7 @@ class Continual_Evaluation(abc.ABC):
         self.load_first_task = config.load_first_task
         self.first_task_loaded = False  # flag
         self.name_algo = config.name_algo
+        self.nb_tot_epoch = None
 
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
@@ -125,6 +126,11 @@ class Continual_Evaluation(abc.ABC):
 
     def log_post_epoch_processing(self, ind_task, epoch, print_acc=False):
 
+        if self.nb_tot_epoch is None:
+            self.nb_tot_epoch = epoch
+        else:
+            self.nb_tot_epoch += 1
+
         # 1. processing for accuracy logs
         assert self.vector_predictions_epoch_tr.shape[0] == self.vector_labels_epoch_tr.shape[0]
         assert self.vector_predictions_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
@@ -135,8 +141,7 @@ class Continual_Evaluation(abc.ABC):
 
         accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
         accuracy_te = correct_te / (1.0 * nb_instances_te)
-        wandb.log({'train accuracy': accuracy_tr, 'epoch': epoch, 'task': ind_task})
-        wandb.log({'test accuracy': accuracy_te, 'epoch': epoch, 'task': ind_task})
+        wandb.log({'train accuracy': accuracy_tr, 'test accuracy': accuracy_te, 'epoch': epoch, 'task': ind_task})
 
         # log correct prediction on nb instances for accuracy computation
         accuracy_infos = np.array([correct_tr, nb_instances_tr, correct_te, nb_instances_te])
