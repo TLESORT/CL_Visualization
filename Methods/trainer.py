@@ -143,7 +143,7 @@ class Trainer(Continual_Evaluation):
                 self.test(ind_task_log=ind_task, train=False)
                 if self.verbose: print("test train")
                 self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
-                self.log_post_epoch_processing(0)
+                self.log_post_epoch_processing(0, epoch=-1)
         return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
@@ -243,7 +243,7 @@ class Trainer(Continual_Evaluation):
             self.callback_epoch(ind_task, epoch)
             self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
-            self.log_post_epoch_processing(ind_task + 1, print_acc=(epoch == self.nb_epochs - 1))
+            self.log_post_epoch_processing(ind_task + 1, epoch=epoch, print_acc=(epoch == self.nb_epochs - 1))
             if self.dev: break
 
         return
