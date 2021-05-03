@@ -5,6 +5,7 @@ import numpy as np
 import abc
 
 from copy import deepcopy
+import wandb
 
 
 class Continual_Evaluation(abc.ABC):
@@ -122,7 +123,7 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array([classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes])
 
-    def log_post_epoch_processing(self, ind_task, print_acc=False):
+    def log_post_epoch_processing(self, ind_task, epoch, print_acc=False):
 
         # 1. processing for accuracy logs
         assert self.vector_predictions_epoch_tr.shape[0] == self.vector_labels_epoch_tr.shape[0]
@@ -131,6 +132,11 @@ class Continual_Evaluation(abc.ABC):
         correct_te = (self.vector_predictions_epoch_te == self.vector_labels_epoch_te).sum()
         nb_instances_tr = self.vector_labels_epoch_tr.shape[0]
         nb_instances_te = self.vector_labels_epoch_te.shape[0]
+
+        accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
+        accuracy_te = correct_te / (1.0 * nb_instances_te)
+        wandb.log({'train accuracy': accuracy_tr, 'epoch': epoch, 'task': ind_task})
+        wandb.log({'test accuracy': accuracy_te, 'epoch': epoch, 'task': ind_task})
 
         # log correct prediction on nb instances for accuracy computation
         accuracy_infos = np.array([correct_tr, nb_instances_tr, correct_te, nb_instances_te])
@@ -202,6 +208,10 @@ class Continual_Evaluation(abc.ABC):
 
 
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
+                if train:
+                    wandb.log({'train loss': loss})
+                else:
+                    wandb.log({'test loss': loss})
 
                 if not (self.name_algo=="ogd" or self.OutLayer=="SLDA" or  self.OutLayer=="KNN" or "MIMO" in self.OutLayer):
                     if model.get_last_layer().weight.grad is not None:

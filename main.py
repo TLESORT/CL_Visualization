@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import argparse
 import datetime
+import wandb
 
 from Methods.trainer import Trainer
 
@@ -50,6 +51,7 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
+
 config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
 if not os.path.exists(config.pmodel_dir):
     os.makedirs(config.pmodel_dir)
@@ -88,6 +90,11 @@ if not config.no_train:
     with open(file_name, 'w') as fp:
         fp.write(f'{datetime.datetime.now()} \n')
         fp.write(str(config).replace(",", ",\n"))
+
+
+wandb.init(project='CL_Visualization', entity='tlesort')
+wandb.config.update(config)
+
 
 if config.name_algo == "baseline":
     Algo = Trainer(config)
