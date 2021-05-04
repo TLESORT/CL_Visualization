@@ -141,7 +141,7 @@ class Continual_Evaluation(abc.ABC):
 
         accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
         accuracy_te = correct_te / (1.0 * nb_instances_te)
-        wandb.log({'train accuracy': accuracy_tr, 'test accuracy': accuracy_te, 'epoch': epoch, 'task': ind_task})
+        wandb.log({'train accuracy': accuracy_tr, 'test accuracy': accuracy_te, 'epoch': self.nb_tot_epoch, 'task': ind_task})
 
         # log correct prediction on nb instances for accuracy computation
         accuracy_infos = np.array([correct_tr, nb_instances_tr, correct_te, nb_instances_te])

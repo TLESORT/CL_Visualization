@@ -51,35 +51,37 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
+experiment_id=f"{config.dataset}"
+
 
 config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
 if not os.path.exists(config.pmodel_dir):
     os.makedirs(config.pmodel_dir)
 
-config.root_dir = os.path.join(config.root_dir, config.dataset, f"{config.num_tasks}-tasks")
+experiment_id = os.path.join(experiment_id, f"{config.num_tasks}-tasks")
 
 if config.pretrained_on is not None:
-    config.root_dir = os.path.join(config.root_dir, f"pretrained_on_{config.pretrained_on}")
-
-config.root_dir = os.path.join(config.root_dir, f"{config.num_tasks}-tasks")
+    experiment_id = os.path.join(experiment_id, f"pretrained_on_{config.pretrained_on}")
 
 if config.subset is not None:
-    config.root_dir = os.path.join(config.root_dir, f"subset-{config.subset}")
+    experiment_id = os.path.join(experiment_id, f"subset-{config.subset}")
     if config.OutLayer in ['MeanLayer','MedianLayer', 'KNN', 'SLDA']:
         config.nb_epochs = 1 # for layer that does not learn there is not need for more than one epoch
 
 if config.test_label:
-    config.root_dir = os.path.join(config.root_dir, "MultiH")
+    experiment_id = os.path.join(experiment_id, "MultiH")
 else:
-    config.root_dir = os.path.join(config.root_dir, "SingleH")
+    experiment_id = os.path.join(experiment_id, "SingleH")
 
 if config.masked_out:
     name_out = f"{config.OutLayer}_Masked"
 else:
     name_out = config.OutLayer
 
-config.root_dir = os.path.join(config.root_dir, f"seed-{config.seed}", name_out)
+experiment_id = os.path.join(experiment_id, f"seed-{config.seed}", name_out)
 
+
+config.root_dir = os.path.join(config.root_dir, experiment_id)
 if not os.path.exists(config.root_dir):
     os.makedirs(config.root_dir)
 
@@ -92,16 +94,23 @@ if not config.no_train:
         fp.write(str(config).replace(",", ",\n"))
 
 
-wandb.init(project='CL_Visualization', entity='tlesort')
-# wandb.init(
-#   project="CL_Visualization",
-#   notes="Experiment {} {} {}",
-#   tags=[config.algo, "whatever"],
-#   config=config,
-# )
+if config.subset is None:
+    experiment_label = f"{config.dataset}-pretrained-{config.pretrained_on}"
+else:
+    experiment_label = f"{config.dataset}-{config.OutLayer}-subset"
 
+experiment_id = experiment_id.replace("/", "-")
 
-wandb.config.update(config)
+#wandb.init(project='CL_Visualization', entity='tlesort')
+wandb.init(
+    project="CL_Visualization",
+    group=experiment_label,
+    id=experiment_id,
+    entity='tlesort',
+    notes=f"Experiment: Dataset {config.dataset}, OutLayer {config.OutLayer}, Pretrained on {config.pretrained_on}",
+    tags=[config.dataset, config.OutLayer],
+    config=config,
+)
 
 
 if config.name_algo == "baseline":
