@@ -43,7 +43,7 @@ parser.add_argument('--fast', action='store_true', default=False, help='if fast 
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet'], help='dataset name')
+                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet', "Core10Lifelong"], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
@@ -58,7 +58,7 @@ config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
 if not os.path.exists(config.pmodel_dir):
     os.makedirs(config.pmodel_dir)
 
-experiment_id = os.path.join(experiment_id, f"{config.num_tasks}-tasks")
+experiment_id = os.path.join(experiment_id, config.scenario_name, f"{config.num_tasks}-tasks")
 
 if config.pretrained_on is not None:
     experiment_id = os.path.join(experiment_id, f"pretrained_on_{config.pretrained_on}")
@@ -97,20 +97,23 @@ if not config.no_train:
 if config.subset is None:
     experiment_label = f"{config.dataset}-pretrained-{config.pretrained_on}"
 else:
-    experiment_label = f"{config.dataset}-{config.OutLayer}-subset"
+    experiment_label = f"{config.dataset}-pretrained-{config.pretrained_on}-subset-{config.subset}"
 
 experiment_id = experiment_id.replace("/", "-")
 
 #wandb.init(project='CL_Visualization', entity='tlesort')
-wandb.init(
-    project="CL_Visualization",
-    group=experiment_label,
-    id=experiment_id,
-    entity='tlesort',
-    notes=f"Experiment: Dataset {config.dataset}, OutLayer {config.OutLayer}, Pretrained on {config.pretrained_on}",
-    tags=[config.dataset, config.OutLayer],
-    config=config,
-)
+if not config.dev:
+    wandb.init(
+        project="CL_Visualization",
+        group=experiment_label,
+        id=experiment_id + '-' + wandb.util.generate_id(),
+        entity='tlesort',
+        notes=f"Experiment: Dataset {config.dataset}, OutLayer {config.OutLayer}, Pretrained on {config.pretrained_on}",
+        tags=[config.dataset, config.OutLayer],
+        config=config,
+    )
+
+    wandb.config.OutLayer = name_out
 
 
 if config.name_algo == "baseline":

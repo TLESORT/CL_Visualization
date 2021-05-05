@@ -141,7 +141,12 @@ class Continual_Evaluation(abc.ABC):
 
         accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
         accuracy_te = correct_te / (1.0 * nb_instances_te)
-        wandb.log({'train accuracy': accuracy_tr, 'test accuracy': accuracy_te, 'epoch': self.nb_tot_epoch, 'task': ind_task})
+
+        if not self.dev:
+            wandb.log({'train accuracy': accuracy_tr,
+                       'test accuracy': accuracy_te,
+                       'epoch': self.nb_tot_epoch,
+                       'task': ind_task})
 
         # log correct prediction on nb instances for accuracy computation
         accuracy_infos = np.array([correct_tr, nb_instances_tr, correct_te, nb_instances_te])
@@ -204,6 +209,12 @@ class Continual_Evaluation(abc.ABC):
         else:
             predictions = self._multihead_predictions(output, labels, task_labels)
 
+        if not self.dev:
+            if train:
+                wandb.log({'train loss': loss})
+            else:
+                wandb.log({'test loss': loss})
+
         if train:
             self.vector_predictions_epoch_tr = np.concatenate([self.vector_predictions_epoch_tr, predictions])
             self.vector_labels_epoch_tr = np.concatenate([self.vector_labels_epoch_tr, labels.cpu().numpy()])
@@ -213,10 +224,6 @@ class Continual_Evaluation(abc.ABC):
 
 
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
-                if train:
-                    wandb.log({'train loss': loss})
-                else:
-                    wandb.log({'test loss': loss})
 
                 if not (self.name_algo=="ogd" or self.OutLayer=="SLDA" or  self.OutLayer=="KNN" or "MIMO" in self.OutLayer):
                     if model.get_last_layer().weight.grad is not None:

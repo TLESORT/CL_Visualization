@@ -96,7 +96,8 @@ class Trainer(Continual_Evaluation):
             self.transform_train=None
             self.transform_test=None
 
-            assert self.scenario_tr.nb_tasks == self.num_tasks
+            assert self.scenario_tr.nb_tasks == self.num_tasks, \
+                print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
 
         self.num_classes = self.scenario_tr.nb_classes
