@@ -13,8 +13,8 @@ def get_scenario(dataset, scenario_name, nb_tasks, transform=None):
         from continuum import ClassIncremental
         scenario = ClassIncremental(dataset, nb_tasks=nb_tasks, transformations=transform)
     elif scenario_name == "Domain":
-        from continuum import InstanceIncremental
-        scenario = InstanceIncremental(dataset, nb_tasks=nb_tasks, transformations=transform)
+        from continuum import ContinualScenario
+        scenario = ContinualScenario(dataset, transformations=transform)
 
     return scenario
 
@@ -23,9 +23,12 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     if name_dataset == "MNIST":
         from continuum.datasets import MNIST
         dataset = MNIST(path_dir, download=True, train=train)
-    if name_dataset == "Core50":
+    elif name_dataset == "Core50":
         from continuum.datasets import Core50
         dataset = Core50(path_dir, download=False, train=train)
+    elif name_dataset == "Core10Lifelong":
+        from continuum.datasets import Core50
+        dataset = Core50(path_dir, scenario="domains", classification="category", train=train)
     elif name_dataset == "CIFAR10":
         from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
@@ -51,7 +54,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 def get_transform(name_dataset, train="True"):
     list_transform=None
-    if name_dataset == "Core50":
+    if name_dataset in ["Core50", "Core10Lifelong"]:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
         resize = trsf.Resize(size=224)
@@ -95,11 +98,11 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                       method=method)
     else:
 
-        if name_dataset == "CIFAR10" or name_dataset == "CIFAR100" or name_dataset == "SVHN":
+        if name_dataset in ["CIFAR10", "CIFAR100", "SVHN"]:
             from Models.cifar_models import CIFARModel
             model = CIFARModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
 
-        elif name_dataset == "Core50":
+        elif name_dataset in ["Core50", "Core10Lifelong"]:
             from Models.imagenet import ImageNetModel
             model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
                                   name_model="alexnet")
