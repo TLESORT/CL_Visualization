@@ -195,7 +195,7 @@ class KNN(nn.Module):
     def __init__(self, size_in, size_out, K=5):
         super().__init__()
         from sklearn.neighbors import KNeighborsClassifier
-        self.neigh = KNeighborsClassifier(n_neighbors=K)
+        self.neigh = KNeighborsClassifier(n_neighbors=K, weights='distance', algorithm='brute')
         self.data = torch.zeros((0, size_in))
         self.labels = torch.zeros(0)
         self.size_out = size_out
@@ -220,10 +220,10 @@ class KNN(nn.Module):
         for i in range(self.size_out):
             indexes = torch.where(self.labels == i)[0]
             data_classes = self.data[indexes]
-            if len(indexes) > 200:
+            if len(indexes) > 250:
                 dists = torch.cdist(data_classes, data_classes).sum(axis=0)
                 _, sort_index = dists.sort()
-                # we keep 100 samples
+                # we keep 150 samples
                 indexes2keep = indexes[sort_index[:150]]
                 new_data.append(self.data[indexes2keep])
                 new_labels.append(self.labels[indexes2keep])
