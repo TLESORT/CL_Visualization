@@ -48,7 +48,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "mnist_fellowship" and name_scenario == "Domain":
         dataset = MNISTFellowship(path_dir, download=True, train=train, update_labels=False)
     else:
-        print("Dataset unKnown")
+        raise NotImplementedError
     return dataset
 
 
@@ -82,7 +82,7 @@ def get_transform(name_dataset, train="True"):
     return list_transform
 
 
-def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None):
+def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None, architecture="resnet"):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         # assert name_dataset == "Disjoint"
@@ -105,7 +105,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
         elif name_dataset in ["Core50", "Core10Lifelong"]:
             from Models.imagenet import ImageNetModel
             model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
-                                  name_model="alexnet")
+                                  name_model=architecture)
         else:
             model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
 

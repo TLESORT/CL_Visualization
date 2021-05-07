@@ -46,6 +46,9 @@ parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet', "Core10Lifelong"], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
+parser.add_argument('--architecture', default=None, type=str,
+                    choices=["resnet", "alexnet"],
+                    help='dataset source of a pretrained model')
 
 config = parser.parse_args()
 torch.manual_seed(config.seed)
@@ -113,7 +116,7 @@ if not config.dev:
         config=config,
     )
 
-    wandb.config.OutLayer = name_out
+    wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
 
 
 if config.name_algo == "baseline":

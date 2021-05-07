@@ -54,6 +54,7 @@ class Trainer(Continual_Evaluation):
         self.OutLayer = config.OutLayer
         self.nb_epochs = config.nb_epochs
         self.non_differential_heads = ["SLDA", "MeanLayer", "MedianLayer", "KNN"]
+        self.architecture = config.architecture
 
 
         dataset_train = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=True)
@@ -71,7 +72,8 @@ class Trainer(Continual_Evaluation):
                                self.test_label,
                                self.OutLayer,
                                self.name_algo,
-                               model_dir=self.pmodel_dir)
+                               model_dir=self.pmodel_dir,
+                               architecture=self.architecture)
         self.model.cuda()
 
         self.finetuning = False

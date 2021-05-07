@@ -20,6 +20,8 @@ class ImageNetModel(nn.Module):
         self.data_encoded = False
         if name_model == "alexnet":
             model = models.alexnet(pretrained=True)
+        elif name_model == "resnet":
+            model = models.resnet18(pretrained=True)
         else:
             raise Exception("Ca va pas la")
 
