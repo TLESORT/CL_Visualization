@@ -46,9 +46,9 @@ parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet', "Core10Lifelong"], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
-parser.add_argument('--architecture', default=None, type=str,
+parser.add_argument('--architecture', default="resnet", type=str,
                     choices=["resnet", "alexnet"],
-                    help='dataset source of a pretrained model')
+                    help='architecture')
 
 config = parser.parse_args()
 torch.manual_seed(config.seed)
