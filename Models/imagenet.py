@@ -18,14 +18,20 @@ class ImageNetModel(nn.Module):
         self.name_model = name_model
         self.num_classes = num_classes
         self.data_encoded = False
-        if name_model == "alexnet":
+        if self.name_model == "alexnet":
             model = models.alexnet(pretrained=True)
-        elif name_model == "resnet":
+
+            self.latent_dim = list(model.children())[-1][-1].in_features
+            self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
+            self.features = nn.Sequential(*list(model.children())[:-1])
+        elif self.name_model == "resnet":
             model = models.resnet18(pretrained=True)
+            self.latent_dim = list(model.children())[-1].in_features
+            self.features = nn.Sequential(*list(model.children())[:-1])
         else:
             raise Exception("Ca va pas la")
 
-        self.latent_dim = list(model.children())[-1][-1].in_features
+
 
         self.head = NNHead(input_size=self.latent_dim,
                            num_classes=self.num_classes,
@@ -33,8 +39,6 @@ class ImageNetModel(nn.Module):
                            LayerType=OutLayer,
                            method=method)
 
-        self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
-        self.features = nn.Sequential(*list(model.children())[:-1])
 
     def set_data_encoded(self, flag):
         self.data_encoded = flag
@@ -47,9 +51,12 @@ class ImageNetModel(nn.Module):
         return self.head.layer
 
     def feature_extractor(self, x):
-        x = self.features(x)
-        x = x.view(-1, 9216)
-        return self.classifier(x)
+
+        if self.name_model == "alexnet":
+            x = self.classifier(self.features(x).view(-1, 9216))
+        else:
+            x = self.features(x)
+        return x
 
     def forward(self, x):
         if not self.data_encoded:
