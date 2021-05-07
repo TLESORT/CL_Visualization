@@ -83,14 +83,14 @@ class Trainer(Continual_Evaluation):
                                                self.scenario_tr,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{config.dataset}_{self.scenario_tr.nb_tasks}_train",
+                                               name=f"encode_{config.dataset}_{config.architecture}_{self.scenario_tr.nb_tasks}_train",
                                                train=True,
                                                dataset=self.dataset)
             self.scenario_te = encode_scenario(self.data_dir,
                                                self.scenario_te,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{config.dataset}_{self.scenario_te.nb_tasks}_test",
+                                               name=f"encode_{config.dataset}_{config.architecture}_{self.scenario_te.nb_tasks}_test",
                                                train=False,
                                                dataset=self.dataset)
             self.data_encoded=True
