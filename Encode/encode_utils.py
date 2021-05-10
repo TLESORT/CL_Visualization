@@ -62,6 +62,7 @@ def encode_scenario(data_dir, scenario, model, batch_size, name, force_encode=Fa
     if os.path.isfile(data_path) and not force_encode:
         encoded_scenario = load_encoded(data_path)
     else:
+        print(f"Encoding {data_path}")
         encoded_scenario = encode(model, scenario, batch_size, dataset=dataset, train=train)
         if save:
             save_encoded_data(data_path, encoded_scenario.cl_dataset)
