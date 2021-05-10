@@ -18,16 +18,27 @@ class ImageNetModel(nn.Module):
         self.name_model = name_model
         self.num_classes = num_classes
         self.data_encoded = False
+        self.img_size = 224
+
         if self.name_model == "alexnet":
             model = models.alexnet(pretrained=True)
-
             self.latent_dim = list(model.children())[-1][-1].in_features
-            self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
+            self.classifier = nn.Sequential(*list(model.children())[-1][:-1])  # between features and outlayer
             self.features = nn.Sequential(*list(model.children())[:-1])
+            self.features_size = 9216
         elif self.name_model == "resnet":
             model = models.resnet18(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features
             self.features = nn.Sequential(*list(model.children())[:-1])
+        elif self.name_model == "inception":
+            model = models.resnet18(pretrained=True)
+            self.latent_dim = list(model.children())[-1].in_features
+            self.features = nn.Sequential(*list(model.children())[:-1])
+        elif self.name_model == "vgg":
+            model = models.vgg16(pretrained=True)
+            self.features = nn.Sequential(*list(model.children())[:-1])
+            self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
+            self.features_size = 25088
         else:
             raise Exception("Ca va pas la")
 
@@ -52,15 +63,15 @@ class ImageNetModel(nn.Module):
 
     def feature_extractor(self, x):
 
-        if self.name_model == "alexnet":
-            x = self.classifier(self.features(x).view(-1, 9216))
+        if self.name_model in ["alexnet", "vgg"]:
+            x = self.classifier(self.features(x).view(-1, self.features_size))
         else:
             x = self.features(x)
         return x
 
     def forward(self, x):
         if not self.data_encoded:
-            x = x.view(-1, 3, 224, 224)
+            x = x.view(-1, 3, self.img_size, self.img_size)
             x = self.feature_extractor(x)
         x = x.view(-1, self.latent_dim)
         return self.head(x)
