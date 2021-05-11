@@ -6,6 +6,7 @@ import datetime
 import wandb
 
 from Methods.trainer import Trainer
+from utils import check_exp_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
@@ -108,6 +109,16 @@ experiment_id = experiment_id.replace("/", "-")
 
 #wandb.init(project='CL_Visualization', entity='tlesort')
 if not config.dev:
+
+    # Check if experience already exists
+    exp_already_done = check_exp_config(config)
+    if exp_already_done:
+        print("This experience has already been run and finished")
+        exit()
+    else:
+        print("This experience has not been run yet")
+
+
     wandb.init(
         project="CL_Visualization",
         group=experiment_label,

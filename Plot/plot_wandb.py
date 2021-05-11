@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import wandb
 import numpy as np
 
+from utils import select_run
 
 def generate_python_exp_2_run(dataset, pretrained_on, num_tasks, seed, outlayer, architecture, subset):
     if dataset == "Core10Lifelong" and num_tasks != 1:
@@ -32,47 +33,10 @@ def generate_python_exp_2_run(dataset, pretrained_on, num_tasks, seed, outlayer,
            f" --seed {seed} --OutLayer {outlayer}{masked_out}{str_subset}{str_archi}"
 
 
-def check_one_config_parameter(config_parameter, value_or_list):
-    if isinstance(value_or_list, list):
-        parameter_ok = (config_parameter in value_or_list)
-    else:
-        parameter_ok = (config_parameter == value_or_list)
-    return parameter_ok
-
-
-def select_run(dict_config, dataset, pretrained_on, num_tasks, OutLayer, subset, seed, architecture=None):
-    dataset_ok = check_one_config_parameter(dict_config["dataset"], dataset)
-    if not dataset_ok: return False
-
-    pretrained_on_ok = check_one_config_parameter(dict_config["pretrained_on"], pretrained_on)
-    if not pretrained_on_ok: return False
-
-    num_tasks_ok = check_one_config_parameter(dict_config["num_tasks"], num_tasks)
-    if not num_tasks_ok: return False
-
-    OutLayer_ok = check_one_config_parameter(dict_config["OutLayer"], OutLayer)
-    if not OutLayer_ok: return False
-
-    subset_ok = check_one_config_parameter(dict_config["subset"], subset)
-    if not subset_ok: return False
-
-    seed_ok = check_one_config_parameter(dict_config["seed"], seed)
-    if not seed_ok: return False
-
-    if dataset in ["Core50", "Core10Lifelong"]:
-        architecture_ok = check_one_config_parameter(dict_config["architecture"], architecture)
-    else:
-        architecture_ok = True
-    return architecture_ok
-
-
 def select_all_experiments(dataset, pretrained_on, num_tasks, list_subset, list_OutLayer, list_seed, architecture):
     api = wandb.Api()
     # Change oreilly-class/cifar to <entity/project-name>
     runs = api.runs("tlesort/CL_Visualization")
-    summary_list = []
-    config_list = []
-    name_list = []
     for run in runs:
         # run.summary are the output key/values like accuracy.  We call ._json_dict to omit large files
 
@@ -176,6 +140,7 @@ def plot_experiment(str_data_type, name_list, config_list, dataset, pretrained_o
                              f"{name_extension}_{dataset}_pt-{pretrained_on}_{num_tasks}_{subset}_{architecture}_{str_data_type}.png")
     plt.ylabel(str_data_type)
     plt.xlabel('Epochs')
+    plt.ylim(0, 1.0)
     plt.legend()
     plt.savefig(save_name)
     plt.clf()
@@ -197,7 +162,7 @@ def generate_one_value(value, std, end_line=False):
 def generate_one_line(Outlayer, Dataset_label, array_values, nb_lines):
     Outlayer_name = Outlayer.replace("_", "-")
     line = ""
-    if nb_lines % 2 == 0:
+    if nb_lines % 2 == 1:
         line += "\\rowcolor{gray!20}"
 
     line += f"{Outlayer_name} &\n {Dataset_label} &\n"
@@ -310,6 +275,7 @@ def plot_experiment_subset(str_data_type, name_list, config_list, dataset, pretr
                                  f"{dataset}_pt-{pretrained_on}_{num_tasks}_Subsets_{OutLayer}_{architecture}_{str_data_type}.png")
         plt.ylabel(str_data_type)
         plt.xlabel('Epochs')
+        plt.ylim(0, 1.0)
         plt.legend()
         plt.savefig(save_name)
         plt.clf()
@@ -330,12 +296,13 @@ list_OutLayer = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", "M
 list_OutLayer = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", "MedianLayer",
                  "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked",
                  'MIMO_Linear_Masked', "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
-list_seed = [0, 1]
+
 
 list_dataset = ["CIFAR10", "CIFAR100", "CIFAR10", "CIFAR100", "Core50", "Core10Lifelong"]
 list_architecture = [None, None, None, None, "resnet", "resnet"]
 list_pretrained_on = ["CIFAR100", "CIFAR10", "CIFAR10", "CIFAR100", "ImageNet", "ImageNet"]
 list_num_tasks = [5, 10, 5, 10, 10, 8]
+list_seed = [0, 1]
 
 check_for_doublon = False
 if check_for_doublon:
@@ -353,33 +320,34 @@ if check_for_doublon:
                                                        num_tasks, subset, OutLayer, list_seed, architecture,
                                                        check_doublon=True)
 
+####################################################################################
+# Masked Experiments
+####################################################################################
+
+list_dataset = ["CIFAR10", "CIFAR100", "Core50", "Core10Lifelong"]
+list_architecture = [None, None, "resnet", "resnet"]
+list_pretrained_on = ["CIFAR100", "CIFAR10", "ImageNet", "ImageNet"]
+list_subset = [None]
+list_num_tasks = [5, 10, 10, 8]
+
+list_OutLayer_masked_exp = ["Linear", "Linear_no_bias", "CosLayer",
+                            "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked"]
+
+for dataset, pretrained_on, num_tasks, architecture in zip(list_dataset, list_pretrained_on, list_num_tasks,
+                                                           list_architecture):
+    summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
+                                                                  list_OutLayer_masked_exp,
+                                                                  list_seed, architecture=architecture)
+
+    nb_exps = len(summary_list)
+
+    plot_experiment(str_data_type="test accuracy", name_list=name_list, config_list=config_list, dataset=dataset,
+                    pretrained_on=pretrained_on,
+                    num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=list_OutLayer_masked_exp,
+                    list_seed=list_seed,
+                    architecture=architecture, name_extension="Masked_Exp")
+
 if False:
-    ####################################################################################
-    # Masked Experiments
-    ####################################################################################
-
-    list_dataset = ["CIFAR10", "CIFAR100", "Core50", "Core10Lifelong"]
-    list_architecture = [None, None, "resnet", "resnet"]
-    list_pretrained_on = ["CIFAR100", "CIFAR10", "ImageNet", "ImageNet"]
-    list_num_tasks = [5, 10, 10, 8]
-
-    list_OutLayer_masked_exp = ["Linear", "Linear_no_bias", "CosLayer",
-                                "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked"]
-
-    for dataset, pretrained_on, num_tasks, architecture in zip(list_dataset, list_pretrained_on, list_num_tasks,
-                                                               list_architecture):
-        summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
-                                                                      list_OutLayer_masked_exp,
-                                                                      list_seed, architecture=architecture)
-
-        nb_exps = len(summary_list)
-
-        plot_experiment(str_data_type="test accuracy", name_list=name_list, config_list=config_list, dataset=dataset,
-                        pretrained_on=pretrained_on,
-                        num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=list_OutLayer_masked_exp,
-                        list_seed=list_seed,
-                        architecture=architecture, name_extension="Masked_Exp")
-
     ####################################################################################
     # Continual Experiments
     ####################################################################################
@@ -408,32 +376,32 @@ if False:
                         num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=list_OutLayer, list_seed=list_seed,
                         architecture=None)
 
-####################################################################################
-# Subset Experiments
-####################################################################################
-list_subset = [100, 200, 500, 1000, 10000, None]
+    ####################################################################################
+    # Subset Experiments
+    ####################################################################################
+    list_subset = [100, 200, 500, 1000, 10000, None]
 
-list_dataset = ["Core50", "Core10Lifelong"]
-list_pretrained_on = ["ImageNet", "ImageNet"]
-list_num_tasks = [1, 1]
-architecture = "resnet"
+    list_dataset = ["Core50", "Core10Lifelong"]
+    list_pretrained_on = ["ImageNet", "ImageNet"]
+    list_num_tasks = [1, 1]
+    architecture = "resnet"
 
-# reset file
-textfile = open("table.txt", "w")
-a = textfile.write("")
-textfile.close()
+    # reset file
+    textfile = open("table.txt", "w")
+    a = textfile.write("")
+    textfile.close()
 
-for dataset, pretrained_on, num_tasks in zip(list_dataset, list_pretrained_on, list_num_tasks):
-    summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
-                                                                  list_OutLayer,
-                                                                  list_seed, architecture=architecture)
+    for dataset, pretrained_on, num_tasks in zip(list_dataset, list_pretrained_on, list_num_tasks):
+        summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
+                                                                      list_OutLayer,
+                                                                      list_seed, architecture=architecture)
 
-    nb_exps = len(summary_list)
+        nb_exps = len(summary_list)
 
-    # plot_experiment_subset(str_data_type="test accuracy", name_list=name_list, config_list=config_list,
-    #                        dataset=dataset,
-    #                        pretrained_on=pretrained_on,
-    #                        num_tasks=num_tasks, list_subset=list_subset, list_OutLayer=list_OutLayer,
-    #                        list_seed=list_seed, architecture=None)
-    generate_table_subset(name_list, summary_list, config_list, "test accuracy", dataset, pretrained_on,
-                          num_tasks, list_subset, list_OutLayer, list_seed, architecture=architecture)
+        # plot_experiment_subset(str_data_type="test accuracy", name_list=name_list, config_list=config_list,
+        #                        dataset=dataset,
+        #                        pretrained_on=pretrained_on,
+        #                        num_tasks=num_tasks, list_subset=list_subset, list_OutLayer=list_OutLayer,
+        #                        list_seed=list_seed, architecture=None)
+        generate_table_subset(name_list, summary_list, config_list, "test accuracy", dataset, pretrained_on,
+                              num_tasks, list_subset, list_OutLayer, list_seed, architecture=architecture)
