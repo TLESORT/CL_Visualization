@@ -151,23 +151,27 @@ def select_run(dict_config, dataset, pretrained_on, num_tasks, OutLayer, subset,
         architecture_ok = True
     return architecture_ok
 
-def check_exp_config(config):
+def check_exp_config(config, name_out):
     api = wandb.Api()
     runs = api.runs("tlesort/CL_Visualization")
     exp_already_done = False
+
+
+
     for run in runs:
-        dict_config = {k: v for k, v in run.config.items() if not k.startswith('_')}
-        exp_already_done = select_run(dict_config,
-                            config.dataset,
-                            config.pretrained_on,
-                            config.num_tasks,
-                            config.OutLayer,
-                            config.subset,
-                            config.seed,
-                            config.lr,
-                            config.architecture)
-        if exp_already_done:
-            print(f"This experience has already be runned and finnished: {run.name}")
-            print(dict_config)
-            break
+        if run.state == "finished":
+            dict_config = {k: v for k, v in run.config.items() if not k.startswith('_')}
+            exp_already_done = select_run(dict_config,
+                                config.dataset,
+                                config.pretrained_on,
+                                config.num_tasks,
+                                name_out,
+                                config.subset,
+                                config.seed,
+                                config.lr,
+                                config.architecture)
+            if exp_already_done:
+                print(f"This experience has already be runned and finnished: {run.name}")
+                print(dict_config)
+                break
     return exp_already_done

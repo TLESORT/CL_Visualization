@@ -111,7 +111,7 @@ experiment_id = experiment_id.replace("/", "-")
 if not config.dev:
 
     # Check if experience already exists
-    exp_already_done = check_exp_config(config)
+    exp_already_done = check_exp_config(config, name_out)
     if exp_already_done:
         print("This experience has already been run and finished")
         exit()
