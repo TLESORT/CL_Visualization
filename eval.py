@@ -2,6 +2,7 @@ import pickle
 import os
 import torch
 import numpy as np
+from numpy import linalg as LA
 import abc
 
 from copy import deepcopy
@@ -86,6 +87,27 @@ class Continual_Evaluation(abc.ABC):
 
             # save log from first tasks
             self.post_training_log(ind_task)
+
+        if not self.fast and (not self.OutLayer in self.non_differential_heads):
+            layer = self.model.get_last_layer()
+            w = np.array(layer.weight.data.detach().cpu().clone(), dtype=np.float16)
+            wandb.log({"weights output": wandb.Histogram(w)})
+            classes_ids = np.arange(self.num_classes)
+            if layer.bias is not None:
+                b = np.array(layer.bias.data.detach().cpu().clone(), dtype=np.float16)
+                data_b = [[s, class_id] for s, class_id in zip(b, classes_ids)]
+                table_b = wandb.Table(data=data_b, columns=["bias", "Class"])
+                wandb.log({f"Bias Task {ind_task}": wandb.plot.bar(table_b, "Class", "bias", title=f"Bias Bars Task {ind_task}")})
+
+            norm_mat = np.zeros(self.num_classes)
+
+            for j in range(self.num_classes):
+                norm_mat[j] = LA.norm(w[j, :])
+
+
+            data_norm = [[s, class_id] for s, class_id in zip(norm_mat, classes_ids)]
+            table_norm = wandb.Table(data=data_norm, columns=["Norm", "Class"])
+            wandb.log({f"Norm Task {ind_task}": wandb.plot.bar(table_norm, "Class", "Norm", title=f"Norm  Bars Task {ind_task}")})
 
     def log_weights_dist(self, ind_task):
 
