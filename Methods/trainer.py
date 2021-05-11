@@ -25,6 +25,7 @@ class Trainer(Continual_Evaluation):
         super().__init__(config)
 
         self.lr = config.lr
+        self.momentum = config.momentum
         self.seed = config.seed
         self.root_dir = config.root_dir
         self.verbose = config.verbose
@@ -39,6 +40,7 @@ class Trainer(Continual_Evaluation):
 
         self.data_dir = config.data_dir
         self.pmodel_dir = config.pmodel_dir
+        self.reset_opt = config.reset_opt
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir)
         self.log_dir = os.path.join(self.root_dir, "Logs", self.scenario_name)
@@ -56,15 +58,16 @@ class Trainer(Continual_Evaluation):
         self.non_differential_heads = ["SLDA", "MeanLayer", "MedianLayer", "KNN"]
         self.architecture = config.architecture
 
-
         dataset_train = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=False)
 
         self.transform_train = get_transform(self.dataset, train=True)
         self.transform_test = get_transform(self.dataset, train=True)
 
-        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_train)
-        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, transform=self.transform_test)
+        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks,
+                                        transform=self.transform_train)
+        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks,
+                                        transform=self.transform_test)
 
         self.model = get_model(self.dataset,
                                self.scenario_tr,
@@ -77,7 +80,7 @@ class Trainer(Continual_Evaluation):
         self.model.cuda()
 
         self.finetuning = False
-        if (self.pretrained_on is not None) and self.finetuning==False:
+        if (self.pretrained_on is not None) and self.finetuning == False:
             # we replace the scenario data by feature vector from the pretrained model to save training time
             self.scenario_tr = encode_scenario(self.data_dir,
                                                self.scenario_tr,
@@ -93,18 +96,17 @@ class Trainer(Continual_Evaluation):
                                                name=f"encode_{config.dataset}_{config.architecture}_{self.scenario_te.nb_tasks}_test",
                                                train=False,
                                                dataset=self.dataset)
-            self.data_encoded=True
+            self.data_encoded = True
             self.model.set_data_encoded(flag=True)
-            self.transform_train=None
-            self.transform_test=None
+            self.transform_train = None
+            self.transform_test = None
 
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
-            self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=config.momentum)
+            self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
         else:
             self.opt = None
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
@@ -120,10 +122,13 @@ class Trainer(Continual_Evaluation):
         torch.manual_seed(self.seed)
         np.random.seed(self.seed)
 
+        if self.reset_opt and (not self.OutLayer in self.non_differential_heads):
+            self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
+
         if self.verbose: print("prepare subset")
         if self.subset is not None:
             # replace the full taskset by a subset of samples ramdomly selected
-            nb_tot_samples =len(task_set)
+            nb_tot_samples = len(task_set)
             indexes = np.random.randint(0, nb_tot_samples, self.subset)
             x, y, t = task_set.get_raw_samples(indexes=indexes)
             task_set = TaskSet(x, y, t, trsf=task_set.trsf, data_type=task_set.data_type)
@@ -151,7 +156,6 @@ class Trainer(Continual_Evaluation):
 
     def callback_task(self, ind_task, task_set):
         self.post_task_log(ind_task)
-
 
     def callback_epoch(self, ind_task, epoch):
         if self.OutLayer in self.non_differential_heads:
@@ -261,7 +265,7 @@ class Trainer(Continual_Evaluation):
 
             if self.verbose: print("init_task")
             data_loader = self.init_task(task_id, task_set)
-            if task_id==0 and self.first_task_loaded:
+            if task_id == 0 and self.first_task_loaded:
                 # we loaded model and log from another experience for task 0
                 continue
             if self.verbose: print("init_log")
