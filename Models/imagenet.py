@@ -36,8 +36,9 @@ class ImageNetModel(nn.Module):
             self.features = nn.Sequential(*list(model.children())[:-1])
         elif self.name_model == "vgg":
             model = models.vgg16(pretrained=True)
-            self.features = nn.Sequential(*list(model.children())[:-1])
+            self.latent_dim = list(model.children())[-1][-1].in_features
             self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
+            self.features = nn.Sequential(*list(model.children())[:-1])
             self.features_size = 25088
         else:
             raise Exception("Ca va pas la")
