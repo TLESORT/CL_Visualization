@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 import numpy as np
 
 from Models.Output_Layers.StreamingSLDA import StreamingLDA
@@ -27,8 +27,23 @@ class CosineLayer(nn.Module):
 
         x = torch.cat(cosine_out, dim=1)
         return x
+    
+class WeightNormLayer(nn.Module):
+    def __init__(self, size_in, size_out, bias=True):
+        super().__init__()
+        self.size_in, self.size_out = size_in, size_out
+        self.weight = nn.Parameter(torch.Tensor(size_out, size_in))
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(size_out))
+        else:
+            bias = None
 
+        # initialize weights
+        nn.init.kaiming_normal_(self.weight)  # weight init
 
+    def forward(self, x):
+        x = F.linear(x, self.weight / torch.norm(self.weight, dim=1, keepdim=True), self.bias)
+        return x
 
 class MIMO(nn.Module):
     def __init__(self, size_in, size_out, num_layer=3, layer_type="MIMO_Linear"):
