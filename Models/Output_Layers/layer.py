@@ -21,7 +21,7 @@ class CosineLayer(nn.Module):
 
     def forward(self, x):
         cosine_out = []
-        cosine_out
+
         for i in range(self.size_out):
             cosine_out.append(torch.cosine_similarity(x, self.weight[i, :].unsqueeze(0)).unsqueeze(-1))
 
