@@ -72,7 +72,11 @@ class Continual_Evaluation(abc.ABC):
 
     def log_task(self, ind_task, model):
         if self.pretrained_on:
-            torch.save(model.get_last_layer().state_dict(), os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pth"))
+            if self.OutLayer == "KNN":
+                knnPickle = open(os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pkl"), 'wb')
+                pickle.dump(model.get_last_layer().neigh, knnPickle)
+            else:
+                torch.save(model.get_last_layer().state_dict(), os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pth"))
         else:
             torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth"))
 
