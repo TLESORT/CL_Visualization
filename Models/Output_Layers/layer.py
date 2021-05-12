@@ -10,7 +10,7 @@ import math
 
 
 class CosineLayer(nn.Module):
-    def __init__(self, size_in, size_out):
+    def __init__(self, size_in, size_out, bias=False):
         super().__init__()
         self.size_in, self.size_out = size_in, size_out
         weight = torch.Tensor(size_out, size_in)
@@ -18,9 +18,16 @@ class CosineLayer(nn.Module):
 
         # initialize weights
         nn.init.kaiming_normal_(self.weight)  # weight init
+        
+        if bias:
+            self.bias = nn.Parameter(torch.zeros(size_in))
+        else:
+            self.bias = None
 
     def forward(self, x):
         cosine_out = []
+        if self.bias is not None:
+            x = x + self.bias.unsqueeze(0)
 
         for i in range(self.size_out):
             cosine_out.append(torch.cosine_similarity(x, self.weight[i, :].unsqueeze(0)).unsqueeze(-1))
