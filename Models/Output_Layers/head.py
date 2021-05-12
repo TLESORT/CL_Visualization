@@ -11,6 +11,7 @@ class NNHead(nn.Module):
         self.method=method
         self.num_classes = num_classes
         self.LayerType=LayerType
+        self.classes_mask = torch.eye(self.num_classes).cuda()
 
         if not (classes_per_tasks is None):
             assert len(np.unique(classes_per_tasks))==self.num_classes
@@ -63,13 +64,18 @@ class NNHead(nn.Module):
         return x
 
 
-    def get_loss(self, out, labels, loss_func, masked=False):
+    def get_loss(self, out, labels, loss_func, masked=None):
 
         if "MIMO_" in self.LayerType:
             loss=self.layer.get_loss(out, labels, loss_func, masked)
         else:
-            if masked:
-                classes_mask = torch.eye(self.num_classes).cuda()
-                out = torch.mul(out, classes_mask[labels])
+            if masked == "single":
+                out = torch.mul(out, self.classes_mask[labels])
+            elif masked == "group":
+                label_unique = labels.unique()
+                ind_mask = self.classes_mask[label_unique].sum(0)
+                full_mask = ind_mask.unsqueeze(0).repeat(out.shape[0], 1)
+                out = torch.mul(out, full_mask)
+
             loss = loss_func(out, labels)
         return loss

@@ -31,7 +31,8 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--reset_opt', action='store_true', default=False,
                     help='reset opt at each new task')
-parser.add_argument('--masked_out', action='store_true', default=False, help='if true we only update one out dimension')
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group"],
+                    help='if single we only update one out dimension, if group mask the classes in the batch')
 parser.add_argument('--subset', type=int, default=None, help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--OutLayer', default="Linear", type=str,
                     choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA'],
@@ -79,8 +80,10 @@ if config.test_label:
 else:
     experiment_id = os.path.join(experiment_id, "SingleH")
 
-if config.masked_out:
+if config.masked_out=="single":
     name_out = f"{config.OutLayer}_Masked"
+elif config.masked_out=="group":
+    name_out = f"{config.OutLayer}_GMasked"
 else:
     name_out = config.OutLayer
 
