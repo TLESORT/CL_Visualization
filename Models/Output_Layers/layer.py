@@ -36,7 +36,7 @@ class WeightNormLayer(nn.Module):
         if bias:
             self.bias = nn.Parameter(torch.zeros(size_out))
         else:
-            bias = None
+            self.bias = None
 
         # initialize weights
         nn.init.kaiming_normal_(self.weight)  # weight init

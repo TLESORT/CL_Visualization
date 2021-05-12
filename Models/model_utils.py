@@ -6,9 +6,11 @@ def get_Output_layer(LayerName, in_dim, out_dim):
         from Models.Output_Layers.layer import CosineLayer
         # We replace the output layer by a cosine layer
         outlayer = CosineLayer(in_dim, out_dim)
+    elif LayerName == "WeightNorm":
+        from Models.Output_Layers.layer import WeightNormLayer
+        outlayer = WeightNormLayer(in_dim, out_dim, bias=False)
     elif LayerName == "SLDA":
         from Models.Output_Layers.layer import SLDALayer
-        # We replace the output layer by a cosine layer
         outlayer = SLDALayer(in_dim, out_dim)
     elif LayerName == "Linear_no_bias":
         outlayer = torch.nn.Linear(in_dim, out_dim, bias=False)

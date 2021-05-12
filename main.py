@@ -35,7 +35,7 @@ parser.add_argument('--masked_out', default=None, type=str, choices=[None, "sing
                     help='if single we only update one out dimension, if group mask the classes in the batch')
 parser.add_argument('--subset', type=int, default=None, help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA'],
+                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default=None, type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
