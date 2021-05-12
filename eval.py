@@ -97,7 +97,7 @@ class Continual_Evaluation(abc.ABC):
             w = np.array(layer.weight.data.detach().cpu().clone(), dtype=np.float16)
             wandb.log({"weights output": wandb.Histogram(w)})
             classes_ids = np.arange(self.num_classes)
-            if layer.bias is not None:
+            if hasattr(layer, 'bias') and layer.bias is not None:
                 b = np.array(layer.bias.data.detach().cpu().clone(), dtype=np.float16)
                 data_b = [[s, class_id] for s, class_id in zip(b, classes_ids)]
                 table_b = wandb.Table(data=data_b, columns=["bias", "Class"])
