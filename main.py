@@ -130,7 +130,7 @@ if not config.dev:
     for i in range(10):
         try:
             wandb.init(
-                project="CL_Visualization",
+                project="CL_Visualization", settings=wandb.Settings(start_method='fork'),
                 group=experiment_label,
                 id=experiment_id + '-' + wandb.util.generate_id(),
                 entity='tlesort',
