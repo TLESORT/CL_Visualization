@@ -22,21 +22,21 @@ class ImageNetModel(nn.Module):
 
         if self.name_model == "alexnet":
             model = models.alexnet(pretrained=True)
-            self.latent_dim = list(model.children())[-1][-1].in_features
+            self.latent_dim = list(model.children())[-1][-1].in_features #2048
             self.classifier = nn.Sequential(*list(model.children())[-1][:-1])  # between features and outlayer
             self.features = nn.Sequential(*list(model.children())[:-1])
             self.features_size = 9216
         elif self.name_model == "resnet":
             model = models.resnet18(pretrained=True)
-            self.latent_dim = list(model.children())[-1].in_features
+            self.latent_dim = list(model.children())[-1].in_features  #512
             self.features = nn.Sequential(*list(model.children())[:-1])
         elif self.name_model == "inception":
-            model = models.resnet18(pretrained=True)
+            model = models.inception(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features
             self.features = nn.Sequential(*list(model.children())[:-1])
         elif self.name_model == "vgg":
             model = models.vgg16(pretrained=True)
-            self.latent_dim = list(model.children())[-1][-1].in_features
+            self.latent_dim = list(model.children())[-1][-1].in_features #2048
             self.classifier = nn.Sequential(*list(model.children())[-1][:-1])
             self.features = nn.Sequential(*list(model.children())[:-1])
             self.features_size = 25088
