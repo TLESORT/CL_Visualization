@@ -1,4 +1,5 @@
 import os
+import time
 import torch
 import numpy as np
 import argparse
@@ -126,15 +127,21 @@ if not config.dev:
     else:
         print("This experience has not been run yet")
 
-    wandb.init(
-        project="CL_Visualization",
-        group=experiment_label,
-        id=experiment_id + '-' + wandb.util.generate_id(),
-        entity='tlesort',
-        notes=f"Experiment: Dataset {config.dataset}, OutLayer {config.OutLayer}, Pretrained on {config.pretrained_on}",
-        tags=[config.dataset, config.OutLayer],
-        config=config,
-    )
+    for i in range(10):
+        try:
+            wandb.init(
+                project="CL_Visualization",
+                group=experiment_label,
+                id=experiment_id + '-' + wandb.util.generate_id(),
+                entity='tlesort',
+                notes=f"Experiment: Dataset {config.dataset}, OutLayer {config.OutLayer}, Pretrained on {config.pretrained_on}",
+                tags=[config.dataset, config.OutLayer],
+                config=config,
+            )
+            break
+        except:
+            print(f"Retrying {i}")
+            time.sleep(10)
 
     wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
 
