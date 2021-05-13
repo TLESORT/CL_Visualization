@@ -49,5 +49,5 @@ class Model(nn.Module):
 
         return x
 
-    def get_loss(self, out, labels, loss_func, masked=False):
+    def get_loss(self, out, labels, loss_func, masked=None):
         return self.head.get_loss(out, labels, loss_func, masked)

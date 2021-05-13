@@ -36,6 +36,11 @@ class Trainer(Continual_Evaluation):
         self.batch_size = config.batch_size
         self.test_label = config.test_label
         self.masked_out = config.masked_out
+
+        print("################################################################")
+        print(self.masked_out)
+        print("################################################################")
+
         self.num_tasks = config.num_tasks
         self.scenario_name = config.scenario_name
         self.subset = config.subset
@@ -202,7 +207,7 @@ class Trainer(Continual_Evaluation):
         loss = self.model.get_loss(output,
                                    y_,
                                    loss_func=F.cross_entropy,
-                                   masked=(self.masked_out and ind_task > 0)
+                                   masked=self.masked_out
                                    # we apply mask from task 1 because before there is no risk of forgetting
                                    )
 
@@ -219,7 +224,7 @@ class Trainer(Continual_Evaluation):
         loss = self.model.get_loss(output,
                                    y_,
                                    loss_func=F.cross_entropy,
-                                   masked=(self.masked_out and ind_task > 0)
+                                   masked=self.masked_out
                                    # we apply mask from task 1 because before there is no risk of forgetting
                                    )
 
