@@ -267,5 +267,7 @@ class KNN(nn.Module):
     def update(self, epoch=0):
         if epoch == 0:
             self._trim_data()
+            # reinit
+            self.neigh = KNeighborsClassifier(n_neighbors=K, weights='distance', algorithm='brute')
             self.neigh.fit(self.data.numpy(), self.labels.numpy())
             self.initiated = True
