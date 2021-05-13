@@ -51,7 +51,7 @@ parser.add_argument('--dataset', default="MNIST", type=str,
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 parser.add_argument('--architecture', default="resnet", type=str,
-                    choices=["resnet", "alexnet", "vgg", "inception"],
+                    choices=["resnet", "alexnet", "vgg", "googlenet"],
                     help='architecture')
 
 config = parser.parse_args()
