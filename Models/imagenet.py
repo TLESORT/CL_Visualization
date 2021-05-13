@@ -31,7 +31,7 @@ class ImageNetModel(nn.Module):
             self.latent_dim = list(model.children())[-1].in_features  #512
             self.features = nn.Sequential(*list(model.children())[:-1])
         elif self.name_model == "inception":
-            model = models.inception(pretrained=True)
+            model = models.inception_v3(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features
             self.features = nn.Sequential(*list(model.children())[:-1])
         elif self.name_model == "vgg":
