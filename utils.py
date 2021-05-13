@@ -52,12 +52,15 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     return dataset
 
 
-def get_transform(name_dataset, train="True"):
+def get_transform(name_dataset, architecture, train="True"):
     list_transform=None
     if name_dataset in ["Core50", "Core10Lifelong"]:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
-        resize = trsf.Resize(size=224)
+        if architecture=="inception":
+            resize = trsf.Resize(size=299)
+        else:
+            resize = trsf.Resize(size=224)
         transform = trsf.Compose([resize, trsf.ToTensor(), normalize])
         list_transform = [transform]
     elif name_dataset == "CIFAR10":
