@@ -33,9 +33,11 @@ parser.add_argument('--reset_opt', action='store_true', default=False,
                     help='reset opt at each new task')
 parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group"],
                     help='if single we only update one out dimension, if group mask the classes in the batch')
-parser.add_argument('--subset', type=int, default=None, help='we can replace the full tasks by a subset of samples randomly selected')
+parser.add_argument('--subset', type=int, default=None,
+                    help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias', 'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm'],
+                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias',
+                             'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default=None, type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
@@ -47,7 +49,8 @@ parser.add_argument('--fast', action='store_true', default=False, help='if fast 
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet', "Core10Lifelong"], help='dataset name')
+                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
+                             "Core10Lifelong"], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 parser.add_argument('--architecture', default="resnet", type=str,
@@ -58,8 +61,13 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
-experiment_id=f"{config.dataset}"
+if config.seed == 0:
+    task_order = np.arange(config.num_tasks)
+else:
+    task_order = np.random.permutation(config.num_tasks)
 
+config.task_order = task_order
+experiment_id = f"{config.dataset}"
 
 config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
 if not os.path.exists(config.pmodel_dir):
@@ -72,23 +80,22 @@ if config.pretrained_on is not None:
 
 if config.subset is not None:
     experiment_id = os.path.join(experiment_id, f"subset-{config.subset}")
-    if config.OutLayer in ['MeanLayer','MedianLayer', 'KNN', 'SLDA']:
-        config.nb_epochs = 1 # for layer that does not learn there is not need for more than one epoch
+    if config.OutLayer in ['MeanLayer', 'MedianLayer', 'KNN', 'SLDA']:
+        config.nb_epochs = 1  # for layer that does not learn there is not need for more than one epoch
 
 if config.test_label:
     experiment_id = os.path.join(experiment_id, "MultiH")
 else:
     experiment_id = os.path.join(experiment_id, "SingleH")
 
-if config.masked_out=="single":
+if config.masked_out == "single":
     name_out = f"{config.OutLayer}_Masked"
-elif config.masked_out=="group":
+elif config.masked_out == "group":
     name_out = f"{config.OutLayer}_GMasked"
 else:
     name_out = config.OutLayer
 
 experiment_id = os.path.join(experiment_id, f"seed-{config.seed}", name_out)
-
 
 config.root_dir = os.path.join(config.root_dir, experiment_id)
 if not os.path.exists(config.root_dir):
@@ -102,7 +109,6 @@ if not config.no_train:
         fp.write(f'{datetime.datetime.now()} \n')
         fp.write(str(config).replace(",", ",\n"))
 
-
 if config.subset is None:
     experiment_label = f"{config.dataset}-pretrained-{config.pretrained_on}"
 else:
@@ -110,7 +116,6 @@ else:
 
 experiment_id = experiment_id.replace("/", "-")
 
-#wandb.init(project='CL_Visualization', entity='tlesort')
 if not config.dev:
 
     # Check if experience already exists
@@ -120,7 +125,6 @@ if not config.dev:
         exit()
     else:
         print("This experience has not been run yet")
-
 
     wandb.init(
         project="CL_Visualization",
@@ -133,7 +137,6 @@ if not config.dev:
     )
 
     wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
-
 
 if config.name_algo == "baseline":
     Algo = Trainer(config)

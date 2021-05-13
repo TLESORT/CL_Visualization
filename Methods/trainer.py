@@ -10,6 +10,7 @@ import torch.nn.functional as F
 import os
 
 from continuum.tasks import TaskSet
+from continuum.scenarios import create_subscenario
 
 from utils import get_dataset, get_model, get_scenario, get_transform
 from Encode.encode_utils import encode_scenario
@@ -25,6 +26,7 @@ class Trainer(Continual_Evaluation):
         super().__init__(config)
 
         self.lr = config.lr
+        self.task_order = config.task_order
         self.momentum = config.momentum
         self.seed = config.seed
         self.root_dir = config.root_dir
@@ -105,6 +107,12 @@ class Trainer(Continual_Evaluation):
 
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
+
+        if self.num_tasks >1:
+            # random permutation of task order
+            self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
+            if self.scenario_te.nb_tasks > 1:
+                self.scenario_te = create_subscenario(self.scenario_te, self.task_order)
 
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
