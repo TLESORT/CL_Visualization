@@ -62,7 +62,7 @@ class Trainer(Continual_Evaluation):
         dataset_test = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=False)
 
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
-        self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=True)
+        self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks,
                                         transform=self.transform_train)

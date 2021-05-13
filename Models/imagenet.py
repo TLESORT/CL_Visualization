@@ -30,9 +30,9 @@ class ImageNetModel(nn.Module):
             model = models.resnet18(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features  #512
             self.features = nn.Sequential(*list(model.children())[:-1])
-        elif self.name_model == "inception":
-            model = models.inception_v3(pretrained=True)
-            self.latent_dim = list(model.children())[-1].in_features
+        elif self.name_model == "googlenet":
+            model = models.googlenet(pretrained=True)
+            self.latent_dim = list(model.children())[-1].in_features # 1024
             self.features = nn.Sequential(*list(model.children())[:-1])
         elif self.name_model == "vgg":
             model = models.vgg16(pretrained=True)
