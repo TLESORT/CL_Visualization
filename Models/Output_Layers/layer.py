@@ -206,14 +206,14 @@ class SLDALayer(nn.Module):
         pass
 
 
-
+from sklearn.neighbors import KNeighborsClassifier
 class KNN(nn.Module):
     """ Custom Linear layer but mimics a standard linear layer """
 
     def __init__(self, size_in, size_out, K=5):
         super().__init__()
-        from sklearn.neighbors import KNeighborsClassifier
-        self.neigh = KNeighborsClassifier(n_neighbors=K, weights='distance', algorithm='brute')
+        self.K = K
+        self.neigh = KNeighborsClassifier(n_neighbors=self.K, weights='distance', algorithm='brute')
         self.data = torch.zeros((0, size_in))
         self.labels = torch.zeros(0)
         self.size_out = size_out
@@ -268,6 +268,6 @@ class KNN(nn.Module):
         if epoch == 0:
             self._trim_data()
             # reinit
-            self.neigh = KNeighborsClassifier(n_neighbors=K, weights='distance', algorithm='brute')
+            self.neigh = KNeighborsClassifier(n_neighbors=self.K, weights='distance', algorithm='brute')
             self.neigh.fit(self.data.numpy(), self.labels.numpy())
             self.initiated = True
