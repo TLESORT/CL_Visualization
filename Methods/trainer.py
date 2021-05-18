@@ -37,10 +37,6 @@ class Trainer(Continual_Evaluation):
         self.test_label = config.test_label
         self.masked_out = config.masked_out
 
-        print("################################################################")
-        print(self.masked_out)
-        print("################################################################")
-
         self.num_tasks = config.num_tasks
         self.scenario_name = config.scenario_name
         self.subset = config.subset
