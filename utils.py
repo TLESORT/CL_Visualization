@@ -29,6 +29,9 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "Core10Lifelong":
         from continuum.datasets import Core50
         dataset = Core50(path_dir, scenario="domains", classification="category", train=train)
+    elif name_dataset == "Core10Mix":
+        from continuum.datasets import Core50
+        dataset = Core50(path_dir, scenario="objects", classification="category", train=train)
     elif name_dataset == "CIFAR10":
         from continuum.datasets import CIFAR10
         dataset = CIFAR10(path_dir, download=True, train=train)
