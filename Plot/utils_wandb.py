@@ -26,7 +26,6 @@ def select_run(dict_config, dataset, pretrained_on, num_tasks, OutLayer, subset,
     seed_ok = check_one_config_parameter(dict_config["seed"], seed)
     if not seed_ok: return False
 
-
     lr_ok = check_one_config_parameter(dict_config["lr"], lr)
     if not lr_ok: return False
 
