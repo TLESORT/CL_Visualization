@@ -32,7 +32,7 @@ parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--reset_opt', action='store_true', default=False,
                     help='reset opt at each new task')
-parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group"],
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "right"],
                     help='if single we only update one out dimension, if group mask the classes in the batch')
 parser.add_argument('--subset', type=int, default=None,
                     help='we can replace the full tasks by a subset of samples randomly selected')
@@ -51,7 +51,7 @@ parser.add_argument('--dev', action='store_true', default=False, help='dev flag'
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
-                             "Core10Lifelong"], help='dataset name')
+                             "Core10Lifelong", "Core10Mix"], help='dataset name')
 parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 parser.add_argument('--architecture', default="resnet", type=str,
@@ -93,6 +93,8 @@ if config.masked_out == "single":
     name_out = f"{config.OutLayer}_Masked"
 elif config.masked_out == "group":
     name_out = f"{config.OutLayer}_GMasked"
+elif config.masked_out == "right":
+    name_out = f"{config.OutLayer}_RMasked"
 else:
     name_out = config.OutLayer
 
@@ -122,7 +124,7 @@ if not config.dev:
     # Check if experience already exists
     exp_already_done = check_exp_config(config, name_out)
     if exp_already_done:
-        print("This experience has already been run and finished")
+        print(f"This experience has already been run and finished: {experiment_id}")
         exit()
     else:
         print("This experience has not been run yet")

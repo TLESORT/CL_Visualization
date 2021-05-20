@@ -57,7 +57,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 def get_transform(name_dataset, architecture, train="True"):
     list_transform=None
-    if name_dataset in ["Core50", "Core10Lifelong"]:
+    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
         resize = trsf.Resize(size=224)
@@ -105,7 +105,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
             from Models.cifar_models import CIFARModel
             model = CIFARModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
 
-        elif name_dataset in ["Core50", "Core10Lifelong"]:
+        elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
             from Models.imagenet import ImageNetModel
             model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
                                   name_model=architecture)

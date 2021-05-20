@@ -18,7 +18,7 @@ def encode(model, scenario, batch_size, dataset, train):
         for taskset in scenario:
             loader = DataLoader(taskset, shuffle=False, batch_size=batch_size)
             for i, (x,y,t) in enumerate(loader):
-                if dataset in ["Core50", "Core10Lifelong"] and train:
+                if dataset in ["Core50", "Core10Lifelong", "Core10Mix"] and train:
                     assert batch_size >= 32
                     # divide fps by 8 to make dataset lighter (we can do it because there are a lot of redundant data)
                     # select 1/8 of samples
