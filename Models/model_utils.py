@@ -9,9 +9,14 @@ def get_Output_layer(LayerName, in_dim, out_dim):
     elif LayerName == "WeightNorm":
         from Models.Output_Layers.layer import WeightNormLayer
         outlayer = WeightNormLayer(in_dim, out_dim, bias=False)
+    elif LayerName == "OriginalWeightNorm":
+        from torch.nn.utils import weight_norm
+        outlayer = weight_norm(torch.nn.Linear(in_dim, out_dim, bias=False))
     elif LayerName == "SLDA":
         from Models.Output_Layers.layer import SLDALayer
         outlayer = SLDALayer(in_dim, out_dim)
+    elif LayerName == "Linear":
+        outlayer = torch.nn.Linear(in_dim, out_dim, bias=True)
     elif LayerName == "Linear_no_bias":
         outlayer = torch.nn.Linear(in_dim, out_dim, bias=False)
     elif "MIMO_" in LayerName:
@@ -27,7 +32,7 @@ def get_Output_layer(LayerName, in_dim, out_dim):
         from Models.Output_Layers.layer import KNN
         outlayer = KNN(in_dim, out_dim, K=5)
     else:
-        outlayer = torch.nn.Linear(in_dim, out_dim, bias=True)
+        raise NotImplementedError
     return outlayer
 
 def freeze_model(model):
