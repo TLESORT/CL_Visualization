@@ -52,7 +52,9 @@ class Continual_Evaluation(abc.ABC):
         self.list_weights[ind_task_log] = []
         self.list_weights_dist[ind_task_log] = []
 
-        self.ref_model = deepcopy(self.model)
+        if not self.fast and not self.OutLayer == "OriginalWeightNorm":
+            self.ref_model = deepcopy(self.model)
+
 
         if ind_task_log == 0 and self.load_first_task:
             if self._can_load_first_task():
@@ -116,10 +118,13 @@ class Continual_Evaluation(abc.ABC):
     def log_weights_dist(self, ind_task):
 
         # compute the l2 distance between current model and model at the beginning of the task
-        dist_list = [torch.dist(p_current, p_ref) for p_current, p_ref in
-                     zip(self.model.parameters(), self.ref_model.parameters())]
-        dist = torch.tensor(dist_list).mean().detach().cpu().item()
-        self.list_weights_dist[ind_task].append(dist)
+        if not self.OutLayer == "OriginalWeightNorm":
+            dist_list = [torch.dist(p_current, p_ref) for p_current, p_ref in
+                         zip(self.model.parameters(), self.ref_model.parameters())]
+            dist = torch.tensor(dist_list).mean().detach().cpu().item()
+            self.list_weights_dist[ind_task].append(dist)
+        else:
+            print("Log of weight dist is not implemented for OriginalWeightNorm")
 
     def _process_classes_logs(self, train):
 
