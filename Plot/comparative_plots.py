@@ -152,13 +152,13 @@ def plot_comparative_accuracies_head(log_dir, Fig_dir, method, list_head, list_s
     plt.clf()
     plt.close()
 
-def plot_comparative_accuracies_subsets(log_dir, Fig_dir, list_heads, list_seed, list_subsets):
+def plot_comparative_accuracies_subsets_by_head(log_dir, Fig_dir, list_heads, list_seed, list_subsets):
     print(f"Plot Comparative Accuracies subsets")
     print(list_heads)
 
-    for head in list_heads:
+    for subset in list_subsets:
         style_c = cycle(['-', '--', ':', '-.'])
-        for subset in list_subsets:
+        for head in list_heads:
             list_results = []
             for seed in list_seed:
                 seed_log_dir = log_dir.replace("1-tasks", f"1-tasks/subset-{subset}")
@@ -198,7 +198,60 @@ def plot_comparative_accuracies_subsets(log_dir, Fig_dir, list_heads, list_seed,
             plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
 
         #plt.title('Evolution of Whole Test Accuracy')
-        plt.ylabel('Accuracy')
+        plt.ylabel(f'Subset {subset} Accuracy')
+        plt.xlabel('Epochs')
+        plt.legend()
+        plt.savefig(os.path.join(Fig_dir, f"Comparative_Accuracy_subsets_{subset}.png"))
+        plt.clf()
+        plt.close()
+
+def plot_comparative_accuracies_subsets(log_dir, Fig_dir, list_heads, list_seed, list_subsets):
+    print(f"Plot Comparative Accuracies subsets")
+    print(list_heads)
+
+    for head in list_heads:
+        style_c = cycle(['-', '--', ':', '-.'])
+        for subset in list_subsets:
+            list_results = []
+            for seed in list_seed:
+                seed_log_dir = log_dir.replace("1-tasks", f"1-tasks/subset-{subset}")
+                seed_log_dir = seed_log_dir.replace("Logs", f"seed-{seed}/{head}/Logs")
+                file_name = os.path.join(seed_log_dir,f"baseline_accuracies.pkl")
+                with open(file_name, 'rb') as fp:
+                    dict_accuracies = pickle.load(fp)
+
+                flat_acc, ind_task_transition = flatten_results(dict_accuracies, type="acc")
+
+                nb_correct_tr = flat_acc[:, 0]
+                nb_instances_tr = flat_acc[:, 1]
+                nb_correct_te = flat_acc[:, 2]
+                nb_instances_te = flat_acc[:, 3]
+
+                flat_acc_tr = np.divide(nb_correct_tr, nb_instances_tr)
+                flat_acc_te = np.divide(nb_correct_te, nb_instances_te)
+
+                list_results.append(flat_acc_te)
+
+                #plt.plot(range(flat_acc_tr.shape[0]), flat_acc_tr, label="method")
+            np_results = np.array(list_results)
+            assert np_results.shape[0]==len(list_seed), print(f"{np_results.shape[0]} vs {len(list_seed)}")
+
+            mean = np.mean(np_results, axis=0)
+            std = np.std(np_results, axis=0)
+            size = np_results.shape[1]
+
+
+            plt.plot(range(size), mean, label=subset, linestyle=next(style_c))
+            plt.fill_between(range(size), mean - std,
+                             mean + std, alpha=0.4)
+
+        # remove first ind and remove offset
+        ind_task_transition = ind_task_transition[1:] - ind_task_transition[0]
+        for xc in ind_task_transition:
+            plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
+
+        #plt.title('Evolution of Whole Test Accuracy')
+        plt.ylabel(f'{head} Accuracy')
         plt.xlabel('Epochs')
         plt.legend()
         plt.savefig(os.path.join(Fig_dir, f"Comparative_Accuracy_subsets_{head}.png"))

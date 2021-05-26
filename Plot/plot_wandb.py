@@ -10,7 +10,7 @@ sys.path.append("..")
 from utils_wandb import select_run
 
 def generate_python_exp_2_run(dataset, pretrained_on, num_tasks, seed, outlayer, architecture, subset, lr):
-    if dataset == "Core10Lifelong" and num_tasks != 1:
+    if dataset in ["Core10Lifelong", "Core10Mix"] and num_tasks != 1:
         scenario = "Domain"
     else:
         scenario = "Disjoint"
@@ -78,7 +78,7 @@ def select_some_experiments(name_list, config_list, str_data_type, dataset, pret
                             list_seed, lr, architecture, check_doublon=False):
     api = wandb.Api()
 
-    if dataset=="Core10Lifelong" and num_tasks>1:
+    if dataset in ["Core10Lifelong", "Core10Mix"]  and num_tasks>1:
         name_scenario ="Domain"
     else:
         name_scenario ="Disjoint"
@@ -121,15 +121,69 @@ def select_some_experiments(name_list, config_list, str_data_type, dataset, pret
                 print(f"Command : {command2run} \n")
     return list_results
 
+def export_legend(ax, filename, three_columns=False):
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot()
+    ax2.axis('off')
+    if three_columns:
+        ncol=3
+    else:
+        ncol = 5
+    legend = ax2.legend(*ax.get_legend_handles_labels(), frameon=True, loc='lower center', ncol=ncol,)
+    fig  = legend.figure
+    fig.canvas.draw()
+    bbox  = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig(filename, dpi="figure", bbox_inches=bbox)
+
+def select_style(outlayer):
+
+    if "GMasked" in outlayer:
+        style = ':'
+    elif "Masked" in outlayer:
+        style = '--'
+    elif outlayer in ["KNN", "SLDA", "MeanLayer", "MedianLayer"]:
+        style = '-.'
+    else:
+        style = '-'
+    return style
+
+# def select_color(outlayer):
+#
+#     if "Linear_no_bias" in outlayer:
+#         color = 'blue'
+#     elif "Linear" in outlayer:
+#         color = 'cyan'
+#     elif "CosLayer" in outlayer:
+#         color = 'green'
+#     else:
+#         style = '-'
+#     return style
+
 
 def plot_experiment(str_data_type, name_list, config_list, dataset, pretrained_on,
-                    num_tasks, subset, list_OutLayer, list_seed, lr, architecture, name_extension):
+                    num_tasks, subset, list_OutLayer, list_seed, lr, architecture, name_extension, legend=False):
 
     NB_EPOCHS = 5
+    #style_c = cycle(['-', '--', ':', '-.'])
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    if legend:
+        list_seed=[list_seed[0]] # we just take on seed to just plot the legend
+
     for OutLayer in list_OutLayer:
-        style_c = cycle(['-', '--', ':', '-.'])
+
+        if ("_GMasked" in OutLayer) and (dataset in ["Core10Lifelong", "Core10Mix"]):
+            # Gmasked has no interest here
+            continue
+
+        if OutLayer in ["KNN", "SLDA", "MeanLayer", "MedianLayer"]:
+            lr_value = 0.002 # default lr for layer without lr
+        else:
+            lr_value = lr
+
         list_results = select_some_experiments(name_list, config_list, str_data_type, dataset, pretrained_on,
-                                               num_tasks, subset, OutLayer, list_seed, lr, architecture)
+                                               num_tasks, subset, OutLayer, list_seed, lr_value, architecture)
 
 
         if len(list_results) > 0:
@@ -147,36 +201,45 @@ def plot_experiment(str_data_type, name_list, config_list, dataset, pretrained_o
                     new_array[i, 1:] = new_array[i, 1:] * array_results[i, 1]
                 array_results = new_array
 
+            style = select_style(OutLayer)
             if len(list_results) > 1:
                 mean = array_results.mean(0)
                 std = array_results.std(0)
-                plt.plot(range(array_results.shape[1]), mean, label=OutLayer)
-                plt.fill_between(range(array_results.shape[1]), mean - std, mean + std, alpha=0.4)
+                ax.plot(range(array_results.shape[1]), mean, label=OutLayer, linestyle=style)
+                ax.fill_between(range(array_results.shape[1]), mean - std, mean + std, alpha=0.4)
             else:
-                plt.plot(range(array_results.shape[1]), array_results[0], label=OutLayer)
+                ax.plot(range(array_results.shape[1]), array_results[0], label=OutLayer, linestyle=style)
         else:
             print(
                 f"No results found for {OutLayer} -- {dataset}_pt-{pretrained_on}_{num_tasks}_{subset}_{architecture}")
 
-    xcoords = (np.arange(num_tasks) * NB_EPOCHS) + 1
 
-    for i, xc in enumerate(xcoords):
-        if i == 0:
-            plt.axvline(x=xc, color='red', linewidth=0.5, linestyle='-')
-        else:
-            plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
 
-    save_name = os.path.join(Fig_dir,
-                             f"{name_extension}_{dataset}_pt-{pretrained_on}_{num_tasks}_{subset}_{architecture}_{str_data_type}.png")
-    plt.ylabel(str_data_type)
-    plt.xlabel('Epochs')
-    plt.ylim(0, 1.0)
-    plt.legend()
-    print(f"Save : {save_name}")
-    plt.savefig(save_name)
-    plt.clf()
-    plt.close()
-    print("Great Success")
+    if legend:
+        legend_name = os.path.join(Fig_dir,
+                                 f"legend_{name_extension}_{dataset}_pt-{pretrained_on}_{num_tasks}_{subset}_{architecture}_{str_data_type}.png")
+        export_legend(ax, legend_name, dataset=="Core10Mix")
+    else:
+        xcoords = (np.arange(num_tasks) * NB_EPOCHS) + 1
+
+        for i, xc in enumerate(xcoords):
+            if i == 0:
+                plt.axvline(x=xc, color='red', linewidth=0.5, linestyle='-')
+            else:
+                plt.axvline(x=xc, color='#000000', linewidth=0.1, linestyle='-.')
+
+        save_name = os.path.join(Fig_dir,
+                                 f"{name_extension}_{dataset}_pt-{pretrained_on}_{num_tasks}_{subset}_{architecture}_{str_data_type}.png")
+        plt.ylabel(str_data_type)
+        plt.xlabel('Epochs')
+        plt.ylim(0, 1.0)
+
+        #plt.legend(loc='upper center',bbox_to_anchor=(0.5, -0.05),ncol=5, bbox_transform=plt.gcf().transFigure)
+        print(f"Save : {save_name}")
+        plt.savefig(save_name)
+        plt.clf()
+        plt.close()
+        print("Great Success")
 
 
 def generate_one_value(value, std, end_line=False, comment=None):
@@ -238,9 +301,13 @@ def generate_table_subset(name_list, summary_list, config_list, str_data_type, d
     for OutLayer in list_OutLayer:
         list_outlayer_results = []
         for subset in list_subset:
+            if OutLayer in ["KNN", "SLDA", "MeanLayer", "MedianLayer"]:
+                lr_value = 0.002  # default lr for layer without lr
+            else:
+                lr_value = lr
             list_items_seed = select_summary_items(name_list, summary_list, config_list, str_data_type, dataset,
                                                    pretrained_on,
-                                                   num_tasks, subset, OutLayer, list_seed, lr, architecture)
+                                                   num_tasks, subset, OutLayer, list_seed, lr_value, architecture)
             if len(list_items_seed) > 0:
                 list_outlayer_results.append(np.array(list_items_seed))
 
@@ -336,7 +403,9 @@ def plot_experiment_subset(str_data_type, name_list, config_list, dataset, pretr
                            num_tasks, list_subset, list_OutLayer, list_seed, lr, architecture):
     for subset in list_subset:
         plot_experiment(str_data_type, name_list, config_list, dataset, pretrained_on,
-                        num_tasks, subset, list_OutLayer, list_seed, lr,  architecture)
+                        num_tasks, subset, list_OutLayer, list_seed, lr,  architecture, legend=False)
+        plot_experiment(str_data_type, name_list, config_list, dataset, pretrained_on,
+                        num_tasks, subset, list_OutLayer, list_seed, lr,  architecture, legend=True)
 
     for OutLayer in list_OutLayer:
         for subset in list_subset:
@@ -362,7 +431,7 @@ def plot_experiment_subset(str_data_type, name_list, config_list, dataset, pretr
         plt.ylabel(str_data_type)
         plt.xlabel('Epochs')
         plt.ylim(0, 1.0)
-        plt.legend()
+        plt.legend(loc='top center')
         print(f"Save : {save_name}")
         plt.savefig(save_name)
         plt.clf()
@@ -407,28 +476,29 @@ if check_for_doublon:
                                                        num_tasks, subset, OutLayer, list_seed, lr, architecture,
                                                        check_doublon=True)
 
-if False:
+if True:
     ####################################################################################
     # Préselection Experiments
     ####################################################################################
     list_subset = [None]
+    list_seed = [0, 1, 2, 3, 4, 5, 6, 7]
 
     list_dataset = ["CIFAR10", "CIFAR10", "CIFAR100", "CIFAR100"]
     list_architecture = ["resnet", "resnet", "resnet", "resnet"]
     list_pretrained_on = ["CIFAR10", "CIFAR100", "CIFAR10", "CIFAR100"]
 
-    # list_dataset = ["Core50", "Core50", "Core50", "Core10Lifelong","Core10Lifelong","Core10Lifelong"]
-    # list_architecture = ["resnet", "vgg", "googlenet","resnet", "vgg",  "googlenet"]
-    # list_pretrained_on = ["ImageNet", "ImageNet", "ImageNet", "ImageNet", "ImageNet", "ImageNet"]
+    list_dataset = ["Core50", "Core50", "Core50", "Core10Lifelong","Core10Lifelong","Core10Lifelong"]
+    list_architecture = ["resnet", "vgg", "googlenet","resnet", "vgg",  "googlenet"]
+    list_pretrained_on = ["ImageNet", "ImageNet", "ImageNet", "ImageNet", "ImageNet", "ImageNet"]
     #
-    # list_dataset = ["Core50","Core10Lifelong"]
-    # list_architecture = ["googlenet",  "googlenet"]
-    # list_pretrained_on = ["ImageNet", "ImageNet"]
+    # list_dataset = ["CIFAR10", "CIFAR10", "CIFAR100", "CIFAR100", "Core50", "Core10Lifelong"]
+    # list_architecture = ["resnet", "resnet", "resnet", "resnet","resnet","resnet"]
+    # list_pretrained_on = ["CIFAR10", "CIFAR100", "CIFAR10", "CIFAR100", "ImageNet", "ImageNet"]
 
     list_lr = [0.1, 0.01, 0.001]
-    list_lr = [0.1]
+    #list_lr = [0.1]
 
-    list_OutLayer = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm"] # ,"Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked"]
+    list_OutLayer = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm", "OriginalWeightNorm"] # ,"Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked"]
     #list_OutLayer = [] # ,"Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked"]
     list_OutLayer_no_LR = ["KNN", "SLDA", "MeanLayer"] #, "MedianLayer"]
 
@@ -462,7 +532,7 @@ if False:
         generate_table_preliminary(full_name_list, full_summary_list, full_config_list, "test accuracy", dataset, pretrained_on,
                                    num_tasks=1, subset=None, list_OutLayer=tot_list_OutLayer, list_seed=list_seed, list_lr=tot_list_lr, architecture=architecture)
 
-if True:
+if False:
     ####################################################################################
     # Masked Experiments
     ####################################################################################
@@ -473,25 +543,30 @@ if True:
     list_num_tasks = [5, 10, 10, 8]
 
 
-    list_dataset = ["CIFAR10", "Core50", "Core10Lifelong"]
-    list_pretrained_on = ["CIFAR100", "ImageNet", "ImageNet"]
-    list_architecture = [None, "resnet", "resnet"]
-    list_num_tasks = [5, 10, 8]
+    list_dataset = ["CIFAR10", "Core50", "Core10Lifelong", "Core10Mix"]
+    list_pretrained_on = ["CIFAR100", "ImageNet", "ImageNet", "ImageNet"]
+    list_architecture = [None, "resnet", "resnet", "resnet"]
+    list_num_tasks = [5, 10, 8, 50]
+
+    # list_dataset = ["CIFAR10"]
+    # list_pretrained_on = ["CIFAR100"]
+    # list_architecture = [None]
+    # list_num_tasks = [5]
 
 
 
-    list_dataset = ["Core50", "Core10Lifelong"]
-    list_pretrained_on = ["ImageNet", "ImageNet"]
-    list_architecture = ["vgg", "vgg"]
-    list_num_tasks = [10, 8]
+    # list_dataset = ["Core50", "Core10Lifelong"]
+    # list_pretrained_on = ["ImageNet", "ImageNet"]
+    # list_architecture = ["vgg", "vgg"]
+    # list_num_tasks = [10, 8]
 
 
     list_subset = [None]
     list_seed = [0, 1, 2, 3, 4, 5, 6, 7]
     lr=0.1
-    list_OutLayer_masked_exp = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm",
-                                "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", "WeightNorm_Masked",
-                                "Linear_GMasked", "Linear_no_bias_GMasked", "CosLayer_GMasked", "WeightNorm_GMasked" ]
+    list_OutLayer_masked_exp = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm", "OriginalWeightNorm",
+                                "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", "WeightNorm_Masked", "OriginalWeightNorm_Masked",
+                                "Linear_GMasked", "Linear_no_bias_GMasked", "CosLayer_GMasked", "WeightNorm_GMasked", "OriginalWeightNorm_GMasked" ]
 
 
     for dataset, pretrained_on, num_tasks, architecture in zip(list_dataset, list_pretrained_on, list_num_tasks,
@@ -507,6 +582,73 @@ if True:
                         num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=list_OutLayer_masked_exp,
                         list_seed=list_seed, lr=lr,
                         architecture=architecture, name_extension="Masked_Exp")
+
+        plot_experiment(str_data_type="test accuracy", name_list=name_list, config_list=config_list, dataset=dataset,
+                        pretrained_on=pretrained_on,
+                        num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=list_OutLayer_masked_exp,
+                        list_seed=list_seed, lr=lr,
+                        architecture=architecture, name_extension="Masked_Exp", legend=True)
+
+if True:
+    ####################################################################################
+    # Comparison Gradient vs prototypes Experiments
+    ####################################################################################
+    list_OutLayer_grad_exp = ["CosLayer", "WeightNorm",
+                                "CosLayer_Masked", "WeightNorm_Masked",
+                                "CosLayer_GMasked", "WeightNorm_GMasked"]
+
+    # list_OutLayer_grad_exp = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm",
+    #                             "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", "WeightNorm_Masked"]
+
+    list_OutLayer_no_LR = ["KNN", "SLDA", "MeanLayer", "MedianLayer"]
+    list_dataset = ["CIFAR10", "Core50", "Core10Lifelong", "Core10Mix"]
+    list_pretrained_on = ["CIFAR100", "ImageNet", "ImageNet", "ImageNet"]
+    list_architecture = [None, "resnet", "resnet", "resnet"]
+    list_num_tasks = [5, 10, 8, 50]
+    list_subset = [None]
+    list_seed = [0, 1, 2, 3, 4, 5, 6, 7]
+    lr=0.1
+    #
+    # list_dataset = ["Core10Mix"]
+    # list_pretrained_on = ["ImageNet"]
+    # list_architecture = ["resnet"]
+    # list_num_tasks = [50]
+
+    for dataset, pretrained_on, num_tasks, architecture in zip(list_dataset, list_pretrained_on, list_num_tasks,
+                                                               list_architecture):
+        full_summary_list, full_config_list, full_name_list = [], [], []
+
+        summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks=num_tasks,
+                                                                      list_subset=list_subset,
+                                                                      list_OutLayer=list_OutLayer_grad_exp,
+                                                                      list_seed=list_seed, lr=lr,
+                                                                      architecture=architecture)
+        full_summary_list = summary_list
+        full_config_list =  config_list
+        full_name_list = name_list
+
+        summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks=num_tasks,
+                                                                      list_subset=list_subset,
+                                                                      list_OutLayer=list_OutLayer_no_LR,
+                                                                      list_seed=list_seed, lr=0.002,
+                                                                      architecture=architecture)
+        full_summary_list = full_summary_list + summary_list
+        full_config_list = full_config_list + config_list
+        full_name_list = full_name_list + name_list
+        tot_list_OutLayer = list_OutLayer_grad_exp + list_OutLayer_no_LR
+
+        plot_experiment(str_data_type="test accuracy", name_list=full_name_list, config_list=full_config_list, dataset=dataset,
+                        pretrained_on=pretrained_on,
+                        num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=tot_list_OutLayer,
+                        list_seed=list_seed, lr=lr,
+                        architecture=architecture, name_extension="Grad_Exp")
+        plot_experiment(str_data_type="test accuracy", name_list=full_name_list, config_list=full_config_list,
+                        dataset=dataset,
+                        pretrained_on=pretrained_on,
+                        num_tasks=num_tasks, subset=list_subset[0], list_OutLayer=tot_list_OutLayer,
+                        list_seed=list_seed, lr=lr,
+                        architecture=architecture, name_extension="Grad_Exp", legend=True)
+
 
 if False:
     ####################################################################################
@@ -542,7 +684,7 @@ if False:
     ####################################################################################
     # Subset Experiments
     ####################################################################################
-    list_subset = [100, 200, 500, 1000, 5000, None]
+    list_subset = [100, 200, 500, 1000, None]
     list_seed = [0, 1]
     lr = 0.1
 
@@ -565,12 +707,24 @@ if False:
                                                                       list_OutLayer,
                                                                       list_seed, lr=lr, architecture=architecture)
 
-        nb_exps = len(summary_list)
+        full_summary_list = summary_list
+        full_config_list = config_list
+        full_name_list = name_list
+
+        summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks=num_tasks,
+                                                                      list_subset=list_subset,
+                                                                      list_OutLayer=list_OutLayer_no_LR,
+                                                                      list_seed=list_seed, lr=0.002,
+                                                                      architecture=architecture)
+        full_summary_list = full_summary_list + summary_list
+        full_config_list = full_config_list + config_list
+        full_name_list = full_name_list + name_list
+        tot_list_OutLayer = list_OutLayer + list_OutLayer_no_LR
 
         # plot_experiment_subset(str_data_type="test accuracy", name_list=name_list, config_list=config_list,
         #                        dataset=dataset,
         #                        pretrained_on=pretrained_on,
         #                        num_tasks=num_tasks, list_subset=list_subset, list_OutLayer=list_OutLayer,
         #                        list_seed=list_seed, architecture=None)
-        generate_table_subset(name_list, summary_list, config_list, "test accuracy", dataset, pretrained_on,
-                              num_tasks, list_subset, list_OutLayer, list_seed, lr, architecture=architecture)
+        generate_table_subset(full_name_list, full_summary_list, full_config_list, "test accuracy", dataset, pretrained_on,
+                              num_tasks, list_subset, tot_list_OutLayer, list_seed, lr, architecture=architecture)

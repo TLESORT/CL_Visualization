@@ -16,7 +16,7 @@ import argparse
 import matplotlib.pyplot as plt
 import sys
 sys.path.append("..")
-print(sys.path)
+#print(sys.path)
 
 from Plot.plot_logs import plot_accuracies, \
     plot_angles_latent_output, \
@@ -37,7 +37,8 @@ from Plot.comparative_plots import plot_comparative_accuracies, \
     plot_comparative_accuracies_per_classes, \
     plot_comparative_loss, \
     plot_comparative_accuracies_head, \
-    plot_comparative_accuracies_subsets
+    plot_comparative_accuracies_subsets, \
+    plot_comparative_accuracies_subsets_by_head
 
 
 class Continual_Plot(object):
@@ -95,6 +96,7 @@ class Continual_Plot(object):
         #plot_comparative_loss(self.log_dir, self.Fig_dir, list_methods, seed_list)
         #plot_comparative_accuracies_head(self.log_dir, self.Fig_dir, "baseline", head_list, seed_list)
         plot_comparative_accuracies_subsets(self.log_dir, self.Fig_dir, head_list, seed_list, list_subsets)
+        plot_comparative_accuracies_subsets_by_head(self.log_dir, self.Fig_dir, head_list, seed_list, list_subsets)
 
         new_log_dir = self.log_dir.replace("Logs", "seed-0/Logs")
         #plot_comparative_tsne_tasks(new_log_dir, self.Fig_dir, list_methods)
@@ -109,7 +111,7 @@ if __name__ == "__main__":
                         help='data directory name')
     parser.add_argument('--test_label', action='store_true', default=False,
                         help='define if we use task label at test')
-    parser.add_argument('--dataset', default="MNIST", type=str, choices=["MNIST","mnist_fellowship","CIFAR10"],
+    parser.add_argument('--dataset', default="MNIST", type=str, choices=["MNIST","mnist_fellowship","CIFAR10","Core50"],
                         help='dataset name')
     parser.add_argument('--pretrained_on', default="None", type=str,
                         choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
@@ -132,10 +134,11 @@ if __name__ == "__main__":
 
 
     subset_list = [100, 200, 500, 1000, 10000]
+    subset_list = [100, 200, 500]
 
     #method_list = ["ewc_kfac"]
     seed_list = [0,2,3,4,5,6,7]
-    seed_list = [0,1]
+    seed_list = [0]
     #method_list = ["ewc_diag", "rehearsal", "ewc_kfac"]
     #method_list = ["rehearsal"]
 
@@ -143,6 +146,9 @@ if __name__ == "__main__":
                  "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", 'MIMO_Linear_Masked', "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
 
     head_list = ["Linear", "Linear_no_bias", "CosLayer", "SLDA", "MeanLayer", "KNN",
+                 "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", 'MIMO_Linear_Masked',
+                 "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
+    head_list = ["Linear", "Linear_no_bias", "CosLayer", "MeanLayer", "KNN",
                  "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", 'MIMO_Linear_Masked',
                  "MIMO_CosLayer_Masked", "MIMO_Linear_no_bias_Masked"]
 
