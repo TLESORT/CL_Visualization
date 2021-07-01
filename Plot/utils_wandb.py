@@ -29,7 +29,7 @@ def select_run(dict_config, dataset, pretrained_on, num_tasks, OutLayer, subset,
     lr_ok = check_one_config_parameter(dict_config["lr"], lr)
     if not lr_ok: return False
 
-    if dataset in ["Core50", "Core10Lifelong"]:
+    if dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
         architecture_ok = check_one_config_parameter(dict_config["architecture"], architecture)
     else:
         architecture_ok = True

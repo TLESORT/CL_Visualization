@@ -62,7 +62,7 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
-if config.seed == 0:
+if config.seed == 0 or config.seed == 1664:
     task_order = np.arange(config.num_tasks)
 else:
     task_order = np.random.permutation(config.num_tasks)

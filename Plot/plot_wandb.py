@@ -179,6 +179,8 @@ def plot_experiment(str_data_type, name_list, config_list, dataset, pretrained_o
 
         if OutLayer in ["KNN", "SLDA", "MeanLayer", "MedianLayer"]:
             lr_value = 0.002 # default lr for layer without lr
+        elif "Linear" in OutLayer:
+            lr_value = 0.01
         else:
             lr_value = lr
 
@@ -303,6 +305,8 @@ def generate_table_subset(name_list, summary_list, config_list, str_data_type, d
         for subset in list_subset:
             if OutLayer in ["KNN", "SLDA", "MeanLayer", "MedianLayer"]:
                 lr_value = 0.002  # default lr for layer without lr
+            elif "Linear" in OutLayer:
+                lr_value = 0.01
             else:
                 lr_value = lr
             list_items_seed = select_summary_items(name_list, summary_list, config_list, str_data_type, dataset,
@@ -476,7 +480,7 @@ if check_for_doublon:
                                                        num_tasks, subset, OutLayer, list_seed, lr, architecture,
                                                        check_doublon=True)
 
-if True:
+if False:
     ####################################################################################
     # Préselection Experiments
     ####################################################################################
@@ -564,6 +568,14 @@ if False:
     list_subset = [None]
     list_seed = [0, 1, 2, 3, 4, 5, 6, 7]
     lr=0.1
+    list_OutLayer_masked_exp_01 = ["CosLayer", "WeightNorm", "OriginalWeightNorm",
+                                "CosLayer_Masked", "WeightNorm_Masked", "OriginalWeightNorm_Masked",
+                                "CosLayer_GMasked", "WeightNorm_GMasked", "OriginalWeightNorm_GMasked" ]
+
+    list_OutLayer_masked_exp_001 = ["Linear", "Linear_no_bias",
+                                   "Linear_Masked", "Linear_no_bias_Masked",
+                                   "Linear_GMasked", "Linear_no_bias_GMasked"]
+
     list_OutLayer_masked_exp = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm", "OriginalWeightNorm",
                                 "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", "WeightNorm_Masked", "OriginalWeightNorm_Masked",
                                 "Linear_GMasked", "Linear_no_bias_GMasked", "CosLayer_GMasked", "WeightNorm_GMasked", "OriginalWeightNorm_GMasked" ]
@@ -572,9 +584,16 @@ if False:
     for dataset, pretrained_on, num_tasks, architecture in zip(list_dataset, list_pretrained_on, list_num_tasks,
                                                                list_architecture):
         summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
-                                                                      list_OutLayer_masked_exp,
-                                                                      list_seed, lr, architecture=architecture)
+                                                                      list_OutLayer_masked_exp_01,
+                                                                      list_seed, lr=0.1, architecture=architecture)
 
+        summary_list_2, config_list_2, name_list_2 = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
+                                                                      list_OutLayer_masked_exp_001,
+                                                                      list_seed, lr=0.01, architecture=architecture)
+
+        summary_list = summary_list + summary_list_2
+        config_list = config_list + config_list_2
+        name_list = name_list + name_list_2
         nb_exps = len(summary_list)
 
         plot_experiment(str_data_type="test accuracy", name_list=name_list, config_list=config_list, dataset=dataset,
@@ -589,7 +608,7 @@ if False:
                         list_seed=list_seed, lr=lr,
                         architecture=architecture, name_extension="Masked_Exp", legend=True)
 
-if True:
+if False:
     ####################################################################################
     # Comparison Gradient vs prototypes Experiments
     ####################################################################################
@@ -680,36 +699,51 @@ if False:
                         architecture=None)
 
 
-if False:
+if True:
     ####################################################################################
     # Subset Experiments
     ####################################################################################
     list_subset = [100, 200, 500, 1000, None]
-    list_seed = [0, 1]
+    list_seed = [0, 1, 2, 3, 4, 5, 6, 7]
     lr = 0.1
 
-    list_OutLayer = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm",
-                                "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", "WeightNorm_Masked"]
+    list_OutLayer = ["Linear", "Linear_no_bias", "CosLayer", "WeightNorm", "OriginalWeightNorm",
+                                "Linear_Masked", "Linear_no_bias_Masked", "CosLayer_Masked", "WeightNorm_Masked", "OriginalWeightNorm_Masked"]
+    list_OutLayer_001 = ["Linear", "Linear_no_bias", "Linear_Masked", "Linear_no_bias_Masked"]
+    list_OutLayer_01 = ["CosLayer", "WeightNorm", "OriginalWeightNorm", "CosLayer_Masked", "WeightNorm_Masked", "OriginalWeightNorm_Masked"]
     list_OutLayer_no_LR = ["KNN", "SLDA", "MeanLayer", "MedianLayer"]
 
-    list_dataset = ["Core50", "Core10Lifelong"]
-    list_pretrained_on = ["ImageNet", "ImageNet"]
-    list_num_tasks = [1, 1]
-    architecture = "resnet"
+    list_dataset = ["CIFAR10","Core50", "Core10Lifelong"]
+    list_pretrained_on = ["CIFAR100","ImageNet", "ImageNet"]
+    list_num_tasks = [1, 1, 1]
+    architectures = [None, "resnet", "resnet"]
+
+    # list_dataset = ["Core50"]
+    # list_pretrained_on = ["ImageNet"]
+    # list_num_tasks = [1]
+    # architectures = ["resnet"]
 
     # reset file
     textfile = open("table.txt", "w")
     a = textfile.write("")
     textfile.close()
 
-    for dataset, pretrained_on, num_tasks in zip(list_dataset, list_pretrained_on, list_num_tasks):
+    for dataset, pretrained_on, num_tasks, architecture in zip(list_dataset, list_pretrained_on, list_num_tasks, architectures):
         summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
-                                                                      list_OutLayer,
-                                                                      list_seed, lr=lr, architecture=architecture)
+                                                                      list_OutLayer_01,
+                                                                      list_seed, lr=0.1, architecture=architecture)
 
         full_summary_list = summary_list
         full_config_list = config_list
         full_name_list = name_list
+
+        summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks, list_subset,
+                                                                      list_OutLayer_001,
+                                                                      list_seed, lr=0.01, architecture=architecture)
+
+        full_summary_list += summary_list
+        full_config_list += config_list
+        full_name_list += name_list
 
         summary_list, config_list, name_list = select_all_experiments(dataset, pretrained_on, num_tasks=num_tasks,
                                                                       list_subset=list_subset,
