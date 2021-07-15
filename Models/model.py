@@ -5,14 +5,14 @@ from Models.Output_Layers.head import NNHead
 
 
 class Model(nn.Module):
-    def __init__(self, num_classes=10, OutLayer="Linear", classes_per_head=None, method="baseline", pretrained_on=None):
+    def __init__(self, num_classes=10, OutLayer="Linear", classes_per_head=None, method="baseline", pretrained_on=None, input_dim=1):
         super(Model, self).__init__()
         self.num_classes = num_classes
 
-        self.input_dim = 1
+        self.input_dim = input_dim
         self.output_dim = 1
         self.relu = nn.ReLU()
-        self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
+        self.conv1 = nn.Conv2d(self.input_dim, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
         self.maxpool2 = nn.MaxPool2d(kernel_size=2)
         self.fc1 = nn.Linear(320, 50)
@@ -36,16 +36,17 @@ class Model(nn.Module):
         return self.linear(x)
 
     def forward_task(self, x, ind_task):
-        x = x.view(-1, 1, 28, 28)
+        x = x.view(-1, self.input_dim, 28, 28)
         x = self.feature_extractor(x)
         x = self.head.forward_task(x, ind_task)
         return x
 
     def forward(self, x, latent_vector=False):
-        x = x.view(-1, 1, 28, 28)
+        x = x.view(-1, self.input_dim, 28, 28)
         x = self.feature_extractor(x)
         if not latent_vector:
-            x = self.get_last_layer(x)
+            #x = self.get_last_layer(x)
+            x = self.head(x)
 
         return x
 

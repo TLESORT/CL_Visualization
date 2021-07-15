@@ -13,7 +13,7 @@ def CIFARModel(num_classes=10, OutLayer="Linear", classes_per_head=None, method=
         model = cifar_resnet20(pretrained=pretrained_on, model_dir=model_dir)
         model.num_classes = num_classes  # manual correction
     else:
-        model = cifar_resnet20()
+        model = cifar_resnet20(num_classes=num_classes)
     latent_dim = model.fc.in_features
 
     if (pretrained_on is not None) and (not finetuning):
