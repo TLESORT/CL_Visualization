@@ -21,8 +21,6 @@ class Rehearsal(Trainer):
         self.nb_samples_rehearsal_per_class = 100
         self.samples_transfer = 5000
         self.sample_num = 100
-        self.input_size = 1
-        self.image_size = 28
 
     def sample_task(self, task_set):
         """

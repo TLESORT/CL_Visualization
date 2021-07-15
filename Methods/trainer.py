@@ -64,13 +64,25 @@ class Trainer(Continual_Evaluation):
         dataset_train = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=False)
 
+        if self.dataset in ["MNIST", "mnist_fellowship"]:
+            self.input_size = 1
+            self.image_size = 28
+            if self.scenario_name == "SpuriousFeatures":
+                self.input_size = 3
+                self.image_size = 28
+        elif self.dataset in ["CIFAR10", "CIFAR100"]:
+            self.input_size = 3
+            self.image_size = 32
+        else:
+            raise NotImplementedError(f"Data infos for Dataset {self.dataset} Unknown")
+
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks,
                                         transform=self.transform_train)
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks,
-                                        transform=self.transform_test)
+                                        transform=self.transform_test, train=False)
 
         self.model = get_model(self.dataset,
                                self.scenario_tr,
@@ -109,7 +121,7 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-        if self.num_tasks >1:
+        if False and self.num_tasks >1:
             # random permutation of task order
             self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
             if self.scenario_te.nb_tasks > 1:
@@ -120,9 +132,8 @@ class Trainer(Continual_Evaluation):
             self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
         else:
             self.opt = None
-        self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
-
-        self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+        #self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+        #self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
 
     def regularize_loss(self, model, loss):
         return loss
@@ -151,7 +162,11 @@ class Trainer(Continual_Evaluation):
                                     batch_size=self.batch_size,
                                     shuffle=True,
                                     num_workers=6)
-        x, y, t = task_set.get_random_samples(10)
+        #x, y, t = task_set.get_random_samples(10)
+
+        print(f"plot figure: samples_task_{ind_task}.png")
+        if task_set.data_type in ["image_path", "image_array"]:
+            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png", 100, shape=[32,32,3])
         if self.verbose: print("prepare log")
         if ind_task == 0:
             # log before training
@@ -175,7 +190,18 @@ class Trainer(Continual_Evaluation):
     def test(self, ind_task_log, data_loader=None, train=False):
 
         if data_loader is None:
-            data_loader = self.eval_te_loader
+
+            for ind_task, task_set in enumerate(self.scenario_te):
+                if ind_task_log==1 and task_set.data_type in ["image_path", "image_array"]:
+                    task_set.plot(self.sample_dir, f"samples_te_task_{ind_task}.png", 100, shape=[32, 32, 3])
+                data_loader = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
+                self.test_task(ind_task_log, data_loader, train)
+        else:
+            self.test_task(ind_task_log, data_loader, train)
+
+
+    def test_task(self, ind_task_log, data_loader=None, train=False):
+
         for i_, (x_, y_, t_) in enumerate(data_loader):
 
             # data does not fit to the model if size<=1
@@ -191,6 +217,7 @@ class Trainer(Continual_Evaluation):
                 output = self.model(x_)
 
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
+
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
     def head_without_grad(self, x_, y_, t_, ind_task, epoch):
