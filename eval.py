@@ -94,7 +94,7 @@ class Continual_Evaluation(abc.ABC):
             # save log from first tasks
             self.post_training_log(ind_task)
 
-        if not self.fast and (not self.OutLayer in self.non_differential_heads):
+        if not self.dev and not self.fast and (not self.OutLayer in self.non_differential_heads):
             layer = self.model.get_last_layer()
             w = np.array(layer.weight.data.detach().cpu().clone(), dtype=np.float16)
             wandb.log({"weights output": wandb.Histogram(w)})
@@ -155,7 +155,22 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array([classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes])
 
-    def log_post_epoch_processing(self, ind_task, epoch, print_acc=False):
+    def print_correct_by_task(self, preds, labels, task_labels):
+
+        list_task_id = np.unique(task_labels).astype(int)
+
+        for task_id in list_task_id:
+            indexes = np.where(task_labels == task_id)[0]
+            selec_preds = preds[indexes]
+            selec_labels = labels[indexes]
+
+            correct = (selec_preds == selec_labels).sum()
+            accuracy = correct / (1.0 * len(indexes))
+
+            print(f"[Task {task_id}] accuracy: {accuracy}")
+
+
+    def log_post_epoch_processing(self, ind_task, epoch, print_acc=True):
 
         if self.nb_tot_epoch is None:
             self.nb_tot_epoch = epoch
@@ -193,6 +208,10 @@ class Continual_Evaluation(abc.ABC):
             print(f"Train Accuracy: {acc_tr} %")
             print(f"Test Accuracy: {acc_te} %")
 
+            self.print_correct_by_task(self.vector_predictions_epoch_te,
+                                       self.vector_labels_epoch_te,
+                                       self.vector_task_labels_epoch_te)
+
         if self.verbose:
             classe_prediction, classe_wrong, classe_total = class_infos_te
             for i in range(self.scenario_tr.nb_classes):
@@ -203,8 +222,10 @@ class Continual_Evaluation(abc.ABC):
         # Reinit log vector
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
+        self.vector_task_labels_epoch_tr = np.zeros(0)
         self.vector_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
+        self.vector_task_labels_epoch_te = np.zeros(0)
 
     def _multihead_predictions(self, output, labels, task_labels):
 

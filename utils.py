@@ -1,11 +1,11 @@
 import torch
+import numpy as np
+import torchvision.transforms as trsf
 
 from Models.model import Model
 
-import torchvision.transforms as trsf
 
-
-def get_scenario(dataset, scenario_name, nb_tasks, transform=None):
+def get_scenario(dataset, scenario_name, nb_tasks, transform=None, train=True):
     if scenario_name == "Rotations":
         from continuum import Rotations
         scenario = Rotations(dataset, nb_tasks=nb_tasks, transformations=transform)
@@ -15,6 +15,9 @@ def get_scenario(dataset, scenario_name, nb_tasks, transform=None):
     elif scenario_name == "Domain":
         from continuum import ContinualScenario
         scenario = ContinualScenario(dataset, transformations=transform)
+    elif scenario_name == "SpuriousFeatures":
+        from scenario.spurious_features import SpuriousFeatures
+        scenario = SpuriousFeatures(dataset, nb_tasks=nb_tasks, base_transformations=transform, train=train)
 
     return scenario
 
@@ -23,6 +26,8 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     if name_dataset == "MNIST":
         from continuum.datasets import MNIST
         dataset = MNIST(path_dir, download=True, train=train)
+    # elif "SQOLOR" in name_dataset:
+    #     dataset = generate_SQOLOR(path_dir, name_dataset, name_scenario, train=train)
     elif name_dataset == "Core50":
         from continuum.datasets import Core50
         dataset = Core50(path_dir, download=False, train=train)
@@ -51,12 +56,12 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "mnist_fellowship" and name_scenario == "Domain":
         dataset = MNISTFellowship(path_dir, download=True, train=train, update_labels=False)
     else:
-        raise NotImplementedError
+        raise NotImplementedError(f"Dataset {name_dataset} Unknown")
     return dataset
 
 
 def get_transform(name_dataset, architecture, train="True"):
-    list_transform=None
+    list_transform = None
     if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
@@ -85,7 +90,8 @@ def get_transform(name_dataset, architecture, train="True"):
     return list_transform
 
 
-def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None, architecture="resnet"):
+def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None,
+              architecture="resnet"):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         # assert name_dataset == "Disjoint"
@@ -103,12 +109,17 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
 
         if name_dataset in ["CIFAR10", "CIFAR100", "SVHN"]:
             from Models.cifar_models import CIFARModel
-            model = CIFARModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
+            model = CIFARModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on,
+                               model_dir=model_dir)
+            print("double check")
 
         elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
             from Models.imagenet import ImageNetModel
-            model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
+            model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer,
+                                  pretrained=pretrained_on == "ImageNet",
                                   name_model=architecture)
+        elif type(scenario).__name__ == "SpuriousFeatures":
+            model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on, input_dim=3)
         else:
             model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
 
@@ -118,27 +129,26 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
 import wandb
 from Plot.utils_wandb import select_run
 
+
 def check_exp_config(config, name_out):
     api = wandb.Api()
     runs = api.runs("tlesort/CL_Visualization")
     exp_already_done = False
 
-
-
     for run in runs:
         if run.state == "finished":
             dict_config = {k: v for k, v in run.config.items() if not k.startswith('_')}
             exp_already_done = select_run(dict_config,
-                                config.dataset,
-                                config.pretrained_on,
-                                config.num_tasks,
-                                name_out,
-                                config.subset,
-                                config.seed,
-                                config.lr,
-                                config.architecture)
+                                          config.dataset,
+                                          config.pretrained_on,
+                                          config.num_tasks,
+                                          name_out,
+                                          config.subset,
+                                          config.seed,
+                                          config.lr,
+                                          config.architecture)
             if exp_already_done:
-                print(f"This experience has already be runned and finnished: {run.name}")
+                print(f"This experience has already be run and finished: {run.name}")
                 print(dict_config)
                 break
     return exp_already_done

@@ -13,7 +13,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd'],
                     default='baseline', help='Approach type')
-parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
+parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint",
                     help='continual scenario')
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--root_dir', default="./Archives", type=str,
@@ -122,7 +122,8 @@ experiment_id = experiment_id.replace("/", "-")
 if not config.dev:
 
     # Check if experience already exists
-    exp_already_done = check_exp_config(config, name_out)
+    # exp_already_done = check_exp_config(config, name_out)
+    exp_already_done = False
     if exp_already_done:
         print(f"This experience has already been run and finished: {experiment_id}")
         exit()
@@ -132,7 +133,7 @@ if not config.dev:
     for i in range(10):
         try:
             wandb.init(
-                project="CL_Visualization", settings=wandb.Settings(start_method='fork'),
+                project="CLOOD", settings=wandb.Settings(start_method='fork'),
                 group=experiment_label,
                 id=experiment_id + '-' + wandb.util.generate_id(),
                 entity='tlesort',
