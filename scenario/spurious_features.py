@@ -8,11 +8,11 @@ from torchvision import transforms
 from continuum.datasets import _ContinuumDataset
 from continuum.tasks import TaskSet
 
-from continuum.scenarios import _BaseScenario
+from continuum.scenarios import InstanceIncremental
 from copy import copy
 
 
-class SpuriousFeatures(_BaseScenario):
+class SpuriousFeatures(InstanceIncremental):
     """Continual Loader, generating datasets for the consecutive tasks.
 
     Scenario: SpuriousFeatures scenarios, use same data for all task but with spurious correlation into data different at each task.
@@ -34,19 +34,13 @@ class SpuriousFeatures(_BaseScenario):
     ):
         assert nb_tasks is not None
 
+        self.training = train
         super().__init__(
             cl_dataset=cl_dataset,
             nb_tasks=nb_tasks,
-            transformations=base_transformations
+            transformations=base_transformations,
+            random_seed = seed
         )
-        self.training = train
-        if self.training:
-            self._nb_tasks = nb_tasks
-        else:
-            # for test we add one more task with data without modif
-            self._nb_tasks = nb_tasks + 1
-        self._setup(nb_tasks)
-
         self.image_size = 32
 
     @property
@@ -105,6 +99,11 @@ class SpuriousFeatures(_BaseScenario):
         x, y, t = self.cl_dataset.get_data()
         y = self.class_remapping(y)
         self.dataset = [x, y, t]
+
+        if not self.training:
+            # for test we add one more task with data without modif
+            nb_tasks += 1
+
         return nb_tasks
 
     def _select_data_by_task(

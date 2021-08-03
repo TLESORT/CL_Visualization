@@ -17,19 +17,16 @@ class Rehearsal(Trainer):
         super().__init__(args)
         self.name_algo = "rehearsal"
         self.data_memory = None
-        self.num_classes_per_task = 2
         self.nb_samples_rehearsal_per_class = 100
         self.samples_transfer = 5000
         self.sample_num = 100
 
     def sample_task(self, task_set):
         """
-                Method to select samples for rehearsal
-                :param ind_task: index of the task to select samples from
-                :param nb_samples_rehearsal: number of samples saved per task
-                :param samples_transfer: number of samples to incorporate in the new training set (samples_transfer > nb_samples_rehearsal)
-                :return: updated train_set and test_set
-                """
+        Method to select samples for rehearsal
+        :param task_set: current task set of data
+        :return: updated train_set and test_set
+        """
         nb_classes = task_set.nb_classes
         assert self.nb_samples_rehearsal_per_class * nb_classes < len(task_set._y), \
             f"{self.nb_samples_rehearsal_per_class} x {nb_classes} =" \
@@ -51,7 +48,7 @@ class Rehearsal(Trainer):
         task_memory_set = None
         if ind_task > 0:
             # ptit checkup
-            if self.scenario_name == "Domain":
+            if self.scenario_name == "Domain" or self.scenario_name == "SpuriousFeatures":
                 assert len(self.data_memory) == self.data_memory.nb_classes *\
                        self.nb_samples_rehearsal_per_class *\
                        ind_task, \
