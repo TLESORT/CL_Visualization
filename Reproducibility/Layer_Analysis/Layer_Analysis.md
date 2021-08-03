@@ -5,11 +5,15 @@
 To reproduce the experiments of the paper:
 you need essentially python 3.8, pytorch and torchvision and a wandb account.
 
+Move to proper branch:
+``
+git checkout Layer_Analysis
+``
 
 you need to install an anaconda environment:
 
 ``
-conda env create -f env_neurips_2021.yml
+conda env create -f env_layer_analysis.yml
 source activate py38
 ``
 
