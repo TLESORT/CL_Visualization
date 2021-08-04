@@ -169,6 +169,13 @@ class MemorySet(TaskSet):
         """
         return [value for value in self.list_IDs.values() if self._y[value] == class_label]
 
+
+    def get_indexes_task(self, task_label):
+        """
+        get the number of iteration of certain task
+        """
+        return [value for value in self.list_IDs.values() if self._t[value] == task_label]
+
     def get_nb_samples_class(self, class_label):
         """
         get the number of samples of certain class.

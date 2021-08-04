@@ -34,6 +34,8 @@ class Rehearsal(Trainer):
         indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
         samples, labels, task_ids = task_set.get_raw_samples(indexes)
 
+        assert task_ids is not None # if it is none it would be better to create a valid task id tensor
+
         return MemorySet(samples, labels, task_ids, None)
 
     def init_task(self, ind_task: int, task_set: TaskSet):
