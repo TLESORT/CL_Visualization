@@ -1,5 +1,14 @@
 # CL_Visualization
 
+### DEV NoTEs
+
+Typical command
+
+``
+python main.py  --scenario_name SpuriousFeatures --num_tasks 2 --name_algo ib_irm  --dataset CIFAR10 --fast --lr 0.1 --seed 1664 --OutLayer Linear
+``
+
+
 
 This repository is a research repository there is no warranty on the current state of the code.
 
