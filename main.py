@@ -11,7 +11,7 @@ from utils import check_exp_config
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--name_algo', type=str,
-                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd'],
+                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'ib_irm'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint",
                     help='continual scenario')
@@ -174,6 +174,10 @@ elif config.name_algo == "ogd":
     from Methods.OGD import OGD
 
     Algo = OGD(config)
+
+elif config.name_algo == "ib_irm":
+    from Methods.IRM import IB_IRM
+    Algo = IB_IRM(config)
 else:
     print("wrong name")
 

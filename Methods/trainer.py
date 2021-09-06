@@ -67,12 +67,14 @@ class Trainer(Continual_Evaluation):
         if self.dataset in ["MNIST", "mnist_fellowship"]:
             self.input_size = 1
             self.image_size = 28
+            self.data_shape = [1, 28, 28]
             if self.scenario_name == "SpuriousFeatures":
                 self.input_size = 3
                 self.image_size = 28
         elif self.dataset in ["CIFAR10", "CIFAR100"]:
             self.input_size = 3
             self.image_size = 32
+            self.data_shape = [3, 32, 32]
         else:
             raise NotImplementedError(f"Data infos for Dataset {self.dataset} Unknown")
 
@@ -121,7 +123,7 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-        if False and self.num_tasks >1:
+        if False and self.num_tasks > 1:
             # random permutation of task order
             self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
             if self.scenario_te.nb_tasks > 1:
@@ -132,8 +134,8 @@ class Trainer(Continual_Evaluation):
             self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
         else:
             self.opt = None
-        #self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
-        #self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+        # self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+        # self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
 
     def regularize_loss(self, model, loss):
         return loss
@@ -162,11 +164,11 @@ class Trainer(Continual_Evaluation):
                                     batch_size=self.batch_size,
                                     shuffle=True,
                                     num_workers=6)
-        #x, y, t = task_set.get_random_samples(10)
+        # x, y, t = task_set.get_random_samples(10)
 
         print(f"plot figure: samples_task_{ind_task}.png")
         if task_set.data_type in ["image_path", "image_array"]:
-            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png", 100, shape=[32,32,3])
+            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png", 100, shape=self.data_shape)
         if self.verbose: print("prepare log")
         if ind_task == 0:
             # log before training
@@ -192,13 +194,12 @@ class Trainer(Continual_Evaluation):
         if data_loader is None:
 
             for ind_task, task_set in enumerate(self.scenario_te):
-                if ind_task_log==1 and task_set.data_type in ["image_path", "image_array"]:
-                    task_set.plot(self.sample_dir, f"samples_te_task_{ind_task}.png", 100, shape=[32, 32, 3])
+                if ind_task_log == 1 and task_set.data_type in ["image_path", "image_array"]:
+                    task_set.plot(self.sample_dir, f"samples_te_task_{ind_task}.png", 100, shape=self.data_shape)
                 data_loader = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
                 self.test_task(ind_task_log, data_loader, train)
         else:
             self.test_task(ind_task_log, data_loader, train)
-
 
     def test_task(self, ind_task_log, data_loader=None, train=False):
 
