@@ -53,6 +53,8 @@ parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
 # FLAGS
+parser.add_argument('--finetuning', action='store_true', default=False,
+                    help='decide if we finetune pretrained models')
 parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--reset_opt', action='store_true', default=False,
