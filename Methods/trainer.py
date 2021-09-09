@@ -96,7 +96,7 @@ class Trainer(Continual_Evaluation):
                                architecture=self.architecture)
         self.model.cuda()
 
-        self.finetuning = False
+        self.finetuning = config.finetuning
         if (self.pretrained_on is not None) and self.finetuning == False:
             # we replace the scenario data by feature vector from the pretrained model to save training time
             self.scenario_tr = encode_scenario(self.data_dir,

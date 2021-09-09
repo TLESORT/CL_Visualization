@@ -10,32 +10,13 @@ from Methods.trainer import Trainer
 from utils import check_exp_config
 
 parser = argparse.ArgumentParser()
+
+
+# Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'ib_irm'],
                     default='baseline', help='Approach type')
-parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint",
-                    help='continual scenario')
-parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
-parser.add_argument('--root_dir', default="./Archives", type=str,
-                    help='data directory name')
-parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
-                    help='data directory name')
-parser.add_argument('--pmodel_dir', default="Pretrained", type=str,
-                    help='data directory name')
-parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
-parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
-parser.add_argument('--nb_epochs', default=5, type=int,
-                    help='Epochs for each task')
-parser.add_argument('--batch_size', default=264, type=int, help='batch size')
-parser.add_argument('--test_label', action='store_true', default=False,
-                    help='define if we use task label at test')
-parser.add_argument('--reset_opt', action='store_true', default=False,
-                    help='reset opt at each new task')
-parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "right"],
-                    help='if single we only update one out dimension, if group mask the classes in the batch')
-parser.add_argument('--subset', type=int, default=None,
-                    help='we can replace the full tasks by a subset of samples randomly selected')
+parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
                     choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias',
                              'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm', 'OriginalWeightNorm'],
@@ -43,6 +24,41 @@ parser.add_argument('--OutLayer', default="Linear", type=str,
 parser.add_argument('--pretrained_on', default=None, type=str,
                     choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
                     help='dataset source of a pretrained model')
+parser.add_argument('--architecture', default="resnet", type=str,
+                    choices=["resnet", "alexnet", "vgg", "googlenet"],
+                    help='architecture')
+
+# Logs / Data / Paths
+
+parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
+parser.add_argument('--root_dir', default="./Archives", type=str,
+                    help='data directory name')
+parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
+                    help='data directory name')
+parser.add_argument('--pmodel_dir', default="Pretrained", type=str,
+                    help='data directory name')
+
+# Model HPs
+parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
+parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
+parser.add_argument('--nb_epochs', default=5, type=int,
+                    help='Epochs for each task')
+parser.add_argument('--batch_size', default=264, type=int, help='batch size')
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "right"],
+                    help='if single we only update one out dimension, if group mask the classes in the batch')
+parser.add_argument('--subset', type=int, default=None,
+                    help='we can replace the full tasks by a subset of samples randomly selected')
+parser.add_argument('--seed', default="1664", type=int,
+                    help='seed for number generator')
+
+# FLAGS
+parser.add_argument('--finetuning', action='store_true', default=False,
+                    help='decide if we finetune pretrained models')
+parser.add_argument('--test_label', action='store_true', default=False,
+                    help='define if we use task label at test')
+parser.add_argument('--reset_opt', action='store_true', default=False,
+                    help='reset opt at each new task')
 parser.add_argument('--load_first_task', action='store_true', default=False, help='dev flag')
 parser.add_argument('--no_train', action='store_true', default=False, help='flag to only analyse or plot figures')
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
@@ -52,11 +68,6 @@ parser.add_argument('--verbose', action='store_true', default=False, help='dev f
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
                              "Core10Lifelong", "Core10Mix"], help='dataset name')
-parser.add_argument('--seed', default="1664", type=int,
-                    help='seed for number generator')
-parser.add_argument('--architecture', default="resnet", type=str,
-                    choices=["resnet", "alexnet", "vgg", "googlenet"],
-                    help='architecture')
 
 config = parser.parse_args()
 torch.manual_seed(config.seed)
