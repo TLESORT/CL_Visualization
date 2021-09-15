@@ -28,6 +28,9 @@ parser.add_argument('--architecture', default="resnet", type=str,
                     help='architecture')
 
 # Logs / Data / Paths
+parser.add_argument('--dataset', default="MNIST", type=str,
+                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
+                             "Core10Lifelong", "Core10Mix"], help='dataset name')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
                     help='continual scenario')
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
@@ -45,8 +48,10 @@ parser.add_argument('--importance', default=1.0, type=float, help='Importance of
 parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
 parser.add_argument('--batch_size', default=264, type=int, help='batch size')
-parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "right"],
-                    help='if single we only update one out dimension, if group mask the classes in the batch')
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "multi-head"],
+                    help='if single we only update one out dimension,'
+                         ' if group mask the classes in the batch,'
+                         ' multi-head is for training with multi head while testing single head')
 parser.add_argument('--subset', type=int, default=None,
                     help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--seed', default="1664", type=int,
@@ -65,9 +70,6 @@ parser.add_argument('--analysis', action='store_true', default=False, help='flag
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
-parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix"], help='dataset name')
 
 config = parser.parse_args()
 torch.manual_seed(config.seed)
@@ -88,7 +90,11 @@ if not os.path.exists(config.pmodel_dir):
 experiment_id = os.path.join(experiment_id, config.scenario_name, f"{config.num_tasks}-tasks")
 
 if config.pretrained_on is not None:
-    experiment_id = os.path.join(experiment_id, f"pretrained_on_{config.pretrained_on}")
+    preposition = ''
+    if config.finetuning:
+        preposition = 'finetuning_'
+
+    experiment_id = os.path.join(experiment_id, f"{preposition}pretrained_on_{config.pretrained_on}")
 
 if config.subset is not None:
     experiment_id = os.path.join(experiment_id, f"subset-{config.subset}")
@@ -104,6 +110,8 @@ if config.masked_out == "single":
     name_out = f"{config.OutLayer}_Masked"
 elif config.masked_out == "group":
     name_out = f"{config.OutLayer}_GMasked"
+elif config.masked_out == "multi-head":
+    name_out = f"{config.OutLayer}_Mhead"
 elif config.masked_out == "right":
     name_out = f"{config.OutLayer}_RMasked"
 else:

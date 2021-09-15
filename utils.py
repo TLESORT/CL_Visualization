@@ -136,7 +136,8 @@ def check_exp_config(config, name_out):
                                 config.subset,
                                 config.seed,
                                 config.lr,
-                                config.architecture)
+                                config.architecture,
+                                config.finetuning)
             if exp_already_done:
                 print(f"This experience has already be runned and finnished: {run.name}")
                 print(dict_config)
