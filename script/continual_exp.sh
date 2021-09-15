@@ -12,6 +12,7 @@ for head in $list_heads ;do
 sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head
 sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head_masked --masked_out single
 sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head_masked --masked_out group
+sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head_masked --masked_out MHead
 done #head
 
 
