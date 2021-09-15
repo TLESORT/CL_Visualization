@@ -83,7 +83,7 @@ class Trainer(Continual_Evaluation):
         self.model.cuda()
 
         self.finetuning = config.finetuning
-        if (self.pretrained_on is not None) and self.finetuning == False:
+        if (self.pretrained_on is not None) and not self.finetuning:
             # we replace the scenario data by feature vector from the pretrained model to save training time
             self.scenario_tr = encode_scenario(self.data_dir,
                                                self.scenario_tr,
@@ -111,9 +111,14 @@ class Trainer(Continual_Evaluation):
 
         if self.num_tasks >1:
             # random permutation of task order
+            trsf = self.scenario_tr.trsf
             self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
+            print("dirty small fix to remove for create_subscenario trsnformations")
+            self.scenario_tr.trsf = trsf # dirty small fix
             if self.scenario_te.nb_tasks > 1:
+                trsf = self.scenario_te.trsf
                 self.scenario_te = create_subscenario(self.scenario_te, self.task_order)
+                self.scenario_te.trsf = trsf  # dirty small fix
 
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
