@@ -47,7 +47,7 @@ parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
 parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
-parser.add_argument('--batch_size', default=264, type=int, help='batch size')
+parser.add_argument('--batch_size', default=256, type=int, help='batch size')
 parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "multi-head"],
                     help='if single we only update one out dimension,'
                          ' if group mask the classes in the batch,'
