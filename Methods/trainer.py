@@ -40,18 +40,7 @@ class Trainer(Continual_Evaluation):
         self.num_tasks = config.num_tasks
         self.scenario_name = config.scenario_name
         self.subset = config.subset
-
-        self.data_dir = config.data_dir
-        self.pmodel_dir = config.pmodel_dir
         self.reset_opt = config.reset_opt
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
-        self.log_dir = os.path.join(self.root_dir, "Logs", self.scenario_name)
-        if not os.path.exists(self.log_dir):
-            os.makedirs(self.log_dir)
-        self.sample_dir = os.path.join(self.root_dir, "Samples")
-        if not os.path.exists(self.sample_dir):
-            os.makedirs(self.sample_dir)
 
         self.algo_name = "baseline"
         self.fast = config.fast

@@ -75,6 +75,8 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
+config.original_root = config.root_dir
+
 if config.seed == 0 or config.seed == 1664:
     task_order = np.arange(config.num_tasks)
 else:
@@ -86,6 +88,9 @@ experiment_id = f"{config.dataset}"
 config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
 if not os.path.exists(config.pmodel_dir):
     os.makedirs(config.pmodel_dir)
+
+if not os.path.exists(config.data_dir):
+    os.makedirs(config.data_dir)
 
 experiment_id = os.path.join(experiment_id, config.scenario_name, f"{config.num_tasks}-tasks")
 
@@ -123,6 +128,13 @@ config.root_dir = os.path.join(config.root_dir, experiment_id)
 if not os.path.exists(config.root_dir):
     os.makedirs(config.root_dir)
 
+config.log_dir = os.path.join(config.root_dir, "Logs", config.scenario_name)
+if not os.path.exists(config.log_dir):
+    os.makedirs(config.log_dir)
+config.sample_dir = os.path.join(config.root_dir, "Samples")
+if not os.path.exists(config.sample_dir):
+    os.makedirs(config.sample_dir)
+
 # save args parameters and date
 if not config.no_train:
     file_name = os.path.join(config.root_dir, f"config_{config.name_algo}.txt")
@@ -151,6 +163,7 @@ if not config.dev:
     for i in range(10):
         try:
             wandb.init(
+                dir=config.original_root,
                 project="CL_Visualization", settings=wandb.Settings(start_method='fork'),
                 group=experiment_label,
                 id=experiment_id + '-' + wandb.util.generate_id(),

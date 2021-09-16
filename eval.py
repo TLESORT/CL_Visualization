@@ -21,6 +21,11 @@ class Continual_Evaluation(abc.ABC):
         self.name_algo = config.name_algo
         self.nb_tot_epoch = None
 
+        self.data_dir = config.data_dir
+        self.pmodel_dir = config.pmodel_dir
+        self.log_dir = config.log_dir
+        self.sample_dir = config.sample_dir
+
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
         self.vector_task_labels_epoch_tr = np.zeros(0)
