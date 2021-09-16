@@ -8,13 +8,13 @@ lrs="0.1 0.01 0.001"
 
 for seed in $seeds ;do
 
-for lr in lrs ;do
+for lr in $lrs ;do
 
 for head in $list_heads ;do
 sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head
-sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head_masked --masked_out single
-sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head_masked --masked_out group
-sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head_masked --masked_out MHead
+sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head --masked_out single
+sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head --masked_out group
+sbatch script/run_on_cluster_continual.sh --lr $lr --seed $seed --OutLayer $head --masked_out MHead
 done #head
 
 done #lrs
