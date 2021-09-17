@@ -7,7 +7,11 @@ def check_one_config_parameter(config_parameter, value_or_list):
         parameter_ok = (config_parameter == value_or_list)
     return parameter_ok
 
-def select_run(dict_config, dataset, pretrained_on, num_tasks, OutLayer, subset, seed, lr=0.002, architecture=None, finetuning=False):
+def select_run(dict_config, name_algo, dataset, pretrained_on, num_tasks, OutLayer, subset, seed, lr=0.002, architecture=None, finetuning=False):
+
+    name_algo_ok = check_one_config_parameter(dict_config["name_algo"], name_algo)
+    if not name_algo_ok: return False
+
     dataset_ok = check_one_config_parameter(dict_config["dataset"], dataset)
     if not dataset_ok: return False
 

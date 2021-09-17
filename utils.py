@@ -129,6 +129,7 @@ def check_exp_config(config, name_out):
         if run.state == "finished":
             dict_config = {k: v for k, v in run.config.items() if not k.startswith('_')}
             exp_already_done = select_run(dict_config,
+                                config.name_algo,
                                 config.dataset,
                                 config.pretrained_on,
                                 config.num_tasks,
