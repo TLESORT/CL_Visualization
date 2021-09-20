@@ -72,6 +72,8 @@ class Trainer(Continual_Evaluation):
         self.model.cuda()
 
         self.finetuning = config.finetuning
+        self.proj_drift_eval = config.proj_drift_eval
+        self.data_encoded = False
         if (self.pretrained_on is not None) and not self.finetuning:
             # we replace the scenario data by feature vector from the pretrained model to save training time
             self.scenario_tr = encode_scenario(self.data_dir,
@@ -98,16 +100,11 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-        if self.num_tasks >1:
+        if self.num_tasks > 1:
             # random permutation of task order
-            trsf = self.scenario_tr.trsf
             self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
-            print("dirty small fix to remove for create_subscenario trsnformations")
-            self.scenario_tr.trsf = trsf # dirty small fix
             if self.scenario_te.nb_tasks > 1:
-                trsf = self.scenario_te.trsf
                 self.scenario_te = create_subscenario(self.scenario_te, self.task_order)
-                self.scenario_te.trsf = trsf  # dirty small fix
 
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
@@ -116,7 +113,8 @@ class Trainer(Continual_Evaluation):
             self.opt = None
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
 
-        self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+        # shuffle should stay false for proj drift estimation
+        self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=False, num_workers=6)
 
     def regularize_loss(self, model, loss):
         return loss
@@ -153,10 +151,10 @@ class Trainer(Continual_Evaluation):
             # if self.first_task_loaded -> we have already loaded test accuracy and train accuracy
             if not self.first_task_loaded:
                 if self.verbose: print("test test")
-                self.test(ind_task_log=ind_task, train=False)
+                list_features_before_training = self.test(ind_task_log=ind_task, train=False)
                 if self.verbose: print("test train")
                 self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
-                self.log_post_epoch_processing(0, epoch=-1)
+                self.log_post_epoch_processing(0, epoch=-1, list_features=list_features_before_training)
         return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
@@ -170,6 +168,9 @@ class Trainer(Continual_Evaluation):
 
         if data_loader is None:
             data_loader = self.eval_te_loader
+
+        list_embedding = []
+
         for i_, (x_, y_, t_) in enumerate(data_loader):
 
             # data does not fit to the model if size<=1
@@ -179,13 +180,24 @@ class Trainer(Continual_Evaluation):
             x_ = x_.cuda()
 
             self.model.eval()
-            if self.test_label:
-                output = self.model.forward_task(x_, t_)
+
+            if not self.data_encoded:
+                features = self.model.feature_extractor(x_)
             else:
-                output = self.model(x_)
+                features = x_
+
+            if self.proj_drift_eval and (not train):
+                list_embedding.append(features.detach().cpu())
+
+            if self.test_label:
+                output = self.model.head.forward_task(features, t_)
+            else:
+                output = self.model.get_last_layer()(features)
 
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
+
+        return list_embedding
 
     def head_without_grad(self, x_, y_, t_, ind_task, epoch):
 
@@ -253,9 +265,12 @@ class Trainer(Continual_Evaluation):
                     if self.dev: break
 
             self.callback_epoch(ind_task, epoch)
-            self.test(ind_task_log=ind_task + 1)
+            list_post_epoch_features = self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
-            self.log_post_epoch_processing(ind_task + 1, epoch=epoch, print_acc=(epoch == self.nb_epochs - 1))
+            self.log_post_epoch_processing(ind_task + 1,
+                                           epoch=epoch,
+                                           list_features=list_post_epoch_features,
+                                           print_acc=(epoch == self.nb_epochs - 1))
             if self.dev: break
 
         return
