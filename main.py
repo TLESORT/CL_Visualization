@@ -60,6 +60,8 @@ parser.add_argument('--seed', default="1664", type=int,
 # FLAGS
 parser.add_argument('--finetuning', action='store_true', default=False,
                     help='decide if we finetune pretrained models')
+parser.add_argument('--proj_drift_eval', action='store_true', default=False,
+                    help='eval the proj drift')
 parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--reset_opt', action='store_true', default=False,
@@ -68,6 +70,7 @@ parser.add_argument('--load_first_task', action='store_true', default=False, hel
 parser.add_argument('--no_train', action='store_true', default=False, help='flag to only analyse or plot figures')
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
+parser.add_argument('--offline', action='store_true', default=False, help='does not save in wandb')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 
@@ -150,7 +153,7 @@ else:
 
 experiment_id = experiment_id.replace("/", "-")
 
-if not config.dev:
+if not (config.dev or config.offline):
 
     # Check if experience already exists
     exp_already_done = check_exp_config(config, name_out)

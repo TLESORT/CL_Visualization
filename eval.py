@@ -20,6 +20,7 @@ class Continual_Evaluation(abc.ABC):
         self.first_task_loaded = False  # flag
         self.name_algo = config.name_algo
         self.nb_tot_epoch = None
+        self.offline = config.offline
 
         self.data_dir = config.data_dir
         self.pmodel_dir = config.pmodel_dir
@@ -160,7 +161,7 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array([classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes])
 
-    def log_post_epoch_processing(self, ind_task, epoch, print_acc=False):
+    def log_post_epoch_processing(self, ind_task, epoch, list_features=[], print_acc=False):
 
         if self.nb_tot_epoch is None:
             self.nb_tot_epoch = epoch
@@ -178,7 +179,39 @@ class Continual_Evaluation(abc.ABC):
         accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
         accuracy_te = correct_te / (1.0 * nb_instances_te)
 
-        if not self.dev:
+        # if self.proj_drift_eval and (self.pretrained_on is not None) and self.finetuning:
+        #
+        #     assert len(list_features) > 0
+        #
+        #     # verifier qu'il y a autant de features que de données dans eval_te_loader
+        #
+        #     # estimate projection drift on test set
+        #
+        #     # we compute mean vector and then we can compute
+        #
+        #     # from beginning of training (tot_proj_drift)
+        #     # from beginning of task (task_proj_drift)
+        #
+        #     tot_proj_drift_angle = np.zeros(self.num_classes)
+        #     tot_proj_drift_norm = np.zeros(self.num_classes)
+        #     tot_proj_drift_bias = np.zeros(self.num_classes)
+        #
+        #     task_proj_drift_angle = np.zeros(self.num_classes)
+        #     task_proj_drift_norm = np.zeros(self.num_classes)
+        #     task_proj_drift_bias = np.zeros(self.num_classes)
+        #
+        #     if ind_task == 0 and epoch == 0:
+        #         # estimate initial for tot_proj_drift
+        #     elif epoch == 0:
+        #         # estimate initial for task_proj_drift
+        #
+        #         # mesure tot_proj_drift
+        #     else:
+        #         # mesure task_proj_drift and tot_proj_drift
+
+
+
+        if not (self.dev or self.offline):
             wandb.log({'train accuracy': accuracy_tr,
                        'test accuracy': accuracy_te,
                        'epoch': self.nb_tot_epoch,
@@ -245,7 +278,7 @@ class Continual_Evaluation(abc.ABC):
         else:
             predictions = self._multihead_predictions(output, labels, task_labels)
 
-        if not self.dev:
+        if not (self.dev or self.offline):
             if train:
                 wandb.log({'train loss': loss})
             else:
