@@ -184,7 +184,7 @@ class Trainer(Continual_Evaluation):
             if not self.data_encoded:
                 features = self.model.feature_extractor(x_)
             else:
-                features = x_
+                features = x_.view(x_.shape[0], -1)
 
             if self.proj_drift_eval and (not train):
                 list_embedding.append(features.detach().cpu())
