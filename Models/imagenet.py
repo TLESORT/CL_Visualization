@@ -18,7 +18,8 @@ class ImageNetModel(nn.Module):
         self.name_model = name_model
         self.num_classes = num_classes
         self.data_encoded = False
-        self.img_size = 224
+        self.image_size = 224
+        self.input_dim = 3
 
         if self.name_model == "alexnet":
             model = models.alexnet(pretrained=True)
@@ -68,11 +69,13 @@ class ImageNetModel(nn.Module):
             x = self.classifier(self.features(x).view(-1, self.features_size))
         else:
             x = self.features(x)
+
+        x = x.view(-1, self.latent_dim)
         return x
 
     def forward(self, x):
         if not self.data_encoded:
-            x = x.view(-1, 3, self.img_size, self.img_size)
+            x = x.view(-1, self.input_dim, self.image_size, self.image_size)
             x = self.feature_extractor(x)
         x = x.view(-1, self.latent_dim)
         return self.head(x)

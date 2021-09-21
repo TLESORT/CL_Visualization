@@ -11,6 +11,7 @@ class Model(nn.Module):
 
         self.input_dim = 1
         self.output_dim = 1
+        self.image_size = 28
         self.relu = nn.ReLU()
         self.conv1 = nn.Conv2d(1, 10, kernel_size=5)
         self.conv2 = nn.Conv2d(10, 20, kernel_size=5)
@@ -36,13 +37,13 @@ class Model(nn.Module):
         return self.linear(x)
 
     def forward_task(self, x, ind_task):
-        x = x.view(-1, 1, 28, 28)
+        x = x.view(-1, self.input_dim, self.image_size, self.image_size)
         x = self.feature_extractor(x)
         x = self.head.forward_task(x, ind_task)
         return x
 
     def forward(self, x, latent_vector=False):
-        x = x.view(-1, 1, 28, 28)
+        x = x.view(-1, self.input_dim, self.image_size, self.image_size)
         x = self.feature_extractor(x)
         if not latent_vector:
             x = self.get_last_layer(x)
