@@ -77,10 +77,11 @@ class NNHead(nn.Module):
                 full_mask = ind_mask.unsqueeze(0).repeat(out.shape[0], 1)
                 out = torch.mul(out, full_mask)
             elif masked == "multi-head":
-                label_min = int(labels.min().item())
-                label_max = int(labels.max().item())
-                labels =  labels - label_min # we remap labels from 0 to label_max-label_min
-                out = out[:, label_min:label_max+1] # we select only a subset of the out labels assumed to be the current head
+                label_unique = labels.unique()
+                ind_mask = self.classes_mask[label_unique].sum(0)
+                full_mask = ind_mask.unsqueeze(0).repeat(out.shape[0], 1)
+                out = torch.mul(out, full_mask)
+                out[out==0] = -1e10
 
 
             loss = loss_func(out, labels)
