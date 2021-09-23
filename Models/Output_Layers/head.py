@@ -12,6 +12,7 @@ class NNHead(nn.Module):
         self.num_classes = num_classes
         self.LayerType=LayerType
         self.classes_mask = torch.eye(self.num_classes).cuda()
+        self.multi_heads = False
 
         if not (classes_per_tasks is None):
             assert len(np.unique(classes_per_tasks))==self.num_classes
@@ -20,6 +21,7 @@ class NNHead(nn.Module):
 
             # vector that for each class gives the correct head index
             self.classes_heads=torch.zeros(self.num_classes)
+            # mask that for task gives the potential classes
             self.heads_mask=torch.zeros(self.num_head, self.num_classes).cuda()
 
 
@@ -36,18 +38,23 @@ class NNHead(nn.Module):
                     dim = len(classes)
                     if self.method=="ogd":
                         self.list_heads.append(get_Output_layer(self.LayerType, self.input_size, dim))
-                    else:
-                        # Normal Output Layer
-                        self.layer = get_Output_layer(self.LayerType, self.input_size, dim)
+            if not self.method == "ogd":
+                # Normal Output Layer
+                self.layer = get_Output_layer(self.LayerType, self.input_size, self.num_classes)
 
         else:
             # Normal Output Layer
             self.layer = get_Output_layer(self.LayerType, self.input_size, self.num_classes)
 
     def forward_task(self, x, task_ids):
+        assert task_ids is not None
+        assert x.shape[0] == task_ids.shape[0]
+
         # we recreate a prediction tensor of size [batch_size, self.global_num_classes]
         # we do so to get outputs of always same shape, the zeros should not interfere with prediction
-        return torch.mul(self.forward(x), self.heads_mask[task_ids])
+        out = torch.mul(self.forward(x), self.heads_mask[task_ids])
+        out[out == 0] = -1e10 # very low prob for other outputs head
+        return out
 
 
     def forward(self, x):
@@ -60,7 +67,9 @@ class NNHead(nn.Module):
             x = torch.cat(list_out, dim=1)
         else:
             x = self.layer(x)
-            assert x.shape[-1]==self.num_classes
+            if not self.multi_heads:
+                assert x.shape[-1]==self.num_classes,\
+                    print(f"x.shape[-1] - {x.shape[-1]} - self.num_classes - {self.num_classes}")
         return x
 
 

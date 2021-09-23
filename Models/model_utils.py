@@ -7,8 +7,14 @@ def get_Output_layer(LayerName, in_dim, out_dim):
         # We replace the output layer by a cosine layer
         outlayer = CosineLayer(in_dim, out_dim)
     elif LayerName == "WeightNorm":
-        from Models.Output_Layers.layer import WeightNormLayer
-        outlayer = WeightNormLayer(in_dim, out_dim, bias=False)
+        #from Models.Output_Layers.layer import WeightNormLayer
+        #outlayer = WeightNormLayer(in_dim, out_dim, bias=False)
+
+        from torch.nn.utils import weight_norm
+        outlayer = weight_norm(torch.nn.Linear(in_dim, out_dim, bias=False))
+        outlayer.weight_g.requires_grad = False # remove g parameter from the parametrization
+        outlayer.state_dict()['weight_g'] = torch.ones(out_dim)
+
     elif LayerName == "OriginalWeightNorm":
         from torch.nn.utils import weight_norm
         outlayer = weight_norm(torch.nn.Linear(in_dim, out_dim, bias=False))

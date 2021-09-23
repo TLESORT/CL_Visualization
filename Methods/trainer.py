@@ -130,7 +130,7 @@ class Trainer(Continual_Evaluation):
 
         if self.verbose: print("prepare subset")
         if self.subset is not None:
-            # replace the full taskset by a subset of samples ramdomly selected
+            # replace the full taskset by a subset of samples randomly selected
             nb_tot_samples = len(task_set)
             indexes = np.random.randint(0, nb_tot_samples, self.subset)
             x, y, t = task_set.get_raw_samples(indexes=indexes)
@@ -151,10 +151,10 @@ class Trainer(Continual_Evaluation):
             # if self.first_task_loaded -> we have already loaded test accuracy and train accuracy
             if not self.first_task_loaded:
                 if self.verbose: print("test test")
-                list_features_before_training = self.test(ind_task_log=ind_task, train=False)
+                tuple_features_before_training = self.test(ind_task_log=ind_task, train=False)
                 if self.verbose: print("test train")
                 self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
-                self.log_post_epoch_processing(0, epoch=-1, list_features=list_features_before_training)
+                self.log_post_epoch_processing(0, epoch=-1, tuple_features=tuple_features_before_training)
         return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
@@ -164,12 +164,13 @@ class Trainer(Continual_Evaluation):
         if self.OutLayer in self.non_differential_heads:
             self.model.update_head(epoch)
 
-    def test(self, ind_task_log, data_loader=None, train=False):
+    def test(self, ind_task_log, data_loader=None, train=False, nb_embedding=200):
 
         if data_loader is None:
             data_loader = self.eval_te_loader
 
-        list_embedding = []
+        np_embedding = np.zeros((0, self.model.features_size))
+        np_classes = np.zeros(0)
 
         for i_, (x_, y_, t_) in enumerate(data_loader):
 
@@ -187,17 +188,24 @@ class Trainer(Continual_Evaluation):
                 features = x_.view(x_.shape[0], -1)
 
             if self.proj_drift_eval and (not train):
-                list_embedding.append(features.detach().cpu())
+                np_embedding = np.concatenate([np_embedding,features.detach().cpu()], axis=0)
+                np_classes = np.concatenate([np_classes,np.array(y_.clone().cpu())], axis=0)
 
             if self.test_label:
-                output = self.model.head.forward_task(features, t_)
+                output = self.model.head.forward_task(features, t_.long())
             else:
                 output = self.model.get_last_layer()(features)
 
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
 
-        return list_embedding
+        if self.proj_drift_eval and (not train):
+            np.random.seed(self.seed)
+            selected_indexes = np.random.randint(np_embedding.shape[0], size=nb_embedding)
+            np_embedding = np_embedding[selected_indexes]
+            np_classes = np_classes[selected_indexes]
+
+        return (np_embedding, np_classes.astype(int))
 
     def head_without_grad(self, x_, y_, t_, ind_task, epoch):
 
@@ -219,7 +227,7 @@ class Trainer(Continual_Evaluation):
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
         self.opt.zero_grad()
         if self.test_label:
-            output = self.model.forward_task(x_, t_)
+            output = self.model.forward_task(x_, t_.long())
         else:
             output = self.model(x_)
 
@@ -265,11 +273,11 @@ class Trainer(Continual_Evaluation):
                     if self.dev: break
 
             self.callback_epoch(ind_task, epoch)
-            list_post_epoch_features = self.test(ind_task_log=ind_task + 1)
+            tuple_post_epoch_features = self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
             self.log_post_epoch_processing(ind_task + 1,
                                            epoch=epoch,
-                                           list_features=list_post_epoch_features,
+                                           tuple_features=tuple_post_epoch_features,
                                            print_acc=(epoch == self.nb_epochs - 1))
             if self.dev: break
 

@@ -95,22 +95,30 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
             classes = task_set.get_classes()
             list_classes_per_tasks.append(classes)
 
+    else:
+        list_classes_per_tasks = None
+
+    if name_dataset in ["CIFAR10", "CIFAR100", "SVHN"]:
+        from Models.cifar_models import CIFARModel
+        model = CIFARModel(num_classes=scenario.nb_classes,
+                           classes_per_head = list_classes_per_tasks,
+                           OutLayer=OutLayer,
+                           pretrained_on=pretrained_on,
+                           model_dir=model_dir)
+
+    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
+        from Models.imagenet import ImageNetModel
+        model = ImageNetModel(num_classes=scenario.nb_classes,
+                              classes_per_head = list_classes_per_tasks,
+                              OutLayer=OutLayer,
+                              pretrained=pretrained_on == "ImageNet",
+                              name_model=architecture)
+    else:
         model = Model(num_classes=scenario.nb_classes,
                       classes_per_head=list_classes_per_tasks,
                       OutLayer=OutLayer,
-                      method=method)
-    else:
-
-        if name_dataset in ["CIFAR10", "CIFAR100", "SVHN"]:
-            from Models.cifar_models import CIFARModel
-            model = CIFARModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on, model_dir=model_dir)
-
-        elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
-            from Models.imagenet import ImageNetModel
-            model = ImageNetModel(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained=pretrained_on == "ImageNet",
-                                  name_model=architecture)
-        else:
-            model = Model(num_classes=scenario.nb_classes, OutLayer=OutLayer, pretrained_on=pretrained_on)
+                      method=method,
+                      pretrained_on=pretrained_on)
 
     return model.cuda()
 

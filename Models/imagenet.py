@@ -73,6 +73,14 @@ class ImageNetModel(nn.Module):
         x = x.view(-1, self.latent_dim)
         return x
 
+    def forward_task(self, x, task_ids):
+
+        if not self.data_encoded:
+            x = x.view(-1, self.input_dim, self.image_size, self.image_size)
+            x = self.feature_extractor(x)
+        x = self.head.forward_task(x, task_ids)
+        return x
+
     def forward(self, x):
         if not self.data_encoded:
             x = x.view(-1, self.input_dim, self.image_size, self.image_size)
