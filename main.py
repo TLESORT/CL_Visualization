@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import datetime
 import wandb
+from typing import List
 
 from Methods.trainer import Trainer
 from utils import check_exp_config
@@ -29,11 +30,12 @@ parser.add_argument('--architecture', default="resnet", type=str,
 
 # Logs / Data / Paths
 parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
+                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
                              "Core10Lifelong", "Core10Mix"], help='dataset name')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
                     help='continual scenario')
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
+parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
 parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
@@ -156,7 +158,9 @@ experiment_id = experiment_id.replace("/", "-")
 if not (config.dev or config.offline):
 
     # Check if experience already exists
-    exp_already_done = check_exp_config(config, name_out)
+    exp_already_done=False
+    if config.seed != 1664: # this seed is vip
+        exp_already_done = check_exp_config(config, name_out)
     if exp_already_done:
         print(f"This experience has already been run and finished: {experiment_id}")
         exit()

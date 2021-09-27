@@ -7,7 +7,18 @@ def check_one_config_parameter(config_parameter, value_or_list):
         parameter_ok = (config_parameter == value_or_list)
     return parameter_ok
 
-def select_run(dict_config, name_algo, dataset, pretrained_on, num_tasks, OutLayer, subset, seed, lr=0.002, architecture=None, finetuning=False):
+def select_run(dict_config,
+               name_algo,
+               dataset,
+               pretrained_on,
+               num_tasks,
+               OutLayer,
+               subset,
+               seed,
+               lr=0.002,
+               architecture=None,
+               finetuning=False,
+               test_label=False):
 
     name_algo_ok = check_one_config_parameter(dict_config["name_algo"], name_algo)
     if not name_algo_ok: return False
@@ -35,6 +46,9 @@ def select_run(dict_config, name_algo, dataset, pretrained_on, num_tasks, OutLay
 
     finetuning_ok = check_one_config_parameter(dict_config["finetuning"], finetuning)
     if not finetuning_ok:  return False
+
+    test_label_ok = check_one_config_parameter(dict_config["test_label"], test_label)
+    if not test_label_ok:  return False
 
     if dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
         architecture_ok = check_one_config_parameter(dict_config["architecture"], architecture)

@@ -31,10 +31,12 @@ class ImageNetModel(nn.Module):
             model = models.resnet18(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features  #512
             self.features = nn.Sequential(*list(model.children())[:-1])
+            self.features_size = 512
         elif self.name_model == "googlenet":
             model = models.googlenet(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features # 1024
             self.features = nn.Sequential(*list(model.children())[:-1])
+            self.features_size = 1024
         elif self.name_model == "vgg":
             model = models.vgg16(pretrained=True)
             self.latent_dim = list(model.children())[-1][-1].in_features #2048

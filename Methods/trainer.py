@@ -38,6 +38,7 @@ class Trainer(Continual_Evaluation):
         self.masked_out = config.masked_out
 
         self.num_tasks = config.num_tasks
+        self.increments = config.increments
         self.scenario_name = config.scenario_name
         self.subset = config.subset
         self.reset_opt = config.reset_opt
@@ -56,10 +57,12 @@ class Trainer(Continual_Evaluation):
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
-        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks,
+        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
                                         transform=self.transform_train)
-        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks,
+        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
                                         transform=self.transform_test)
+
+        print(len(self.scenario_te[1]))
 
         self.model = get_model(self.dataset,
                                self.scenario_tr,
@@ -143,7 +146,13 @@ class Trainer(Continual_Evaluation):
                                     batch_size=self.batch_size,
                                     shuffle=True,
                                     num_workers=6)
-        x, y, t = task_set.get_random_samples(10)
+
+
+        if not self.data_encoded: # if data is encoded we can not plot it
+            self.task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
+                                  nb_samples=100,
+                                  shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+
         if self.verbose: print("prepare log")
         if ind_task == 0:
             # log before training
@@ -171,6 +180,7 @@ class Trainer(Continual_Evaluation):
 
         np_embedding = np.zeros((0, self.model.features_size))
         np_classes = np.zeros(0)
+        np_task_ids = np.zeros(0)
 
         for i_, (x_, y_, t_) in enumerate(data_loader):
 
@@ -190,6 +200,7 @@ class Trainer(Continual_Evaluation):
             if self.proj_drift_eval and (not train):
                 np_embedding = np.concatenate([np_embedding,features.detach().cpu()], axis=0)
                 np_classes = np.concatenate([np_classes,np.array(y_.clone().cpu())], axis=0)
+                np_task_ids = np.concatenate([np_task_ids,np.array(t_.clone().cpu())], axis=0)
 
             if self.test_label:
                 output = self.model.head.forward_task(features, t_.long())
@@ -204,8 +215,9 @@ class Trainer(Continual_Evaluation):
             selected_indexes = np.random.randint(np_embedding.shape[0], size=nb_embedding)
             np_embedding = np_embedding[selected_indexes]
             np_classes = np_classes[selected_indexes]
+            np_task_ids = np_task_ids[selected_indexes]
 
-        return (np_embedding, np_classes.astype(int))
+        return (np_embedding, np_classes.astype(int), np_task_ids)
 
     def head_without_grad(self, x_, y_, t_, ind_task, epoch):
 
@@ -237,10 +249,9 @@ class Trainer(Continual_Evaluation):
                                    masked=self.masked_out
                                    # we apply mask from task 1 because before there is no risk of forgetting
                                    )
-
+        loss = self.regularize_loss(self.model, loss)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
-        loss = self.regularize_loss(self.model, loss)
         self.optimizer_step(ind_task)
 
         return output, loss

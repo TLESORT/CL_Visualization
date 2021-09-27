@@ -1,17 +1,20 @@
 import torch
+import torchvision.transforms as trsf
 
 from Models.model import Model
 
-import torchvision.transforms as trsf
 
-
-def get_scenario(dataset, scenario_name, nb_tasks, transform=None):
+def get_scenario(dataset, scenario_name, nb_tasks, increments=0, transform=None):
     if scenario_name == "Rotations":
         from continuum import Rotations
         scenario = Rotations(dataset, nb_tasks=nb_tasks, transformations=transform)
     elif scenario_name == "Disjoint":
         from continuum import ClassIncremental
-        scenario = ClassIncremental(dataset, nb_tasks=nb_tasks, transformations=transform)
+        if  increments[0]== 0:
+            scenario = ClassIncremental(dataset, nb_tasks=nb_tasks, transformations=transform)
+        else:
+            scenario = ClassIncremental(dataset, increment=5, transformations=transform)
+
     elif scenario_name == "Domain":
         from continuum import ContinualScenario
         scenario = ContinualScenario(dataset, transformations=transform)
@@ -39,8 +42,14 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
         from continuum.datasets import CIFAR100
         dataset = CIFAR100(path_dir, download=True, train=train)
     elif name_dataset == "ImageNet":
-        from continuum.datasets import CIFAR10
-        dataset = CIFAR10(path_dir, download=True, train=train)
+        from continuum.datasets import ImageNet
+        dataset = ImageNet(path_dir, download=True, train=train)
+    elif name_dataset == "CUB200":
+        from continuum.datasets import CUB200
+        dataset = CUB200(path_dir, download=True, train=train)
+    elif name_dataset == "AwA2":
+        from continuum.datasets import AwA2
+        dataset = AwA2(path_dir, download=True, train=train)
     elif name_dataset == "SVHN":
         from torchvision.datasets import SVHN
         from continuum.datasets import PyTorchDataset
@@ -57,10 +66,10 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 def get_transform(name_dataset, architecture, train="True"):
     list_transform=None
-    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
+    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200' , 'AwA2']:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
-        resize = trsf.Resize(size=224)
+        resize = trsf.Resize(size=(224, 224))
         transform = trsf.Compose([resize, trsf.ToTensor(), normalize])
         list_transform = [transform]
     elif name_dataset == "CIFAR10":
@@ -106,7 +115,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                            pretrained_on=pretrained_on,
                            model_dir=model_dir)
 
-    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
+    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix",'CUB200', 'AwA2']:
         from Models.imagenet import ImageNetModel
         model = ImageNetModel(num_classes=scenario.nb_classes,
                               classes_per_head = list_classes_per_tasks,
@@ -146,7 +155,8 @@ def check_exp_config(config, name_out):
                                 config.seed,
                                 config.lr,
                                 config.architecture,
-                                config.finetuning)
+                                config.finetuning,
+                                config.test_label)
             if exp_already_done:
                 print(f"This experience has already be runned and finnished: {run.name}")
                 print(dict_config)
