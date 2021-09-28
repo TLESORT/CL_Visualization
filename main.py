@@ -31,7 +31,7 @@ parser.add_argument('--architecture', default="resnet", type=str,
 # Logs / Data / Paths
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix"], help='dataset name')
+                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain'], default="Disjoint",
                     help='continual scenario')
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
@@ -73,6 +73,7 @@ parser.add_argument('--no_train', action='store_true', default=False, help='flag
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--offline', action='store_true', default=False, help='does not save in wandb')
+parser.add_argument('--offline_wandb', action='store_true', default=False, help='does save in wandb but offline')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
 
@@ -169,6 +170,13 @@ if not (config.dev or config.offline):
 
     for i in range(10):
         try:
+            if config.offline_wandb:
+                os.environ["WANDB_MODE"] = "offline"
+                # to synchronize : run in terminal wandb sync YOUR_RUN_DIRECTORY
+                # ex : wandb sync wandb/offline-run-20210903_135922-MNIST-class_inc-AverageHash-seed_1665-1468z5g8/
+            else:
+                os.environ["WANDB_MODE"] = "online"
+
             wandb.init(
                 dir=config.original_root,
                 project="CL_Visualization", settings=wandb.Settings(start_method='fork'),

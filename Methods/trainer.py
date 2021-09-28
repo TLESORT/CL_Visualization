@@ -62,8 +62,6 @@ class Trainer(Continual_Evaluation):
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
                                         transform=self.transform_test)
 
-        print(len(self.scenario_te[1]))
-
         self.model = get_model(self.dataset,
                                self.scenario_tr,
                                self.pretrained_on,
@@ -149,7 +147,7 @@ class Trainer(Continual_Evaluation):
 
 
         if not self.data_encoded: # if data is encoded we can not plot it
-            self.task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
+            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
                                   nb_samples=100,
                                   shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
 
