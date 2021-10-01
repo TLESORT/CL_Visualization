@@ -37,11 +37,6 @@ def get_lifelong_cifar100(dataset):
     t = np.zeros(len(y))
     for i in range(5):
         indexes = np_indexes_coarse_labels[i,:]
-        # print(i)
-        # print(indexes)
-        # print(cifar100_coarse_labels[indexes])
-        # print(np.unique(cifar100_coarse_labels[indexes]))
-        # print(len(np.unique(cifar100_coarse_labels[indexes])))
         assert len(np.unique(cifar100_coarse_labels[indexes])) == 20, print(cifar100_coarse_labels[indexes])
         assert len(indexes) == 20, print(f"len(indexes) {len(indexes)}")
         for index in indexes:

@@ -179,8 +179,8 @@ class Continual_Evaluation(abc.ABC):
         nb_instances_tr = self.vector_labels_epoch_tr.shape[0]
         nb_instances_te = self.vector_labels_epoch_te.shape[0]
 
-        accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
-        accuracy_te = correct_te / (1.0 * nb_instances_te)
+        accuracy_tr = (1.0 * correct_tr) / nb_instances_tr
+        accuracy_te = (1.0 * correct_te) / nb_instances_te
 
         if not (self.dev or self.offline):
             assert self.vector_task_labels_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
@@ -195,7 +195,9 @@ class Continual_Evaluation(abc.ABC):
                 correct_te_task = (vector_predictions_epoch_te_task == vector_labels_epoch_te_task).sum()
                 assert len(indexes) == vector_labels_epoch_te_task.shape[0], \
                     print(f'{len(indexes)} vs {vector_labels_epoch_te_task.shape[0]}')
-                accuracy_te_task = correct_te_task / (1.0 * len(indexes))
+                accuracy_te_task = (1.0 * correct_te_task) / len(indexes)
+                
+                
                 wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
                            'task': ind_task})
 
