@@ -50,7 +50,7 @@ def select_run(dict_config,
     test_label_ok = check_one_config_parameter(dict_config["test_label"], test_label)
     if not test_label_ok:  return False
 
-    if dataset in ["Core50", "Core10Lifelong", "Core10Mix"]:
+    if dataset in ["Core50", "Core10Lifelong", "Core10Mix", "CUB200"]:
         architecture_ok = check_one_config_parameter(dict_config["architecture"], architecture)
     else:
         architecture_ok = True

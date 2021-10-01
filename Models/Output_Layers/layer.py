@@ -225,6 +225,7 @@ class KNN(nn.Module):
         data = x.detach()  # no backprop possible
         if self.initiated:
             classes = self.neigh.predict(data.cpu().numpy())
+            #convert into pseudo probability vector
             out = self.classes_mask[classes]
         else:
             out = torch.randn((x.shape[0], self.size_out)).cuda()
