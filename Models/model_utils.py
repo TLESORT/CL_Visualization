@@ -1,25 +1,18 @@
 
 import torch
 
+from nngeometry import Cosine1d, WeightNorm1d
 def get_Output_layer(LayerName, in_dim, out_dim):
     if LayerName == "CosLayer":
         from Models.Output_Layers.layer import CosineLayer
         # We replace the output layer by a cosine layer
-        outlayer = CosineLayer(in_dim, out_dim)
+        outlayer = Cosine1d(in_dim, out_dim)
     elif LayerName == "FCosLayer":
         from Models.Output_Layers.layer import CosineLayer
         # We replace the output layer by a cosine layer
         outlayer = CosineLayer(in_dim, out_dim, factor=True)
     elif LayerName == "WeightNorm":
-        #from Models.Output_Layers.layer import WeightNormLayer
-        #outlayer = WeightNormLayer(in_dim, out_dim, bias=False)
-
-        from torch.nn.utils import weight_norm
-        layer = torch.nn.Linear(in_dim, out_dim, bias=False)
-        torch.nn.init.kaiming_normal_(layer.weight)
-        outlayer = weight_norm(layer)
-        outlayer.weight_g.requires_grad = False # remove g parameter from the parametrization
-        outlayer.state_dict()['weight_g'] = torch.ones(out_dim)
+        outlayer = WeightNorm1d(in_dim, out_dim)
 
     elif LayerName == "OriginalWeightNorm":
         from torch.nn.utils import weight_norm
