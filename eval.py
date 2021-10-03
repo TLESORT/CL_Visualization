@@ -183,23 +183,27 @@ class Continual_Evaluation(abc.ABC):
         accuracy_te = (1.0 * correct_te) / nb_instances_te
 
         if not (self.dev or self.offline):
-            assert self.vector_task_labels_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
 
-            list_tasks = np.unique(self.vector_task_labels_epoch_te)
-            assert len(list_tasks) == self.num_tasks
+            if self.dataset not in ["Core50", "Core10Lifelong", "Core10Mix"]:
+                # the test set of core50 is not compatible with an evaluation by task especially in Lifelong setting
 
-            for i in range(self.num_tasks):
-                indexes = np.where(self.vector_task_labels_epoch_te == list_tasks[i])[0]
-                vector_labels_epoch_te_task = self.vector_labels_epoch_te[indexes]
-                vector_predictions_epoch_te_task = self.vector_predictions_epoch_te[indexes]
-                correct_te_task = (vector_predictions_epoch_te_task == vector_labels_epoch_te_task).sum()
-                assert len(indexes) == vector_labels_epoch_te_task.shape[0], \
-                    print(f'{len(indexes)} vs {vector_labels_epoch_te_task.shape[0]}')
-                accuracy_te_task = (1.0 * correct_te_task) / len(indexes)
-                
-                
-                wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
-                           'task': ind_task})
+                assert self.vector_task_labels_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
+
+                list_tasks = np.unique(self.vector_task_labels_epoch_te)
+                assert len(list_tasks) == self.num_tasks, print(f"{len(list_tasks)} vs {self.num_tasks}")
+
+                for i in range(self.num_tasks):
+                    indexes = np.where(self.vector_task_labels_epoch_te == list_tasks[i])[0]
+                    vector_labels_epoch_te_task = self.vector_labels_epoch_te[indexes]
+                    vector_predictions_epoch_te_task = self.vector_predictions_epoch_te[indexes]
+                    correct_te_task = (vector_predictions_epoch_te_task == vector_labels_epoch_te_task).sum()
+                    assert len(indexes) == vector_labels_epoch_te_task.shape[0], \
+                        print(f'{len(indexes)} vs {vector_labels_epoch_te_task.shape[0]}')
+                    accuracy_te_task = (1.0 * correct_te_task) / len(indexes)
+
+
+                    wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
+                               'task': ind_task})
 
             wandb.log({'train accuracy': accuracy_tr,
                        'test accuracy': accuracy_te,
