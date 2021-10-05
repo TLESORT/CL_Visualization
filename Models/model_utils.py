@@ -1,24 +1,33 @@
 
 import torch
 
+from nngeometry.layers import Cosine1d, WeightNorm1d
 def get_Output_layer(LayerName, in_dim, out_dim):
     if LayerName == "CosLayer":
         from Models.Output_Layers.layer import CosineLayer
         # We replace the output layer by a cosine layer
-        outlayer = CosineLayer(in_dim, out_dim)
+        outlayer = Cosine1d(in_dim, out_dim)
+    elif LayerName == "FCosLayer":
+        from Models.Output_Layers.layer import CosineLayer
+        # We replace the output layer by a cosine layer
+        outlayer = CosineLayer(in_dim, out_dim, factor=True)
     elif LayerName == "WeightNorm":
-        from Models.Output_Layers.layer import WeightNormLayer
-        outlayer = WeightNormLayer(in_dim, out_dim, bias=False)
+        outlayer = WeightNorm1d(in_dim, out_dim)
+
     elif LayerName == "OriginalWeightNorm":
         from torch.nn.utils import weight_norm
-        outlayer = weight_norm(torch.nn.Linear(in_dim, out_dim, bias=False))
+        layer = torch.nn.Linear(in_dim, out_dim, bias=False)
+        torch.nn.init.kaiming_normal_(layer.weight)
+        outlayer = weight_norm(layer)
     elif LayerName == "SLDA":
         from Models.Output_Layers.layer import SLDALayer
         outlayer = SLDALayer(in_dim, out_dim)
     elif LayerName == "Linear":
         outlayer = torch.nn.Linear(in_dim, out_dim, bias=True)
+        torch.nn.init.kaiming_normal_(outlayer.weight)
     elif LayerName == "Linear_no_bias":
         outlayer = torch.nn.Linear(in_dim, out_dim, bias=False)
+        torch.nn.init.kaiming_normal_(outlayer.weight)
     elif "MIMO_" in LayerName:
         from Models.Output_Layers.layer import MIMO
         outlayer = MIMO(in_dim, out_dim, num_layer=3, layer_type=LayerName)

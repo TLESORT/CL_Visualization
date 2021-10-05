@@ -75,6 +75,10 @@ class CifarResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=10):
         super(CifarResNet, self).__init__()
+
+
+        self.image_size = 32
+        self.input_dim = 3
         self.inplanes = 16
         self.conv1 = conv3x3(3, 16)
         self.bn1 = nn.BatchNorm2d(16)
@@ -87,7 +91,9 @@ class CifarResNet(nn.Module):
         self.layer3 = self._make_layer(block, 64, layers[2], stride=2)
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(64 * block.expansion, num_classes)
+
+        self.features_size = 64 * block.expansion
+        self.fc = nn.Linear(self.features_size, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -128,6 +134,15 @@ class CifarResNet(nn.Module):
         x = self.layer3(x)
 
         x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        return x
+
+    def forward_task(self, x, task_ids):
+
+        if not self.data_encoded:
+            x = x.view(-1, self.input_dim, self.image_size, self.image_size)
+            x = self.feature_extractor(x)
+        x = self.head.forward_task(x, task_ids)
         return x
 
     def forward(self, x):

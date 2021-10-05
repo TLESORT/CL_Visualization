@@ -18,7 +18,8 @@ class ImageNetModel(nn.Module):
         self.name_model = name_model
         self.num_classes = num_classes
         self.data_encoded = False
-        self.img_size = 224
+        self.image_size = 224
+        self.input_dim = 3
 
         if self.name_model == "alexnet":
             model = models.alexnet(pretrained=True)
@@ -30,10 +31,12 @@ class ImageNetModel(nn.Module):
             model = models.resnet18(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features  #512
             self.features = nn.Sequential(*list(model.children())[:-1])
+            self.features_size = 512
         elif self.name_model == "googlenet":
             model = models.googlenet(pretrained=True)
             self.latent_dim = list(model.children())[-1].in_features # 1024
             self.features = nn.Sequential(*list(model.children())[:-1])
+            self.features_size = 1024
         elif self.name_model == "vgg":
             model = models.vgg16(pretrained=True)
             self.latent_dim = list(model.children())[-1][-1].in_features #2048
@@ -68,11 +71,21 @@ class ImageNetModel(nn.Module):
             x = self.classifier(self.features(x).view(-1, self.features_size))
         else:
             x = self.features(x)
+
+        x = x.view(-1, self.latent_dim)
+        return x
+
+    def forward_task(self, x, task_ids):
+
+        if not self.data_encoded:
+            x = x.view(-1, self.input_dim, self.image_size, self.image_size)
+            x = self.feature_extractor(x)
+        x = self.head.forward_task(x, task_ids)
         return x
 
     def forward(self, x):
         if not self.data_encoded:
-            x = x.view(-1, 3, self.img_size, self.img_size)
+            x = x.view(-1, self.input_dim, self.image_size, self.image_size)
             x = self.feature_extractor(x)
         x = x.view(-1, self.latent_dim)
         return self.head(x)

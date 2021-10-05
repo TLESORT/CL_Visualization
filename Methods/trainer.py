@@ -38,20 +38,10 @@ class Trainer(Continual_Evaluation):
         self.masked_out = config.masked_out
 
         self.num_tasks = config.num_tasks
+        self.increments = config.increments
         self.scenario_name = config.scenario_name
         self.subset = config.subset
-
-        self.data_dir = config.data_dir
-        self.pmodel_dir = config.pmodel_dir
         self.reset_opt = config.reset_opt
-        if not os.path.exists(self.data_dir):
-            os.makedirs(self.data_dir)
-        self.log_dir = os.path.join(self.root_dir, "Logs", self.scenario_name)
-        if not os.path.exists(self.log_dir):
-            os.makedirs(self.log_dir)
-        self.sample_dir = os.path.join(self.root_dir, "Samples")
-        if not os.path.exists(self.sample_dir):
-            os.makedirs(self.sample_dir)
 
         self.algo_name = "baseline"
         self.fast = config.fast
@@ -81,9 +71,10 @@ class Trainer(Continual_Evaluation):
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
-        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks,
+        self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
                                         transform=self.transform_train)
-        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks,
+
+        self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
                                         transform=self.transform_test, train=False)
 
         self.model = get_model(self.dataset,
@@ -97,7 +88,9 @@ class Trainer(Continual_Evaluation):
         self.model.cuda()
 
         self.finetuning = config.finetuning
-        if (self.pretrained_on is not None) and self.finetuning == False:
+        self.proj_drift_eval = config.proj_drift_eval
+        self.data_encoded = False
+        if (self.pretrained_on is not None) and not self.finetuning:
             # we replace the scenario data by feature vector from the pretrained model to save training time
             self.scenario_tr = encode_scenario(self.data_dir,
                                                self.scenario_tr,
@@ -123,7 +116,11 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
+<<<<<<< HEAD
         if False and self.num_tasks > 1:
+=======
+        if self.num_tasks > 1:
+>>>>>>> scaling
             # random permutation of task order
             self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
             if self.scenario_te.nb_tasks > 1:
@@ -134,8 +131,15 @@ class Trainer(Continual_Evaluation):
             self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
         else:
             self.opt = None
+<<<<<<< HEAD
         # self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
         # self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+=======
+        self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
+
+        # shuffle should stay false for proj drift estimation
+        self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=False, num_workers=6)
+>>>>>>> scaling
 
     def regularize_loss(self, model, loss):
         return loss
@@ -151,7 +155,7 @@ class Trainer(Continual_Evaluation):
 
         if self.verbose: print("prepare subset")
         if self.subset is not None:
-            # replace the full taskset by a subset of samples ramdomly selected
+            # replace the full taskset by a subset of samples randomly selected
             nb_tot_samples = len(task_set)
             indexes = np.random.randint(0, nb_tot_samples, self.subset)
             x, y, t = task_set.get_raw_samples(indexes=indexes)
@@ -164,11 +168,21 @@ class Trainer(Continual_Evaluation):
                                     batch_size=self.batch_size,
                                     shuffle=True,
                                     num_workers=6)
+<<<<<<< HEAD
         # x, y, t = task_set.get_random_samples(10)
 
         print(f"plot figure: samples_task_{ind_task}.png")
         if task_set.data_type in ["image_path", "image_array"]:
             task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png", 100, shape=self.data_shape)
+=======
+
+
+        if not self.data_encoded: # if data is encoded we can not plot it
+            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
+                                  nb_samples=100,
+                                  shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+
+>>>>>>> scaling
         if self.verbose: print("prepare log")
         if ind_task == 0:
             # log before training
@@ -176,10 +190,10 @@ class Trainer(Continual_Evaluation):
             # if self.first_task_loaded -> we have already loaded test accuracy and train accuracy
             if not self.first_task_loaded:
                 if self.verbose: print("test test")
-                self.test(ind_task_log=ind_task, train=False)
+                tuple_features_before_training = self.test(ind_task_log=ind_task, train=False)
                 if self.verbose: print("test train")
                 self.test(ind_task_log=ind_task, data_loader=data_loader_tr, train=True)
-                self.log_post_epoch_processing(0, epoch=-1)
+                self.log_post_epoch_processing(0, epoch=-1, tuple_features=tuple_features_before_training)
         return data_loader_tr
 
     def callback_task(self, ind_task, task_set):
@@ -189,9 +203,10 @@ class Trainer(Continual_Evaluation):
         if self.OutLayer in self.non_differential_heads:
             self.model.update_head(epoch)
 
-    def test(self, ind_task_log, data_loader=None, train=False):
+    def test(self, ind_task_log, data_loader=None, train=False, nb_embedding=200):
 
         if data_loader is None:
+<<<<<<< HEAD
 
             for ind_task, task_set in enumerate(self.scenario_te):
                 if ind_task_log == 1 and task_set.data_type in ["image_path", "image_array"]:
@@ -202,6 +217,13 @@ class Trainer(Continual_Evaluation):
             self.test_task(ind_task_log, data_loader, train)
 
     def test_task(self, ind_task_log, data_loader=None, train=False):
+=======
+            data_loader = self.eval_te_loader
+
+        np_embedding = np.zeros((0, self.model.features_size))
+        np_classes = np.zeros(0)
+        np_task_ids = np.zeros(0)
+>>>>>>> scaling
 
         for i_, (x_, y_, t_) in enumerate(data_loader):
 
@@ -212,14 +234,34 @@ class Trainer(Continual_Evaluation):
             x_ = x_.cuda()
 
             self.model.eval()
-            if self.test_label:
-                output = self.model.forward_task(x_, t_)
+
+            if not self.data_encoded:
+                features = self.model.feature_extractor(x_)
             else:
-                output = self.model(x_)
+                features = x_.view(x_.shape[0], -1)
+
+            if self.proj_drift_eval and (not train):
+                np_embedding = np.concatenate([np_embedding,features.detach().cpu()], axis=0)
+                np_classes = np.concatenate([np_classes,np.array(y_.clone().cpu())], axis=0)
+                np_task_ids = np.concatenate([np_task_ids,np.array(t_.clone().cpu())], axis=0)
+
+            if self.test_label:
+                output = self.model.head.forward_task(features, t_.long())
+            else:
+                output = self.model.get_last_layer()(features)
 
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
 
             self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
+
+        if self.proj_drift_eval and (not train):
+            np.random.seed(self.seed)
+            selected_indexes = np.random.randint(np_embedding.shape[0], size=nb_embedding)
+            np_embedding = np_embedding[selected_indexes]
+            np_classes = np_classes[selected_indexes]
+            np_task_ids = np_task_ids[selected_indexes]
+
+        return (np_embedding, np_classes.astype(int), np_task_ids)
 
     def head_without_grad(self, x_, y_, t_, ind_task, epoch):
 
@@ -241,7 +283,7 @@ class Trainer(Continual_Evaluation):
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
         self.opt.zero_grad()
         if self.test_label:
-            output = self.model.forward_task(x_, t_)
+            output = self.model.forward_task(x_, t_.long())
         else:
             output = self.model(x_)
 
@@ -251,10 +293,9 @@ class Trainer(Continual_Evaluation):
                                    masked=self.masked_out
                                    # we apply mask from task 1 because before there is no risk of forgetting
                                    )
-
+        loss = self.regularize_loss(self.model, loss)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
-        loss = self.regularize_loss(self.model, loss)
         self.optimizer_step(ind_task)
 
         return output, loss
@@ -287,9 +328,12 @@ class Trainer(Continual_Evaluation):
                     if self.dev: break
 
             self.callback_epoch(ind_task, epoch)
-            self.test(ind_task_log=ind_task + 1)
+            tuple_post_epoch_features = self.test(ind_task_log=ind_task + 1)
             # we log and we print acc only for the last epoch
-            self.log_post_epoch_processing(ind_task + 1, epoch=epoch, print_acc=(epoch == self.nb_epochs - 1))
+            self.log_post_epoch_processing(ind_task + 1,
+                                           epoch=epoch,
+                                           tuple_features=tuple_post_epoch_features,
+                                           print_acc=(epoch == self.nb_epochs - 1))
             if self.dev: break
 
         return

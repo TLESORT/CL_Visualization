@@ -4,7 +4,9 @@ import torch
 import numpy as np
 from numpy import linalg as LA
 import abc
+from multiprocessing import Pool, cpu_count
 
+from Plot.plot_utils import angle_between
 from copy import deepcopy
 import wandb
 
@@ -20,6 +22,12 @@ class Continual_Evaluation(abc.ABC):
         self.first_task_loaded = False  # flag
         self.name_algo = config.name_algo
         self.nb_tot_epoch = None
+        self.offline = config.offline
+
+        self.data_dir = config.data_dir
+        self.pmodel_dir = config.pmodel_dir
+        self.log_dir = config.log_dir
+        self.sample_dir = config.sample_dir
 
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
@@ -55,7 +63,6 @@ class Continual_Evaluation(abc.ABC):
         if not self.fast and not self.OutLayer == "OriginalWeightNorm":
             self.ref_model = deepcopy(self.model)
 
-
         if ind_task_log == 0 and self.load_first_task:
             if self._can_load_first_task():
                 model_weights_path = os.path.join(self.log_dir, f"Model_Task_{ind_task_log}.pth")
@@ -78,7 +85,8 @@ class Continual_Evaluation(abc.ABC):
                 knnPickle = open(os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pkl"), 'wb')
                 pickle.dump(model.get_last_layer().neigh, knnPickle)
             else:
-                torch.save(model.get_last_layer().state_dict(), os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pth"))
+                torch.save(model.get_last_layer().state_dict(),
+                           os.path.join(self.log_dir, f"Head_{self.name_algo}_Task_{ind_task}.pth"))
         else:
             torch.save(model.state_dict(), os.path.join(self.log_dir, f"Model_{self.name_algo}_Task_{ind_task}.pth"))
 
@@ -103,17 +111,18 @@ class Continual_Evaluation(abc.ABC):
                 b = np.array(layer.bias.data.detach().cpu().clone(), dtype=np.float16)
                 data_b = [[s, class_id] for s, class_id in zip(b, classes_ids)]
                 table_b = wandb.Table(data=data_b, columns=["bias", "Class"])
-                wandb.log({f"Bias Task {ind_task}": wandb.plot.bar(table_b, "Class", "bias", title=f"Bias Bars Task {ind_task}")})
+                wandb.log({f"Bias Task {ind_task}": wandb.plot.bar(table_b, "Class", "bias",
+                                                                   title=f"Bias Bars Task {ind_task}")})
 
             norm_mat = np.zeros(self.num_classes)
 
             for j in range(self.num_classes):
                 norm_mat[j] = LA.norm(w[j, :])
 
-
             data_norm = [[s, class_id] for s, class_id in zip(norm_mat, classes_ids)]
             table_norm = wandb.Table(data=data_norm, columns=["Norm", "Class"])
-            wandb.log({f"Norm Task {ind_task}": wandb.plot.bar(table_norm, "Class", "Norm", title=f"Norm  Bars Task {ind_task}")})
+            wandb.log({f"Norm Task {ind_task}": wandb.plot.bar(table_norm, "Class", "Norm",
+                                                               title=f"Norm  Bars Task {ind_task}")})
 
     def log_weights_dist(self, ind_task):
 
@@ -155,6 +164,7 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array([classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes])
 
+<<<<<<< HEAD
     def print_correct_by_task(self, preds, labels, task_labels):
 
         list_task_id = np.unique(task_labels).astype(int)
@@ -171,6 +181,9 @@ class Continual_Evaluation(abc.ABC):
 
 
     def log_post_epoch_processing(self, ind_task, epoch, print_acc=True):
+=======
+    def log_post_epoch_processing(self, ind_task, epoch, tuple_features, print_acc=False):
+>>>>>>> scaling
 
         if self.nb_tot_epoch is None:
             self.nb_tot_epoch = epoch
@@ -185,14 +198,97 @@ class Continual_Evaluation(abc.ABC):
         nb_instances_tr = self.vector_labels_epoch_tr.shape[0]
         nb_instances_te = self.vector_labels_epoch_te.shape[0]
 
-        accuracy_tr = correct_tr / (1.0 * nb_instances_tr)
-        accuracy_te = correct_te / (1.0 * nb_instances_te)
+        accuracy_tr = (1.0 * correct_tr) / nb_instances_tr
+        accuracy_te = (1.0 * correct_te) / nb_instances_te
 
-        if not self.dev:
+        if not (self.dev or self.offline):
+
+            if self.dataset not in ["Core50", "Core10Lifelong", "Core10Mix"]:
+                # the test set of core50 is not compatible with an evaluation by task especially in Lifelong setting
+
+                assert self.vector_task_labels_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
+
+                list_tasks = np.unique(self.vector_task_labels_epoch_te)
+                assert len(list_tasks) == self.num_tasks, print(f"{len(list_tasks)} vs {self.num_tasks}")
+
+                for i in range(self.num_tasks):
+                    indexes = np.where(self.vector_task_labels_epoch_te == list_tasks[i])[0]
+                    vector_labels_epoch_te_task = self.vector_labels_epoch_te[indexes]
+                    vector_predictions_epoch_te_task = self.vector_predictions_epoch_te[indexes]
+                    correct_te_task = (vector_predictions_epoch_te_task == vector_labels_epoch_te_task).sum()
+                    assert len(indexes) == vector_labels_epoch_te_task.shape[0], \
+                        print(f'{len(indexes)} vs {vector_labels_epoch_te_task.shape[0]}')
+                    accuracy_te_task = (1.0 * correct_te_task) / len(indexes)
+
+
+                    wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
+                               'task': ind_task})
+
             wandb.log({'train accuracy': accuracy_tr,
                        'test accuracy': accuracy_te,
                        'epoch': self.nb_tot_epoch,
                        'task': ind_task})
+
+        if self.proj_drift_eval and (self.pretrained_on is not None) and self.finetuning:
+
+            np_features, np_classes, np_task_ids = tuple_features[0], tuple_features[1], tuple_features[2]
+            assert len(np_features) > 0
+            assert len(np_features) == len(np_classes)
+            if not (ind_task == 0 and epoch == -1):
+                assert np.all(self.ref_classes == np_classes)
+
+            weight_matrix = np.array(self.model.get_last_layer().weight.data.detach().cpu().clone())
+
+            if ind_task == 0 and epoch == -1:  # epoch == -1 means before starting continual training
+                # estimate initial for tot_proj_drift
+
+                self.ref_features = {}
+                self.norm_drifts = {}
+                self.angle_drift = {}
+                self.ref_classes = np_classes
+                self.init_features = np_features
+                self.ref_features = np.zeros(0, np_features.shape[0], np_features.shape[1])
+            else:
+                if epoch == self.nb_epochs - 1:  # just before next task we prepare ref features
+                    self.ref_features = np.concatenate([self.ref_features, np_features], axis=0)
+
+                if epoch == 0:
+                    self.norm_drifts[ind_task] = []
+                    self.angle_drift[ind_task] = []
+
+                # mesure task_proj_drift and tot_proj_drift
+
+                # ref
+                diff_representation = np_features - self.init_features
+
+                # angles
+                with Pool(min(8, cpu_count())) as p:
+                    list_repr_angles = list(
+                        p.starmap(angle_between, zip(list(self.init_features), list(np_features))))
+
+                np_repr_angles = np.array(list_repr_angles)
+
+                with Pool(min(8, cpu_count())) as p:
+                    list_angles = list(
+                        p.starmap(angle_between, zip(list(diff_representation), list(weight_matrix[np_classes]))))
+
+                norm_drift = LA.norm(diff_representation, axis=1)
+
+                np_angles = np.array(list_angles)
+
+                self.norm_drifts[ind_task].append(norm_drift)
+                self.angle_drift[ind_task].append(np_angles)
+
+                for i in range(self.num_classes):
+                    indexes = np.where(np_classes == i)[0]
+                    norm_class = norm_drift[indexes]
+                    np_angles_class = np_angles[indexes]
+                    np_repr_angles_class = np_repr_angles[indexes]
+                    wandb.log({f'delta norm class {i}': norm_class.mean(),
+                               f'delta angle class {i}': np_angles_class.mean(),
+                               f'delta repr angle class {i}': np_repr_angles_class.mean(),
+                               'epoch': self.nb_tot_epoch,
+                               'task': ind_task})
 
         # log correct prediction on nb instances for accuracy computation
         accuracy_infos = np.array([correct_tr, nb_instances_tr, correct_te, nb_instances_te])
@@ -219,6 +315,7 @@ class Continual_Evaluation(abc.ABC):
                       f"- Total :{classe_total[i]}- Wrong :{classe_wrong[i]}")
 
         self.list_accuracies_per_classes[ind_task].append(np.array([class_infos_tr, class_infos_te]))
+
         # Reinit log vector
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
@@ -254,14 +351,14 @@ class Continual_Evaluation(abc.ABC):
 
         if "MIMO_" in self.OutLayer:
             # the prediction average output
-            output=output.mean(1)
+            output = output.mean(1)
 
         if not self.test_label:
             predictions = np.array(output.max(dim=1)[1].cpu())
         else:
             predictions = self._multihead_predictions(output, labels, task_labels)
 
-        if not self.dev:
+        if not (self.dev or self.offline):
             if train:
                 wandb.log({'train loss': loss})
             else:
@@ -274,10 +371,10 @@ class Continual_Evaluation(abc.ABC):
 
             if not self.fast:
 
-
                 self.list_loss[ind_task].append(loss.data.clone().detach().cpu().item())
 
-                if not (self.name_algo=="ogd" or self.OutLayer=="SLDA" or  self.OutLayer=="KNN" or "MIMO" in self.OutLayer):
+                if not (
+                        self.name_algo == "ogd" or self.OutLayer == "SLDA" or self.OutLayer == "KNN" or "MIMO" in self.OutLayer):
                     if model.get_last_layer().weight.grad is not None:
                         grad = model.get_last_layer().weight.grad.clone().detach().cpu()
                     else:
@@ -287,7 +384,7 @@ class Continual_Evaluation(abc.ABC):
                     self.list_grad[ind_task].append(grad)
 
                     w = np.array(model.get_last_layer().weight.data.detach().cpu().clone(), dtype=np.float16)
-                    if self.OutLayer=="Linear":
+                    if self.OutLayer == "Linear":
                         b = np.array(model.get_last_layer().bias.data.detach().cpu().clone(), dtype=np.float16)
                         self.list_weights[ind_task].append([w, b])
                     else:

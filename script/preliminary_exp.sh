@@ -2,7 +2,7 @@
 
 seeds="0 1"
 lrs="0.1 0.01 0.001"
-list_heads=" Linear CosLayer Linear_no_bias WeightNorm"
+list_heads=" Linear CosLayer Linear_no_bias WeightNorm OriginalWeightNorm"
 list_heads_WO_lr="SLDA MeanLayer MedianLayer KNN"
 
 for seed in $seeds ;do

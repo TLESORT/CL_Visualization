@@ -5,6 +5,7 @@ import numpy as np
 import argparse
 import datetime
 import wandb
+from typing import List
 
 from Methods.trainer import Trainer
 from utils import check_exp_config
@@ -18,7 +19,7 @@ parser.add_argument('--name_algo', type=str,
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias',
+                    choices=['Linear', 'CosLayer', 'FCosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias',
                              'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm', 'OriginalWeightNorm'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default=None, type=str,
@@ -29,8 +30,12 @@ parser.add_argument('--architecture', default="resnet", type=str,
                     help='architecture')
 
 # Logs / Data / Paths
+parser.add_argument('--dataset', default="MNIST", type=str,
+                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
+                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
+parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
 parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
@@ -44,9 +49,11 @@ parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
 parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
-parser.add_argument('--batch_size', default=264, type=int, help='batch size')
-parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "right"],
-                    help='if single we only update one out dimension, if group mask the classes in the batch')
+parser.add_argument('--batch_size', default=256, type=int, help='batch size')
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "multi-head"],
+                    help='if single we only update one out dimension,'
+                         ' if group mask the classes in the batch,'
+                         ' multi-head is for training with multi head while testing single head')
 parser.add_argument('--subset', type=int, default=None,
                     help='we can replace the full tasks by a subset of samples randomly selected')
 parser.add_argument('--seed', default="1664", type=int,
@@ -55,6 +62,8 @@ parser.add_argument('--seed', default="1664", type=int,
 # FLAGS
 parser.add_argument('--finetuning', action='store_true', default=False,
                     help='decide if we finetune pretrained models')
+parser.add_argument('--proj_drift_eval', action='store_true', default=False,
+                    help='eval the proj drift')
 parser.add_argument('--test_label', action='store_true', default=False,
                     help='define if we use task label at test')
 parser.add_argument('--reset_opt', action='store_true', default=False,
@@ -63,15 +72,16 @@ parser.add_argument('--load_first_task', action='store_true', default=False, hel
 parser.add_argument('--no_train', action='store_true', default=False, help='flag to only analyse or plot figures')
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
+parser.add_argument('--offline', action='store_true', default=False, help='does not save in wandb')
+parser.add_argument('--offline_wandb', action='store_true', default=False, help='does save in wandb but offline')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
 parser.add_argument('--verbose', action='store_true', default=False, help='dev flag')
-parser.add_argument('--dataset', default="MNIST", type=str,
-                    choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix"], help='dataset name')
 
 config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
+
+config.original_root = config.root_dir
 
 if config.seed == 0 or config.seed == 1664:
     task_order = np.arange(config.num_tasks)
@@ -85,10 +95,17 @@ config.pmodel_dir = os.path.join(config.root_dir, config.pmodel_dir)
 if not os.path.exists(config.pmodel_dir):
     os.makedirs(config.pmodel_dir)
 
+if not os.path.exists(config.data_dir):
+    os.makedirs(config.data_dir)
+
 experiment_id = os.path.join(experiment_id, config.scenario_name, f"{config.num_tasks}-tasks")
 
 if config.pretrained_on is not None:
-    experiment_id = os.path.join(experiment_id, f"pretrained_on_{config.pretrained_on}")
+    preposition = ''
+    if config.finetuning:
+        preposition = 'finetuning_'
+
+    experiment_id = os.path.join(experiment_id, f"{preposition}pretrained_on_{config.pretrained_on}")
 
 if config.subset is not None:
     experiment_id = os.path.join(experiment_id, f"subset-{config.subset}")
@@ -104,6 +121,8 @@ if config.masked_out == "single":
     name_out = f"{config.OutLayer}_Masked"
 elif config.masked_out == "group":
     name_out = f"{config.OutLayer}_GMasked"
+elif config.masked_out == "multi-head":
+    name_out = f"{config.OutLayer}_Mhead"
 elif config.masked_out == "right":
     name_out = f"{config.OutLayer}_RMasked"
 else:
@@ -114,6 +133,13 @@ experiment_id = os.path.join(experiment_id, f"seed-{config.seed}", name_out)
 config.root_dir = os.path.join(config.root_dir, experiment_id)
 if not os.path.exists(config.root_dir):
     os.makedirs(config.root_dir)
+
+config.log_dir = os.path.join(config.root_dir, "Logs", config.scenario_name)
+if not os.path.exists(config.log_dir):
+    os.makedirs(config.log_dir)
+config.sample_dir = os.path.join(config.root_dir, "Samples")
+if not os.path.exists(config.sample_dir):
+    os.makedirs(config.sample_dir)
 
 # save args parameters and date
 if not config.no_train:
@@ -130,11 +156,12 @@ else:
 
 experiment_id = experiment_id.replace("/", "-")
 
-if not config.dev:
+if not (config.dev or config.offline):
 
     # Check if experience already exists
-    # exp_already_done = check_exp_config(config, name_out)
-    exp_already_done = False
+    exp_already_done=False
+    if config.seed != 1664: # this seed is vip
+        exp_already_done = check_exp_config(config, name_out)
     if exp_already_done:
         print(f"This experience has already been run and finished: {experiment_id}")
         exit()
@@ -143,7 +170,15 @@ if not config.dev:
 
     for i in range(10):
         try:
+            if config.offline_wandb:
+                os.environ["WANDB_MODE"] = "offline"
+                # to synchronize : run in terminal wandb sync YOUR_RUN_DIRECTORY
+                # ex : wandb sync wandb/offline-run-20210903_135922-MNIST-class_inc-AverageHash-seed_1665-1468z5g8/
+            else:
+                os.environ["WANDB_MODE"] = "online"
+
             wandb.init(
+                dir=config.original_root,
                 project="CLOOD", settings=wandb.Settings(start_method='fork'),
                 group=experiment_label,
                 id=experiment_id + '-' + wandb.util.generate_id(),

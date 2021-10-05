@@ -18,7 +18,6 @@ class Rehearsal(Trainer):
         self.name_algo = "rehearsal"
         self.data_memory = None
         self.nb_samples_rehearsal_per_class = 100
-        self.samples_transfer = 5000
         self.sample_num = 100
 
     def sample_task(self, task_set):
@@ -40,9 +39,10 @@ class Rehearsal(Trainer):
 
     def init_task(self, ind_task: int, task_set: TaskSet):
 
-        task_set.plot(self.sample_dir, f"training_{ind_task}.png",
-                      nb_samples=100,
-                      shape=[self.image_size, self.image_size, self.input_size])
+        if not self.data_encoded: # if data is encoded we can not plot it
+            task_set.plot(self.sample_dir, f"training_{ind_task}.png",
+                          nb_samples=100,
+                          shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
 
         samples_memory = self.sample_task(task_set)
 
@@ -74,9 +74,10 @@ class Rehearsal(Trainer):
         else:
             task_memory_set = task_set
 
-        task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
-                      nb_samples=100,
-                      shape=[self.image_size, self.image_size, self.input_size])
+        if not self.data_encoded: # if data is encoded we can not plot it
+            task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
+                          nb_samples=100,
+                          shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
 
         # merge memory with new samples
         if self.data_memory is not None:
@@ -84,8 +85,9 @@ class Rehearsal(Trainer):
         else:
             self.data_memory = samples_memory
 
-        self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
-                              nb_samples=100,
-                              shape=[self.image_size, self.image_size, self.input_size])
+        if not self.data_encoded: # if data is encoded we can not plot it
+            self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
+                                  nb_samples=100,
+                                  shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
 
         return super().init_task(ind_task, task_memory_set)
