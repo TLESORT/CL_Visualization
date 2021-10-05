@@ -1,7 +1,7 @@
 
 import torch
 
-from nngeometry import Cosine1d, WeightNorm1d
+from nngeometry.layers import Cosine1d, WeightNorm1d
 def get_Output_layer(LayerName, in_dim, out_dim):
     if LayerName == "CosLayer":
         from Models.Output_Layers.layer import CosineLayer

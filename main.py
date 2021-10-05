@@ -18,7 +18,7 @@ parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd'],
                     default='baseline', help='Approach type')
 parser.add_argument('--OutLayer', default="Linear", type=str,
-                    choices=['Linear', 'CosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias',
+                    choices=['Linear', 'CosLayer', 'FCosLayer', "Linear_no_bias", 'MIMO_Linear', 'MIMO_Linear_no_bias',
                              'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm', 'OriginalWeightNorm'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default=None, type=str,

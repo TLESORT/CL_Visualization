@@ -3,18 +3,49 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+
+import math
+from torch import Tensor
+from torch.nn import Linear, Module
+
+
 from Models.Output_Layers.StreamingSLDA import StreamingLDA
 from Models.model_utils import get_Output_layer
 
-import math
 
 
-class CosineLayer(nn.Module):
-    def __init__(self, size_in, size_out, bias=False):
+class CosineLayer(Linear):
+    """Computes the cosine similarity between rows of the weight matrix
+    and the incoming data
+     from https://github.com/tfjgeorge/nngeometry/blob/custom_layers/nngeometry/layers.py
+    """
+
+    def __init__(self, in_features: int, out_features: int, bias=False, factor=False) -> None:
+        super(CosineLayer, self).__init__(in_features=in_features,
+                                     out_features=out_features,
+                                     bias=bias)
+        if factor:
+            factor_weight = torch.Tensor(1)
+            self.factor_weight = nn.Parameter(factor_weight)  # nn.Parameter is a Tensor that's a module parameter.
+        else:
+            self.factor_weight = 1.0
+
+    def forward(self, input: Tensor) -> Tensor:
+        return self.factor_weight * F.linear((input / torch.norm(input, dim=1, keepdim=True)),
+                        self.weight / torch.norm(self.weight, dim=1, keepdim=True))
+
+class CosineLayer_Old(nn.Module):
+    def __init__(self, size_in, size_out, bias=False, factor=False):
         super().__init__()
         self.size_in, self.size_out = size_in, size_out
         weight = torch.Tensor(size_out, size_in)
         self.weight = nn.Parameter(weight)  # nn.Parameter is a Tensor that's a module parameter.
+
+        if factor:
+            factor_weight = torch.Tensor(1)
+            self.factor_weight = nn.Parameter(factor_weight)  # nn.Parameter is a Tensor that's a module parameter.
+        else:
+            self.factor_weight = 1.0
 
         # initialize weights
         nn.init.kaiming_normal_(self.weight)  # weight init
@@ -228,6 +259,7 @@ class KNN(nn.Module):
             #convert into pseudo probability vector
             out = self.classes_mask[classes]
         else:
+            # there is no support data -> random prediction
             out = torch.randn((x.shape[0], self.size_out)).cuda()
         return out
 

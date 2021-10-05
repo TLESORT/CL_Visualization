@@ -292,6 +292,7 @@ class Continual_Evaluation(abc.ABC):
                       f"- Total :{classe_total[i]}- Wrong :{classe_wrong[i]}")
 
         self.list_accuracies_per_classes[ind_task].append(np.array([class_infos_tr, class_infos_te]))
+
         # Reinit log vector
         self.vector_predictions_epoch_tr = np.zeros(0)
         self.vector_labels_epoch_tr = np.zeros(0)
