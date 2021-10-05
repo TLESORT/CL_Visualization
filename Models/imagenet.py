@@ -20,6 +20,7 @@ class ImageNetModel(nn.Module):
         self.data_encoded = False
         self.image_size = 224
         self.input_dim = 3
+        self.data_shape = [self.input_dim, self.image_size, self.image_size]
 
         if self.name_model == "alexnet":
             model = models.alexnet(pretrained=True)

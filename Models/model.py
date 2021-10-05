@@ -12,6 +12,7 @@ class Model(nn.Module):
         self.input_dim = input_dim
         self.output_dim = 1
         self.image_size = 28
+        self.data_shape = [self.input_dim, self.image_size, self.image_size]
         self.features_size = 320
         self.relu = nn.ReLU()
         self.conv1 = nn.Conv2d(self.input_dim, 10, kernel_size=5)

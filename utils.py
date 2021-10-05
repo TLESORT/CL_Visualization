@@ -1,5 +1,4 @@
 import torch
-<<<<<<< HEAD
 import numpy as np
 import torchvision.transforms as trsf
 
@@ -73,7 +72,7 @@ def get_scenario(dataset, scenario_name, nb_tasks, increments=[0], transform=Non
         scenario = ContinualScenario(dataset, transformations=transform)
     elif scenario_name == "SpuriousFeatures":
         from scenario.spurious_features import SpuriousFeatures
-        scenario = SpuriousFeatures(dataset, nb_tasks=nb_tasks, base_transformations=transform, train=train)
+        scenario = SpuriousFeatures(dataset, nb_tasks=nb_tasks, base_transformations=transform, train=dataset.train)
 
     return scenario
 

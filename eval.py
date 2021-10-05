@@ -164,26 +164,7 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array([classes_correctly_predicted, classes_wrongly_predicted, nb_instance_classes])
 
-<<<<<<< HEAD
-    def print_correct_by_task(self, preds, labels, task_labels):
-
-        list_task_id = np.unique(task_labels).astype(int)
-
-        for task_id in list_task_id:
-            indexes = np.where(task_labels == task_id)[0]
-            selec_preds = preds[indexes]
-            selec_labels = labels[indexes]
-
-            correct = (selec_preds == selec_labels).sum()
-            accuracy = correct / (1.0 * len(indexes))
-
-            print(f"[Task {task_id}] accuracy: {accuracy}")
-
-
-    def log_post_epoch_processing(self, ind_task, epoch, print_acc=True):
-=======
     def log_post_epoch_processing(self, ind_task, epoch, tuple_features, print_acc=False):
->>>>>>> scaling
 
         if self.nb_tot_epoch is None:
             self.nb_tot_epoch = epoch
@@ -211,7 +192,7 @@ class Continual_Evaluation(abc.ABC):
                 list_tasks = np.unique(self.vector_task_labels_epoch_te)
                 assert len(list_tasks) == self.num_tasks, print(f"{len(list_tasks)} vs {self.num_tasks}")
 
-                for i in range(self.num_tasks):
+                for i in np.unique(self.vector_task_labels_epoch_te):
                     indexes = np.where(self.vector_task_labels_epoch_te == list_tasks[i])[0]
                     vector_labels_epoch_te_task = self.vector_labels_epoch_te[indexes]
                     vector_predictions_epoch_te_task = self.vector_predictions_epoch_te[indexes]
@@ -220,6 +201,7 @@ class Continual_Evaluation(abc.ABC):
                         print(f'{len(indexes)} vs {vector_labels_epoch_te_task.shape[0]}')
                     accuracy_te_task = (1.0 * correct_te_task) / len(indexes)
 
+                    print(f'test accuracy task {list_tasks[i]}: {accuracy_te_task}, epoch - {self.nb_tot_epoch},task {ind_task}')
 
                     wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
                                'task': ind_task})
@@ -303,10 +285,6 @@ class Continual_Evaluation(abc.ABC):
             acc_te = 100.0 * correct_te / nb_instances_te
             print(f"Train Accuracy: {acc_tr} %")
             print(f"Test Accuracy: {acc_te} %")
-
-            self.print_correct_by_task(self.vector_predictions_epoch_te,
-                                       self.vector_labels_epoch_te,
-                                       self.vector_task_labels_epoch_te)
 
         if self.verbose:
             classe_prediction, classe_wrong, classe_total = class_infos_te

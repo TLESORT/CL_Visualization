@@ -54,20 +54,6 @@ class Trainer(Continual_Evaluation):
         dataset_train = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=False)
 
-        if self.dataset in ["MNIST", "mnist_fellowship"]:
-            self.input_size = 1
-            self.image_size = 28
-            self.data_shape = [1, 28, 28]
-            if self.scenario_name == "SpuriousFeatures":
-                self.input_size = 3
-                self.image_size = 28
-        elif self.dataset in ["CIFAR10", "CIFAR100"]:
-            self.input_size = 3
-            self.image_size = 32
-            self.data_shape = [3, 32, 32]
-        else:
-            raise NotImplementedError(f"Data infos for Dataset {self.dataset} Unknown")
-
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
@@ -75,7 +61,7 @@ class Trainer(Continual_Evaluation):
                                         transform=self.transform_train)
 
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
-                                        transform=self.transform_test, train=False)
+                                        transform=self.transform_test)
 
         self.model = get_model(self.dataset,
                                self.scenario_tr,
@@ -116,30 +102,38 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-<<<<<<< HEAD
-        if False and self.num_tasks > 1:
-=======
         if self.num_tasks > 1:
->>>>>>> scaling
+            # no need for mixing task in Spurious features and it create problems since there is not the same nb of task
+            # in train and test
             # random permutation of task order
             self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
             if self.scenario_te.nb_tasks > 1:
-                self.scenario_te = create_subscenario(self.scenario_te, self.task_order)
+                test_task_order = self.task_order
+                if self.scenario_name=="SpuriousFeatures":
+                    test_task_order = np.concatenate([self.task_order,np.array([self.scenario_te.nb_tasks-1])])
+
+                self.scenario_te = create_subscenario(self.scenario_te, test_task_order)
+
+        if not self.data_encoded:
+            for ind_task, task_set in enumerate(self.scenario_te):
+                if task_set.data_type in ["image_path", "image_array"]:
+                    task_set.plot(self.sample_dir, f"samples_te_task_{ind_task}.png", 100,
+                                  shape=self.model.data_shape)
+            for ind_task, task_set in enumerate(self.scenario_tr):
+                if task_set.data_type in ["image_path", "image_array"]:
+                    task_set.plot(self.sample_dir, f"samples_tr_task_{ind_task}.png", 100,
+                                  shape=self.model.data_shape)
 
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
             self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
         else:
             self.opt = None
-<<<<<<< HEAD
-        # self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
-        # self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
-=======
+
         self.eval_tr_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=True, num_workers=6)
 
         # shuffle should stay false for proj drift estimation
         self.eval_te_loader = DataLoader(self.scenario_te[:], batch_size=self.batch_size, shuffle=False, num_workers=6)
->>>>>>> scaling
 
     def regularize_loss(self, model, loss):
         return loss
@@ -168,21 +162,12 @@ class Trainer(Continual_Evaluation):
                                     batch_size=self.batch_size,
                                     shuffle=True,
                                     num_workers=6)
-<<<<<<< HEAD
-        # x, y, t = task_set.get_random_samples(10)
-
-        print(f"plot figure: samples_task_{ind_task}.png")
-        if task_set.data_type in ["image_path", "image_array"]:
-            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png", 100, shape=self.data_shape)
-=======
-
 
         if not self.data_encoded: # if data is encoded we can not plot it
             task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
                                   nb_samples=100,
                                   shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
 
->>>>>>> scaling
         if self.verbose: print("prepare log")
         if ind_task == 0:
             # log before training
@@ -205,25 +190,13 @@ class Trainer(Continual_Evaluation):
 
     def test(self, ind_task_log, data_loader=None, train=False, nb_embedding=200):
 
+
         if data_loader is None:
-<<<<<<< HEAD
-
-            for ind_task, task_set in enumerate(self.scenario_te):
-                if ind_task_log == 1 and task_set.data_type in ["image_path", "image_array"]:
-                    task_set.plot(self.sample_dir, f"samples_te_task_{ind_task}.png", 100, shape=self.data_shape)
-                data_loader = DataLoader(task_set, batch_size=self.batch_size, shuffle=True, num_workers=6)
-                self.test_task(ind_task_log, data_loader, train)
-        else:
-            self.test_task(ind_task_log, data_loader, train)
-
-    def test_task(self, ind_task_log, data_loader=None, train=False):
-=======
             data_loader = self.eval_te_loader
 
         np_embedding = np.zeros((0, self.model.features_size))
         np_classes = np.zeros(0)
         np_task_ids = np.zeros(0)
->>>>>>> scaling
 
         for i_, (x_, y_, t_) in enumerate(data_loader):
 

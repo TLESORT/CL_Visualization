@@ -76,9 +76,9 @@ class CifarResNet(nn.Module):
     def __init__(self, block, layers, num_classes=10):
         super(CifarResNet, self).__init__()
 
-
         self.image_size = 32
         self.input_dim = 3
+        self.data_shape = [self.input_dim, self.image_size, self.image_size]
         self.inplanes = 16
         self.conv1 = conv3x3(3, 16)
         self.bn1 = nn.BatchNorm2d(16)
