@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import DataLoader
 from continuum.datasets import InMemoryDataset
 from continuum.scenarios import ContinualScenario
+from continuum.tasks import TaskType
 
 def encode(model, scenario, batch_size, dataset, train):
 
@@ -40,7 +41,7 @@ def encode(model, scenario, batch_size, dataset, train):
     tasks_labels_vector  = torch.cat(list_tasks_labels).numpy()
 
     # create new scenario with encoded data
-    cl_dataset = InMemoryDataset(feature_vector, label_vector, tasks_labels_vector, data_type="tensor")
+    cl_dataset = InMemoryDataset(feature_vector, label_vector, tasks_labels_vector, data_type=TaskType.TENSOR)
     encoded_scenario = ContinualScenario(cl_dataset)
     return encoded_scenario
 
