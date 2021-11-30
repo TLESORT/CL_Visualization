@@ -22,6 +22,8 @@ class SpuriousFeatures(InstanceIncremental):
     :param nb_tasks: The scenario's number of tasks.
     :param base_transformations: List of transformations to apply to all tasks.
     :param seed: initialization seed for the random number generator.
+    :param correlation: correlation between label and spurious feature, 1.0 full correlation, 0.0 no correlation.
+     To lower correlation we just do not add spurious feature to the data point.
     """
 
     def __init__(
@@ -30,11 +32,13 @@ class SpuriousFeatures(InstanceIncremental):
             nb_tasks: int = None,
             base_transformations: List[Callable] = None,
             seed: int = 0,
+            correlation: float = 1.0,
             train=True
     ):
         assert nb_tasks is not None
 
         self.training = train
+        self.correlation = correlation
         super().__init__(
             cl_dataset=cl_dataset,
             nb_tasks=nb_tasks,
@@ -79,18 +83,20 @@ class SpuriousFeatures(InstanceIncremental):
 
             colors = self._generate_two_colors(ind_task)
             for i in range(nb_samples):
-                square_size = 2  # random.choice([1, 2, 3])
-                center = centers[i, :]  # [5, 5]
-                label = labels[i]
-                color = colors[label]
-                x_min = max(0, center[0] - square_size)
-                x_max = min(self.image_size - 1, center[0] + square_size)
-                y_min = max(0, center[1] - square_size)
-                y_max = min(self.image_size - 1, center[1] + square_size)
+                # uniform sampling between 0 and 1 to create correlation
+                if np.random.uniform() < self.correlation:
+                    square_size = 2  # random.choice([1, 2, 3])
+                    center = centers[i, :]  # [5, 5]
+                    label = labels[i]
+                    color = colors[label]
+                    x_min = max(0, center[0] - square_size)
+                    x_max = min(self.image_size - 1, center[0] + square_size)
+                    y_min = max(0, center[1] - square_size)
+                    y_max = min(self.image_size - 1, center[1] + square_size)
 
-                data_task[i, x_min:x_max, y_min:y_max, 0] = color[0]
-                data_task[i, x_min:x_max, y_min:y_max, 1] = color[1]
-                data_task[i, x_min:x_max, y_min:y_max, 2] = color[2]
+                    data_task[i, x_min:x_max, y_min:y_max, 0] = color[0]
+                    data_task[i, x_min:x_max, y_min:y_max, 1] = color[1]
+                    data_task[i, x_min:x_max, y_min:y_max, 2] = color[2]
 
         return data_task
 
