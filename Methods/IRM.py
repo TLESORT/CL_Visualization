@@ -291,7 +291,7 @@ class IBIRM(IRM):
         var_loss = inter_logits.var(dim=0).mean()
         loss += ib_penalty_weight * var_loss
 
-        if self.model.update_count == self.config.irm_penalty_anneal_iters:
+        if self.model.update_count == self.irm_penalty_anneal_iters:
             if not self.xyl:
                 print("!!!!UPDATE IB-ERM ADAM OPTIMIZER")
                 self.optimizer = torch.optim.Adam(

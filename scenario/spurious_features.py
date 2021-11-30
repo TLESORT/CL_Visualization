@@ -129,7 +129,7 @@ class SpuriousFeatures(InstanceIncremental):
 
         x = self._data_transformation(x, y, task_index)
         t = torch.ones(y.shape[0]) * task_index
-        return x, y, t, task_index
+        return x, y, t, task_index, np.arange(y.shape[0])
 
 
 """"

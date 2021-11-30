@@ -191,7 +191,11 @@ class Continual_Evaluation(abc.ABC):
 
                 list_tasks = np.unique(self.vector_task_labels_epoch_te).astype(int)
 
-                assert len(list_tasks) == self.num_tasks, print(f"{len(list_tasks)} vs {self.num_tasks}")
+                if self.scenario_name != "SpuriousFeatures":
+                    assert len(list_tasks) == self.num_tasks, print(f"{len(list_tasks)} vs {self.num_tasks}")
+                else:
+                    # +1 task for Spurious correlation since we have the test task with no spurious correlations
+                    assert len(list_tasks) == self.num_tasks+1, print(f"{len(list_tasks)} vs {self.num_tasks+1}")
 
                 for i in list_tasks:
                     indexes = np.where(self.vector_task_labels_epoch_te == list_tasks[i])[0]
