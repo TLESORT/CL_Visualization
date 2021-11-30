@@ -3,10 +3,10 @@ from typing import Tuple, Union
 import numpy as np
 from torchvision import transforms
 
-from continuum.tasks.task_set import TaskSet
+from continuum.tasks.task_set import ArrayTaskSet, TaskType
 
 
-class MemorySet(TaskSet):
+class MemorySet(ArrayTaskSet):
     """
     A task set designed for Rehearsal strategies
     """
@@ -19,7 +19,8 @@ class MemorySet(TaskSet):
             trsf: transforms.Compose,
             data_type: str = "image_array"
     ):
-        super().__init__(x=x, y=y, t=t, trsf=trsf, data_type=data_type)
+        super().__init__(x=x, y=y, t=t, trsf=trsf, target_trsf=None)
+        self.data_type = TaskType.IMAGE_ARRAY
 
         list_labels_id = range(len(self._y))
 

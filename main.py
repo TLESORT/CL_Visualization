@@ -15,7 +15,8 @@ parser = argparse.ArgumentParser()
 
 # Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
-                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'ib_irm'],
+                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'erm',
+                             'ib_erm', 'irm', 'ib_irm'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
@@ -45,8 +46,12 @@ parser.add_argument('--pmodel_dir', default="Pretrained", type=str,
 
 # Model HPs
 parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
+parser.add_argument('--weight_decay', default=0.0, type=float, help='weight_decay')
+parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda', choices=[0, 0.1, 0.5, 1, 10, 1e2])
+parser.add_argument('--irm_lambda', default=0.1, type=float, help='irm_lambda', choices=[0.1, 1, 10, 1e2, 1e3, 1e4])
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
+parser.add_argument('--normalize', action="store_true", help="normalize the loss of irm / vrex")
 parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
 parser.add_argument('--batch_size', default=256, type=int, help='batch size')
@@ -221,9 +226,19 @@ elif config.name_algo == "ogd":
 
     Algo = OGD(config)
 
+elif config.name_algo == "irm":
+    from Methods.IRM import IRM
+    Algo = IRM(config)
+
+elif config.name_algo == "erm":
+    from Methods.IRM import ERM
+    Algo = ERM(config)
+elif config.name_algo == "ib_erm":
+    from Methods.IRM import IBERM
+    Algo = IBERM(config)
 elif config.name_algo == "ib_irm":
-    from Methods.IRM import IB_IRM
-    Algo = IB_IRM(config)
+    from Methods.IRM import IBIRM
+    Algo = IBIRM(config)
 else:
     print("wrong name")
 

@@ -189,10 +189,11 @@ class Continual_Evaluation(abc.ABC):
 
                 assert self.vector_task_labels_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
 
-                list_tasks = np.unique(self.vector_task_labels_epoch_te)
+                list_tasks = np.unique(self.vector_task_labels_epoch_te).astype(int)
+
                 assert len(list_tasks) == self.num_tasks, print(f"{len(list_tasks)} vs {self.num_tasks}")
 
-                for i in np.unique(self.vector_task_labels_epoch_te):
+                for i in list_tasks:
                     indexes = np.where(self.vector_task_labels_epoch_te == list_tasks[i])[0]
                     vector_labels_epoch_te_task = self.vector_labels_epoch_te[indexes]
                     vector_predictions_epoch_te_task = self.vector_predictions_epoch_te[indexes]
