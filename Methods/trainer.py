@@ -58,10 +58,10 @@ class Trainer(Continual_Evaluation):
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
-                                        transform=self.transform_train)
+                                        transform=self.transform_train, config=config)
 
         self.scenario_te = get_scenario(dataset_test, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
-                                        transform=self.transform_test)
+                                        transform=self.transform_test, config=config)
 
         self.model = get_model(self.dataset,
                                self.scenario_tr,

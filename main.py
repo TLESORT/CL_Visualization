@@ -36,6 +36,7 @@ parser.add_argument('--dataset', default="MNIST", type=str,
                              "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
+parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
 parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
@@ -55,6 +56,7 @@ parser.add_argument('--normalize', action="store_true", help="normalize the loss
 parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
 parser.add_argument('--batch_size', default=256, type=int, help='batch size')
+parser.add_argument('--nb_samples_rehearsal_per_class', default=100, type=int, help='nb_samples_rehearsal_per_class')
 parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "multi-head"],
                     help='if single we only update one out dimension,'
                          ' if group mask the classes in the batch,'
