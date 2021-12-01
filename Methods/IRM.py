@@ -9,8 +9,8 @@ import pdb
 
 from Methods.rehearsal import Rehearsal
 
-#from domainbed import networks
-#from domainbed.lib.misc import random_pairs_of_minibatches
+# from domainbed import networks
+# from domainbed.lib.misc import random_pairs_of_minibatches
 
 ALGORITHMS = [
     'ERM',
@@ -90,19 +90,19 @@ class ERM(OOD_Algorithm):
         self.classifier = self.model.head
         self.network = self.model
 
-        self.xyl = False
-        self.xylopt = False
+        self.xyl = False  # TODO what is that ???
+        self.xylopt = False  # TODO what is that ???
         if self.xylopt:
             print("LRRRRRRR:", self.config.lr)
             self.xyl = True
-            self.optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr,
-                momentum=0.9, weight_decay=self.config.weight_decay)
+            self.opt = torch.optim.SGD(self.model.parameters(), lr=self.config.lr,
+                                       momentum=0.9, weight_decay=self.config.weight_decay)
 
             print("DECAY STEP:", config.sch_size)
-            self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=config.sch_size, gamma=0.1)
+            self.scheduler = torch.optim.lr_scheduler.StepLR(self.opt, step_size=config.sch_size, gamma=0.1)
         else:
-            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.config.lr,
-                weight_decay=config.weight_decay)
+            self.opt = torch.optim.Adam(self.model.parameters(), lr=self.config.lr,
+                                        weight_decay=config.weight_decay)
 
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
 
@@ -117,29 +117,27 @@ class ERM(OOD_Algorithm):
 
             loss = self.loss_ood(x_, y_, ind_task)
             loss.backward()
-            #torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
-            #loss = self.regularize_loss(self.model, loss)
+            # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
+            # loss = self.regularize_loss(self.model, loss)
             self.optimizer_step(ind_task)
         if self.xyl:
             self.scheduler.step()
 
         return output, loss
 
+    def get_minibatches(self, current_x, current_y, ind_task):
+        minibatches = []
+        for id_env in range(ind_task):
+            minibatches.append(self.get_env_data(id_env, ind_task))
+        minibatches.append([current_x, current_y])
+        return minibatches
+
     def loss_ood(self, current_x, current_y, ind_task):
+        minibatches = self.get_minibatches(current_x, current_y, ind_task)
+        all_x = torch.cat([x for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches])
 
-        step = self.step
-        loss = 0.0
-        # for id_env, env in enumerate(train_envs):
-        for id_env in range(ind_task+1):
-            # get one batch of the env
-            if id_env == ind_task:
-                batch_x, batch_y = current_x, current_y
-            else:
-                batch_x, batch_y = self.get_env_data(id_env, ind_task)
-
-            batch_x, batch_y = batch_x.cuda(), batch_y.cuda()
-
-            loss += F.cross_entropy(self.predict(batch_x), batch_y)
+        loss = F.cross_entropy(self.predict(all_x), all_y)
 
         return loss
 
@@ -157,14 +155,10 @@ class IBERM(ERM):
 
     def loss_ood(self, current_x, current_y, ind_task):
 
-        #def update(self, minibatches):
-        minibatches = []
-        for id_env in range(ind_task):
-            minibatches.append(self.get_env_data(id_env, ind_task))
-        minibatches.append([current_x, current_y])
+        minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
         penalty_weight = (self.config.ib_lambda if self.model.update_count
-                       >= self.ib_penalty_anneal_iters else 0.0)
+                                                   >= self.ib_penalty_anneal_iters else 0.0)
         all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
 
@@ -180,11 +174,12 @@ class IBERM(ERM):
         if self.model.update_count == self.ib_penalty_anneal_iters:
             if not self.xyl:
                 print("!!!!UPDATE IB-ERM ADAM OPTIMIZER")
-                self.optimizer = torch.optim.Adam(
+                self.opt = torch.optim.Adam(
                     self.network.parameters(),
                     lr=self.config.lr,
                     weight_decay=self.config.weight_decay)
         return loss
+
 
 class IRM(ERM):
     """Invariant Risk Minimization"""
@@ -193,7 +188,7 @@ class IRM(ERM):
         super().__init__(config)
         self.model.register_buffer('update_count', torch.tensor([0]))
         self.normalize = config.normalize
-        self.irm_penalty_anneal_iters = 0
+        self.irm_penalty_anneal_iters = 500  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
 
     @staticmethod
     def _irm_penalty(logits, y):
@@ -205,23 +200,16 @@ class IRM(ERM):
         result = torch.sum(grad_1 * grad_2)
         return result
 
-
     def loss_ood(self, current_x, current_y, ind_task):
 
-        #def update(self, minibatches):
-        minibatches = []
-        for id_env in range(ind_task):
-            minibatches.append(self.get_env_data(id_env, ind_task))
-        minibatches.append([current_x, current_y])
-
-        envs_batches = minibatches
+        minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
         penalty_weight = (self.config.irm_lambda if self.model.update_count
-                    >= self.irm_penalty_anneal_iters else 0.0)  # todo
+                                                    >= self.irm_penalty_anneal_iters else 0.0)  # todo
 
         nll = 0.
         penalty = 0.
-        all_x = torch.cat([x for x, y in envs_batches])
+        all_x = torch.cat([x for x, y in minibatches])
         all_logits = self.network(all_x)
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
@@ -238,7 +226,7 @@ class IRM(ERM):
         if self.model.update_count == self.irm_penalty_anneal_iters:
             if not self.xyl:
                 print("!!!!UPDATE IRM ADAM OPTIMIZER")
-                self.optimizer = torch.optim.Adam(
+                self.opt = torch.optim.Adam(
                     self.network.parameters(),
                     lr=self.config.lr,
                     weight_decay=self.config.weight_decay)
@@ -247,33 +235,30 @@ class IRM(ERM):
 
         return loss
 
+
 class IBIRM(IRM):
     """Invariant Risk Minimization"""
 
     def __init__(self, config):
         super(IBIRM, self).__init__(config)
 
-        self.irm_penalty_anneal_iters = 0
-        self.ib_penalty_anneal_iters = 0
+        self.irm_penalty_anneal_iters = 500  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+        self.ib_penalty_anneal_iters = 500  # ('ib_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
 
     def loss_ood(self, current_x, current_y, ind_task):
 
-        # def update(self, minibatches):
-        minibatches = []
-        for id_env in range(ind_task):
-            minibatches.append(self.get_env_data(id_env, ind_task))
-        minibatches.append([current_x, current_y])
+        minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
         penalty_weight = (self.config.irm_lambda if self.model.update_count
-                    >= self.irm_penalty_anneal_iters else 0.0)  # todo
+                                                    >= self.irm_penalty_anneal_iters else 0.0)  # todo
 
         ib_penalty_weight = (self.config.ib_lambda if self.model.update_count
-                   >= self.ib_penalty_anneal_iters else 0.0)
+                                                      >= self.ib_penalty_anneal_iters else 0.0)
 
         nll = 0.
         penalty = 0.
         all_x = torch.cat([x for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
+        # all_y = torch.cat([y for x, y in minibatches])
         inter_logits = self.featurizer(all_x)
         all_logits = self.classifier(inter_logits)
         all_logits_idx = 0
@@ -294,7 +279,7 @@ class IBIRM(IRM):
         if self.model.update_count == self.irm_penalty_anneal_iters:
             if not self.xyl:
                 print("!!!!UPDATE IB-ERM ADAM OPTIMIZER")
-                self.optimizer = torch.optim.Adam(
+                self.opt = torch.optim.Adam(
                     self.network.parameters(),
                     lr=self.config.lr,
                     weight_decay=self.config.weight_decay)
