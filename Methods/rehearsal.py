@@ -13,11 +13,11 @@ from memory import MemorySet
 from Methods.trainer import Trainer
 
 class Rehearsal(Trainer):
-    def __init__(self, args):
-        super().__init__(args)
+    def __init__(self, config):
+        super().__init__(config)
         self.name_algo = "rehearsal"
         self.data_memory = None
-        self.nb_samples_rehearsal_per_class = 100
+        self.nb_samples_rehearsal_per_class = config.nb_samples_rehearsal_per_class
         self.sample_num = 100
 
     def sample_task(self, task_set):

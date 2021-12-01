@@ -16,8 +16,7 @@ class MemorySet(ArrayTaskSet):
             x: np.ndarray,
             y: np.ndarray,
             t: np.ndarray,
-            trsf: transforms.Compose,
-            data_type: str = "image_array"
+            trsf: transforms.Compose
     ):
         super().__init__(x=x, y=y, t=t, trsf=trsf, target_trsf=None)
         self.data_type = TaskType.IMAGE_ARRAY

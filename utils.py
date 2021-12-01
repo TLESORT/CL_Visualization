@@ -57,7 +57,7 @@ def get_lifelong_cifar100(dataset):
 
     return InMemoryDataset(x, y.astype(int), t.astype(int), data_type="image_array")
 
-def get_scenario(dataset, scenario_name, nb_tasks, increments=[0], transform=None):
+def get_scenario(dataset, scenario_name, nb_tasks, increments=[0], transform=None, config=None):
     if scenario_name == "Rotations":
         from continuum import Rotations
         scenario = Rotations(dataset, nb_tasks=nb_tasks, transformations=transform)
@@ -72,7 +72,8 @@ def get_scenario(dataset, scenario_name, nb_tasks, increments=[0], transform=Non
         scenario = ContinualScenario(dataset, transformations=transform)
     elif scenario_name == "SpuriousFeatures":
         from scenario.spurious_features import SpuriousFeatures
-        scenario = SpuriousFeatures(dataset, nb_tasks=nb_tasks, base_transformations=transform, train=dataset.train)
+        scenario = SpuriousFeatures(dataset, nb_tasks=nb_tasks, base_transformations=transform,
+                                    correlation=config.spurious_corr, train=dataset.train)
 
     return scenario
 
