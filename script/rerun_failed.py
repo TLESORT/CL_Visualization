@@ -10,7 +10,7 @@ runs = api.runs(NAME_PROJECT)
 LIST_ARGUMENTS = ["seed", "scenario_name", "num_tasks", "dataset","name_algo", "lr", "OutLayer", "nb_samples_rehearsal_per_class", "spurious_corr"]
 # TO ADD STILL :  root_dir, data_dir
 
-commands = ''
+commands = '#!/bin/bash\n\n'
 
 counter = 0
 for run in runs:
