@@ -232,7 +232,7 @@ class IRM(ERM):
         if self.normalize and penalty_weight > 1:
             loss /= (1 + penalty_weight)
 
-        if self.model.update_count == self.hparams['irm_penalty_anneal_iters']:
+        if self.model.update_count == self.irm_penalty_anneal_iters:
             # Reset Adam, because it doesn't like the sharp jump in gradient
             # magnitudes that happens at this step.
             self.optimizer = torch.optim.Adam(
@@ -289,8 +289,7 @@ class IBIRM(IRM):
         loss += irm_penalty_weight * irm_penalty
         loss += ib_penalty_weight * ib_penalty
 
-        if self.model.update_count == self.hparams['irm_penalty_anneal_iters'] or self.model.update_count == self.hparams[
-            'ib_penalty_anneal_iters']:
+        if self.model.update_count == self.irm_penalty_anneal_iters or self.model.update_count == self.ib_penalty_anneal_iters:
             # Reset Adam, because it doesn't like the sharp jump in gradient
             # magnitudes that happens at this step.
             self.optimizer = torch.optim.Adam(
