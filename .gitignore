@@ -1,3 +1,13 @@
+
+viz_notebooks
+media
+Archives
+Archives_Server
+.idea
+Plot/Data
+Plot/Figures
+dev_tests
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
