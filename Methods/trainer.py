@@ -26,6 +26,7 @@ class Trainer(Continual_Evaluation):
         super().__init__(config)
 
         self.lr = config.lr
+        self.weight_decay = config.weight_decay
         self.task_order = config.task_order
         self.momentum = config.momentum
         self.seed = config.seed
