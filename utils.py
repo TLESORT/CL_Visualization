@@ -206,13 +206,14 @@ from Plot.utils_wandb import select_run
 
 def check_exp_config(config, name_out):
     api = wandb.Api()
-    runs = api.runs("tlesort/CL_Visualization")
+    runs = api.runs(f"tlesort/{config.project_name}")
     exp_already_done = False
 
     for run in runs:
         if run.state == "finished":
             dict_config = {k: v for k, v in run.config.items() if not k.startswith('_')}
             exp_already_done = select_run(dict_config,
+                                          config.scenario_name,
                                           config.name_algo,
                                           config.dataset,
                                           config.pretrained_on,
@@ -223,7 +224,9 @@ def check_exp_config(config, name_out):
                                           config.lr,
                                           config.architecture,
                                           config.finetuning,
-                                          config.test_label)
+                                          config.test_label,
+                                          config.spurious_corr,
+                                          config.nb_samples_rehearsal_per_class)
             if exp_already_done:
                 print(f"This experience has already be run and finished: {run.name}")
                 print(dict_config)

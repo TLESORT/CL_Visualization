@@ -79,6 +79,7 @@ parser.add_argument('--load_first_task', action='store_true', default=False, hel
 parser.add_argument('--no_train', action='store_true', default=False, help='flag to only analyse or plot figures')
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
+parser.add_argument('--project_name', default="CLOOD", type=str, help='project name for wandb')
 parser.add_argument('--offline', action='store_true', default=False, help='does not save in wandb')
 parser.add_argument('--offline_wandb', action='store_true', default=False, help='does save in wandb but offline')
 parser.add_argument('--dev', action='store_true', default=False, help='dev flag')
