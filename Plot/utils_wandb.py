@@ -23,9 +23,6 @@ def select_run(dict_config,
                spurious_corr=0.0,
                nb_samples_rehearsal_per_class = 100):
 
-    print(dict_config)
-
-
     if not check_one_config_parameter(dict_config["scenario_name"], scenario_name): return False
     if not check_one_config_parameter(dict_config["name_algo"], name_algo): return False
     if not check_one_config_parameter(dict_config["dataset"], dataset):  return False
