@@ -24,6 +24,7 @@ class SpuriousFeatures(InstanceIncremental):
     :param seed: initialization seed for the random number generator.
     :param correlation: correlation between label and spurious feature, 1.0 full correlation, 0.0 no correlation.
      To lower correlation we just do not add spurious feature to the data point.
+    :param support: the amount of the original data that is inside each task, if it is 1.0 all data is in all tasks, 0.5 we only keep floor(half of the classes)
     """
 
     def __init__(
@@ -33,12 +34,16 @@ class SpuriousFeatures(InstanceIncremental):
             base_transformations: List[Callable] = None,
             seed: int = 0,
             correlation: float = 1.0,
+            support: float = 1.0,
             train=True
     ):
         assert nb_tasks is not None
 
         self.training = train
         self.correlation = correlation
+        self.support = support
+        assert support > 0.0 and support <= 1.0
+        self.seed = seed
         super().__init__(
             cl_dataset=cl_dataset,
             nb_tasks=nb_tasks,
@@ -54,13 +59,13 @@ class SpuriousFeatures(InstanceIncremental):
         return self._nb_tasks
 
     def _generate_two_colors(self, ind_task):
-        rng = np.random.RandomState(seed=ind_task)
+        rng = np.random.RandomState(seed=self.seed + ind_task)
         colors = rng.choice(range(16), size=(2, 3)) * 16  # 16 * 16 = 256, we don't want to have too close colors
 
         return colors
 
     def class_remapping(self, y):
-        return y // 5
+        return y // int(self.nb_classes/2)
 
     def _data_transformation(self, x, labels, ind_task):
         """"Transform data for scenario purposes
@@ -103,7 +108,6 @@ class SpuriousFeatures(InstanceIncremental):
     # nothing to do in the setup function
     def _setup(self, nb_tasks: int) -> int:
         x, y, t = self.cl_dataset.get_data()
-        y = self.class_remapping(y)
         self.dataset = [x, y, t]
 
         if not self.training:
@@ -112,9 +116,33 @@ class SpuriousFeatures(InstanceIncremental):
 
         return nb_tasks
 
+    def select_support(self, x, y, t, ind_task):
+        np.random.seed(self.seed + ind_task)
+        rand_class_order = np.random.permutation(self.nb_classes)
+
+        nb_classes = int(np.ceil(self.nb_classes * self.support / 2))
+
+        # select nb_classes for both labels
+        selected_classes_0 = rand_class_order[np.where(self.class_remapping(rand_class_order) == 0)[0][:nb_classes]]
+        selected_classes_1 = rand_class_order[np.where(self.class_remapping(rand_class_order) == 1)[0][:nb_classes]]
+
+        # concatenate selected classes
+        selected_classes = np.concatenate([selected_classes_0, selected_classes_1])
+
+        # get index in y vector to keep
+        y_indexes = np.concatenate([np.where(y==value)[0] for value in selected_classes])
+        # reoder everything
+        y_indexes.sort()
+
+
+        return x[y_indexes], y[y_indexes], t[y_indexes]
+
+
+
+
     def _select_data_by_task(
             self,
-            task_index: Union[int, slice, np.ndarray]
+            task_index: int
     ) -> Union[np.ndarray, np.ndarray, np.ndarray, Union[int, List[int]]]:
         """Selects a subset of the whole data for a given task.
 
@@ -129,11 +157,19 @@ class SpuriousFeatures(InstanceIncremental):
         :return: A tuple of numpy array being resp. (1) the data, (2) the targets,
                  (3) task ids, and (4) the actual task required by the user.
         """
+
+        assert isinstance(task_index, int), print("this scenario does not support slicing")
         assert task_index < self.nb_tasks
+
 
         x, y, t = self.dataset
 
+
+        if self.support != 1.0:
+            x, y, t = self.select_support(x, y, t, task_index)
+
         x = self._data_transformation(x, y, task_index)
+        y = self.class_remapping(y)
         t = torch.ones(y.shape[0]) * task_index
         return x, y, t, task_index, np.arange(y.shape[0])
 
