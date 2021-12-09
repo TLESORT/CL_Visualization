@@ -132,10 +132,11 @@ class ERM(OOD_Algorithm):
 
     def loss_ood(self, current_x, current_y, ind_task):
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
-        all_x = torch.cat([x for x, y in minibatches])
+        #all_x = torch.cat([x for x, y in minibatches])
+        all_hat_y = torch.cat([self.predict(x) for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
 
-        loss = F.cross_entropy(self.predict(all_x), all_y)
+        loss = F.cross_entropy(all_hat_y, all_y)
 
         return loss
 
@@ -161,8 +162,9 @@ class IBERM(ERM):
         nll = 0.
         ib_penalty = 0.
 
-        all_x = torch.cat([x for x, y in minibatches])
-        all_features = self.featurizer(all_x)
+        #all_x = torch.cat([x for x, y in minibatches])
+        all_features = torch.cat([self.featurizer(x) for x, y in minibatches])
+        #all_features = self.featurizer(all_x)
         all_logits = self.classifier(all_features)
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
@@ -218,8 +220,9 @@ class IRM(ERM):
 
         nll = 0.
         penalty = 0.
-        all_x = torch.cat([x for x, y in minibatches])
-        all_logits = self.model(all_x)
+        # all_x = torch.cat([x for x, y in minibatches])
+        # all_logits = self.model(all_x)
+        all_logits = torch.cat([self.model(x) for x, y in minibatches])
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
             logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
@@ -268,8 +271,9 @@ class IBIRM(IRM):
         irm_penalty = 0.
         ib_penalty = 0.
 
-        all_x = torch.cat([x for x, y in minibatches])
-        all_features = self.model.feature_extractor(all_x)
+        #all_x = torch.cat([x for x, y in minibatches])
+        all_features = torch.cat([self.model.feature_extractor(x) for x, y in minibatches])
+        #all_features = self.model.feature_extractor(all_x)
         all_logits = self.model.head(all_features)
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
@@ -314,11 +318,12 @@ class SpectralDecoupling(ERM):
 
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
-        all_x = torch.cat([x for x, y in minibatches])
+        #all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
-        y_hat = self.classifier(self.featurizer(all_x))
-        loss = torch.log(1.0 + torch.exp(-y_hat[:, 0] * all_y)).mean()
-        loss += self.sp_coef * (y_hat ** 2).mean()
+        #y_hat = self.classifier(self.featurizer(all_x))
+        all_hat_y = torch.cat([self.predict(x) for x, y in minibatches])
+        loss = torch.log(1.0 + torch.exp(-all_hat_y[:, 0] * all_y)).mean()
+        loss += self.sp_coef * (all_hat_y ** 2).mean()
 
         return loss
 
