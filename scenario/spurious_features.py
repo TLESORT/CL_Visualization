@@ -42,6 +42,7 @@ class SpuriousFeatures(InstanceIncremental):
         self.training = train
         self.correlation = correlation
         self.support = support
+
         assert support > 0.0 and support <= 1.0
         self.seed = seed
         super().__init__(
@@ -50,6 +51,8 @@ class SpuriousFeatures(InstanceIncremental):
             transformations=base_transformations,
             random_seed = seed
         )
+
+        self.initial_nb_classes = len(np.unique(self.dataset[1]))
         self.image_size = 32
 
     @property
@@ -58,6 +61,14 @@ class SpuriousFeatures(InstanceIncremental):
 
         return self._nb_tasks
 
+    @property
+    def nb_classes(self):
+        return len(self.classes)
+
+    @property
+    def classes(self):
+        return np.unique(self.class_remapping(self.dataset[1]))
+
     def _generate_two_colors(self, ind_task):
         rng = np.random.RandomState(seed=self.seed + ind_task)
         colors = rng.choice(range(16), size=(2, 3)) * 16  # 16 * 16 = 256, we don't want to have too close colors
@@ -65,7 +76,7 @@ class SpuriousFeatures(InstanceIncremental):
         return colors
 
     def class_remapping(self, y):
-        return y // int(self.nb_classes/2)
+        return y // int(self.initial_nb_classes/2)
 
     def _data_transformation(self, x, labels, ind_task):
         """"Transform data for scenario purposes
