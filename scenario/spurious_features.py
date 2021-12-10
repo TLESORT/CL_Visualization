@@ -158,7 +158,7 @@ class SpuriousFeatures(InstanceIncremental):
                  (3) task ids, and (4) the actual task required by the user.
         """
 
-        assert isinstance(task_index, int), print("this scenario does not support slicing")
+        assert int(task_index) == task_index, print(f"this scenario does not support slicing: task_index {task_index} - {type(task_index)}")
         assert task_index < self.nb_tasks
 
 
@@ -168,8 +168,8 @@ class SpuriousFeatures(InstanceIncremental):
         if self.support != 1.0:
             x, y, t = self.select_support(x, y, t, task_index)
 
-        x = self._data_transformation(x, y, task_index)
         y = self.class_remapping(y)
+        x = self._data_transformation(x, y, task_index)
         t = torch.ones(y.shape[0]) * task_index
         return x, y, t, task_index, np.arange(y.shape[0])
 
