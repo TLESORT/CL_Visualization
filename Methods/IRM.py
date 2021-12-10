@@ -154,7 +154,7 @@ class IBERM(ERM):
 
     def loss_ood(self, current_x, current_y, ind_task):
 
-        ib_penalty_weight = (self.ib_lambda if self.update_count
+        ib_penalty_weight = (self.ib_lambda if self.model.update_count
                                                           >= self.ib_penalty_anneal_iters else
                              0.0)
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
