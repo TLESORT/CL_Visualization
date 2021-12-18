@@ -66,7 +66,7 @@ class OGD(Trainer):
         # author comment: # Leave it to 0, this is for the case when using Lenet, projecting orthogonally only against the linear layers seems to work better
         self.all_features = 0
 
-        self.memory_size = 100
+        self.memory_size = args.nb_samples_rehearsal_per_class
         self.criterion = nn.CrossEntropyLoss()
         n_params = count_parameter(self.model)
         self.ogd_basis = torch.empty(n_params, 0).cuda()
@@ -84,7 +84,7 @@ class OGD(Trainer):
     def update_mem(self, task_set, task_count):
         self.task_count = task_count
 
-        num_sample_per_task = self.memory_size  # // (self.config.n_tasks-1)
+        num_sample_per_task = self.memory_size * task_set.nb_classes  # // (self.config.n_tasks-1)
         num_sample_per_task = min(len(task_set), num_sample_per_task)
 
         memory_length = []
@@ -99,7 +99,6 @@ class OGD(Trainer):
 
         randind = torch.randperm(len(task_set))[:num_sample_per_task]  # randomly sample some data
         for ind in randind:  # save it to the memory
-
             self.task_memory[0].append(task_set[ind])
 
         ####################################### Grads MEM ###########################
@@ -107,7 +106,6 @@ class OGD(Trainer):
         for storage in self.task_grad_memory.values():
             storage.reduce(num_sample_per_task)
 
-        # if trainer.config.method in ['ogd', 'pca']:
         ogd_train_loader = torch.utils.data.DataLoader(self.task_memory[0],
                                                        batch_size=1,
                                                        shuffle=False,
