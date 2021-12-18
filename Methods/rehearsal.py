@@ -18,7 +18,6 @@ class Rehearsal(Trainer):
         self.name_algo = "rehearsal"
         self.data_memory = None
         self.nb_samples_rehearsal_per_class = config.nb_samples_rehearsal_per_class
-        self.sample_num = 100
 
     def sample_task(self, task_set):
         """
