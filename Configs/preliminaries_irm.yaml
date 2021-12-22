@@ -1,0 +1,38 @@
+program: main.py
+method: grid
+metric:
+  goal: maximize
+  name: test accuracy task 5
+parameters:
+  dataset:
+    value: "CIFAR10"
+  scenario_name:
+    value: "SpuriousFeatures"
+  num_tasks:
+    value: 5
+  nb_epochs:
+    value: 25
+  name_algo:
+    value: "irm"
+  spurious_corr:
+    values: [0.25, 0.5, 0.75, 1.0]
+  seed:
+    values: [0]
+  lr:
+    values: [0.001, 0.01, 0.1]
+  opt_name:
+    value: Adam
+  irm_lambda:
+    # _hparam('irm_lambda', 1e2, lambda r: 10**r.uniform(-1, 5))
+    values: [ 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5 ]
+  irm_penalty_anneal_iters:
+    # _hparam('irm_penalty_anneal_iters', 500, lambda r: int(10**r.uniform(0, 4)))
+    values: [ 1e0, 1e1, 1e2, 1e3, 1e4]
+
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--fast"
+  - "--OOD_Training"
+  - ${args}
