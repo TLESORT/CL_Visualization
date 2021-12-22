@@ -59,6 +59,8 @@ class Trainer(Continual_Evaluation):
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)
 
+        self.OOD_Training = config.OOD_Training
+
         self.scenario_tr = get_scenario(dataset_train, self.scenario_name, nb_tasks=self.num_tasks, increments=self.increments,
                                         transform=self.transform_train, config=config)
 
@@ -346,7 +348,13 @@ class Trainer(Continual_Evaluation):
             if self.verbose: print("callback_task")
             self.callback_task(task_id, task_set)
 
+            if self.OOD_Training:
+                # in OOD Training there is only one big task with several envs.
+                # we escape the loop
+                break
+
         # last log (we log  at the beginning of each task except for the last one)
 
         self.log_task(self.num_tasks, self.model)
         self.post_training_log()
+

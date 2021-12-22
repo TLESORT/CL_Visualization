@@ -82,11 +82,15 @@ class OOD_Algorithm(Rehearsal):
             assert env_id < ind_task
 
         # get data corresponding to env_id <=> ind_task
-        if env_id < ind_task:
-            indexes = self.data_memory.get_indexes_task(env_id)
-            x, y, _ = self.data_memory.get_samples(indexes)
+        if self.OOD_Training:
+            # we have access to all envs at the same time
+            x, y, _ = self.scenario_tr[ind_task].get_random_samples(self.batch_size)
         else:
-            AssertionError("get env function is only made for past data")
+            if env_id < ind_task:
+                indexes = self.data_memory.get_indexes_task(env_id)
+                x, y, _ = self.data_memory.get_samples(indexes)
+            else:
+                AssertionError("get env function is only made for past data")
 
         return x.cuda(), y.cuda()
 
@@ -124,6 +128,11 @@ class ERM(OOD_Algorithm):
         return output, loss
 
     def get_minibatches(self, current_x, current_y, ind_task):
+
+        if self.OOD_Training:
+            # we train to all envs at once
+            ind_task = self.num_tasks
+
         minibatches = []
         for id_env in range(ind_task):
             minibatches.append(self.get_env_data(id_env, ind_task))
@@ -199,7 +208,8 @@ class IRM(ERM):
         super().__init__(config)
         self.model.register_buffer('update_count', torch.tensor([0]))
         self.normalize = config.normalize
-        self.irm_penalty_anneal_iters = 500  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+        self.irm_lambda = config.irm_lambda
+        self.irm_penalty_anneal_iters = config.irm_penalty_anneal_iters  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
 
     @staticmethod
     def _irm_penalty(logits, y):
@@ -215,7 +225,7 @@ class IRM(ERM):
 
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
-        penalty_weight = (self.config.irm_lambda if self.model.update_count
+        penalty_weight = (self.irm_lambda if self.model.update_count
                                                     >= self.irm_penalty_anneal_iters else 0.0)  # todo
 
         nll = 0.
