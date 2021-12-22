@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 # Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'erm',
-                             'ib_erm', 'irm', 'ib_irm', 'SpectralDecoupling'],
+                             'ib_erm', 'irm', 'ib_irm', 'SpectralDecoupling', 'GroupDRO'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
@@ -36,6 +36,7 @@ parser.add_argument('--dataset', default="MNIST", type=str,
                              "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
+parser.add_argument('--num_domains', type=int, default=1, help='Domain number for OOD training')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
 parser.add_argument('--support', type=float, default=1.0, help='amount of data of the original data in each task for spurious correlation scenarios')
 parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
@@ -48,9 +49,13 @@ parser.add_argument('--pmodel_dir', default="Pretrained", type=str,
 
 # Model HPs
 parser.add_argument('--lr', default=0.002, type=float, help='learning rate')
+parser.add_argument('--opt_name', default="SGD", type=str,
+                    choices=['SGD', 'Adam'],
+                    help='data directory name')
 parser.add_argument('--weight_decay', default=0.0, type=float, help='weight_decay')
 parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda', choices=[0, 0.1, 0.5, 1, 10, 1e2])
 parser.add_argument('--irm_lambda', default=0.1, type=float, help='irm_lambda', choices=[0.1, 1, 10, 1e2, 1e3, 1e4])
+parser.add_argument('--groupdro_eta', default=1e-2, type=float, help='_hparam(\'groupdro_eta\', 1e-2, lambda r: 10**r.uniform(-3, -1))')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
 parser.add_argument('--normalize', action="store_true", help="normalize the loss of irm / vrex")
@@ -89,6 +94,15 @@ parser.add_argument('--verbose', action='store_true', default=False, help='dev f
 config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
+
+if config.num_domains != 1:
+    assert config.num_tasks == 1, print("multi domain is not compatible yet with multiple tasks.")
+
+# cluster sweep
+slurm_tmpdir = os.environ.get('SLURM_TMPDIR')
+if not (slurm_tmpdir is None):
+    config.root_dir = os.path.join(slurm_tmpdir, "Archives")
+    config.data_dir = os.path.join(slurm_tmpdir, "Datasets")
 
 config.original_root = config.root_dir
 
@@ -246,6 +260,9 @@ elif config.name_algo == "ib_irm":
 elif config.name_algo == "SpectralDecoupling":
     from Methods.IRM import SpectralDecoupling
     Algo = SpectralDecoupling(config)
+elif config.name_algo == "GroupDRO":
+    from Methods.IRM import GroupDRO
+    Algo = GroupDRO(config)
 else:
     print("wrong name")
 
