@@ -36,7 +36,6 @@ parser.add_argument('--dataset', default="MNIST", type=str,
                              "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
-parser.add_argument('--num_domains', type=int, default=1, help='Domain number for OOD training')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
 parser.add_argument('--support', type=float, default=1.0, help='amount of data of the original data in each task for spurious correlation scenarios')
 parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
@@ -54,6 +53,7 @@ parser.add_argument('--opt_name', default="SGD", type=str,
                     help='data directory name')
 parser.add_argument('--weight_decay', default=0.0, type=float, help='weight_decay')
 parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda', choices=[0, 0.1, 0.5, 1, 10, 1e2])
+parser.add_argument('--irm_penalty_anneal_iters', default=500, type=float, help='irm_penalty_anneal_iters')
 parser.add_argument('--irm_lambda', default=0.1, type=float, help='irm_lambda', choices=[0.1, 1, 10, 1e2, 1e3, 1e4])
 parser.add_argument('--groupdro_eta', default=1e-2, type=float, help='_hparam(\'groupdro_eta\', 1e-2, lambda r: 10**r.uniform(-3, -1))')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
@@ -75,6 +75,8 @@ parser.add_argument('--seed', default="1664", type=int,
 # FLAGS
 parser.add_argument('--finetuning', action='store_true', default=False,
                     help='decide if we finetune pretrained models')
+parser.add_argument('--OOD_Training', action='store_true', default=False,
+                    help='ood training all tasks are available at the same time as different envs')
 parser.add_argument('--proj_drift_eval', action='store_true', default=False,
                     help='eval the proj drift')
 parser.add_argument('--test_label', action='store_true', default=False,
@@ -85,6 +87,7 @@ parser.add_argument('--load_first_task', action='store_true', default=False, hel
 parser.add_argument('--no_train', action='store_true', default=False, help='flag to only analyse or plot figures')
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
+parser.add_argument('--sweep', action='store_true', default=False, help='if sweep we do not check if exps has been already ran')
 parser.add_argument('--project_name', default="CLOOD", type=str, help='project name for wandb')
 parser.add_argument('--offline', action='store_true', default=False, help='does not save in wandb')
 parser.add_argument('--offline_wandb', action='store_true', default=False, help='does save in wandb but offline')
@@ -94,9 +97,6 @@ parser.add_argument('--verbose', action='store_true', default=False, help='dev f
 config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
-
-if config.num_domains != 1:
-    assert config.num_tasks == 1, print("multi domain is not compatible yet with multiple tasks.")
 
 # cluster sweep
 slurm_tmpdir = os.environ.get('SLURM_TMPDIR')
@@ -183,7 +183,7 @@ if not (config.dev or config.offline):
 
     # Check if experience already exists
     exp_already_done=False
-    if config.seed != 1664: # this seed is vip
+    if config.seed != 1664 and not config.sweep: # this seed is vip and sweep already check if exps are already run
         exp_already_done = check_exp_config(config, name_out)
     if exp_already_done:
         print(f"This experience has already been run and finished: {experiment_id}")
