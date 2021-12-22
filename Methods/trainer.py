@@ -9,7 +9,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 import os
 
-from continuum.tasks import TaskSet
+from continuum.tasks import TaskSet, TaskType
 from continuum.scenarios import create_subscenario
 
 from utils import get_dataset, get_model, get_scenario, get_transform
@@ -26,6 +26,7 @@ class Trainer(Continual_Evaluation):
         super().__init__(config)
 
         self.lr = config.lr
+        self.opt_name = config.opt_name
         self.weight_decay = config.weight_decay
         self.task_order = config.task_order
         self.momentum = config.momentum
@@ -103,12 +104,13 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-        if self.num_tasks > 1:
+        if self.num_tasks > 1  or self.scenario_name=="SpuriousFeatures":
             # no need for mixing task in Spurious features and it create problems since there is not the same nb of task
             # in train and test
             # random permutation of task order
-            self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
-            if self.scenario_te.nb_tasks > 1:
+            if self.num_tasks > 1:
+                self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
+            if self.scenario_te.nb_tasks > 1: # some test scenario have more task than train scenario
                 test_task_order = self.task_order
                 if self.scenario_name=="SpuriousFeatures":
                     test_task_order = np.concatenate([self.task_order,np.array([self.scenario_te.nb_tasks-1])])
@@ -117,17 +119,22 @@ class Trainer(Continual_Evaluation):
 
         if not self.data_encoded:
             for ind_task, task_set in enumerate(self.scenario_te):
-                if task_set.data_type in ["image_path", "image_array"]:
+                if task_set.data_type in [TaskType.IMAGE_ARRAY, TaskType.IMAGE_PATH]:
                     task_set.plot(self.sample_dir, f"samples_te_task_{ind_task}.png", 100,
                                   shape=self.model.data_shape)
             for ind_task, task_set in enumerate(self.scenario_tr):
-                if task_set.data_type in ["image_path", "image_array"]:
+                if task_set.data_type in [TaskType.IMAGE_ARRAY, TaskType.IMAGE_PATH]:
                     task_set.plot(self.sample_dir, f"samples_tr_task_{ind_task}.png", 100,
                                   shape=self.model.data_shape)
 
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
-            self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
+            if self.opt_name=="SGD":
+                self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
+            elif self.opt_name=="Adam":
+                self.opt = optim.Adam(params=self.model.parameters(), lr=self.lr)
+            else:
+                raise NotImplementedError("this opt is not implemented here")
         else:
             self.opt = None
 
@@ -146,7 +153,12 @@ class Trainer(Continual_Evaluation):
         np.random.seed(self.seed)
 
         if self.reset_opt and (not self.OutLayer in self.non_differential_heads):
-            self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
+            if self.opt_name=="SGD":
+                self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
+            elif self.opt_name=="Adam":
+                self.opt = optim.Adam(params=self.model.parameters(), lr=self.lr)
+            else:
+                raise NotImplementedError("this opt is not implemented here")
 
         if self.verbose: print("prepare subset")
         if self.subset is not None:
