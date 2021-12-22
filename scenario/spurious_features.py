@@ -52,6 +52,11 @@ class SpuriousFeatures(InstanceIncremental):
             random_seed = seed
         )
 
+        assert type(cl_dataset).__name__ == "CIFAR10", print(type(cl_dataset).__name__)
+        # means of transportation
+        # old_labels = [airplane, automobile, , bird, cat, deer, dog, frog, horse, ship, truck]
+        self.new_labels=torch.LongTensor([0,0,1,1,1,1,1,0,0,0])
+
         self.initial_nb_classes = len(np.unique(self.dataset[1]))
         self.image_size = 32
 
@@ -76,7 +81,8 @@ class SpuriousFeatures(InstanceIncremental):
         return colors
 
     def class_remapping(self, y):
-        return y // int(self.initial_nb_classes/2)
+        #return y // int(self.initial_nb_classes/2)
+        return self.new_labels[y]
 
     def _data_transformation(self, x, labels, ind_task):
         """"Transform data for scenario purposes
