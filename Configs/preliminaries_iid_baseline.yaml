@@ -1,0 +1,31 @@
+program: main.py
+method: bayes
+metric:
+  goal: maximize
+  name: test accuracy task 1
+parameters:
+  dataset:
+    value: "CIFAR10"
+  scenario_name:
+    value: "SpuriousFeatures"
+  num_tasks:
+    value: 1
+  nb_epochs:
+    value: 200
+  name_algo:
+    value: "baseline"
+  spurious_corr:
+    value: 0
+  seed:
+    values: [0]
+  lr:
+    min: 0.0001
+    max: 0.1
+  opt_name:
+    values: ["adam", "sgd"]
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--fast"
+  - ${args}
