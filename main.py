@@ -24,7 +24,7 @@ parser.add_argument('--OutLayer', default="Linear", type=str,
                              'MIMO_CosLayer', 'MeanLayer', 'MedianLayer', 'KNN', 'SLDA', 'WeightNorm', 'OriginalWeightNorm'],
                     help='type of ouput layer used for the NN')
 parser.add_argument('--pretrained_on', default=None, type=str,
-                    choices=[None, "CIFAR10", "CIFAR100", "ImageNet"],
+                    choices=[None, "NA","CIFAR10", "CIFAR100", "ImageNet"],
                     help='dataset source of a pretrained model')
 parser.add_argument('--architecture', default="resnet", type=str,
                     choices=["resnet", "alexnet", "vgg", "googlenet"],
@@ -178,6 +178,8 @@ else:
     experiment_label = f"{config.dataset}-pretrained-{config.pretrained_on}-subset-{config.subset}"
 
 experiment_id = experiment_id.replace("/", "-")
+
+if config.pretrained_on == "NA": config.pretrained_on = None
 
 if not (config.dev or config.offline):
 

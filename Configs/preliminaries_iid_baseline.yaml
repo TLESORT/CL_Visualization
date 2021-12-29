@@ -17,21 +17,22 @@ parameters:
   spurious_corr:
     value: 0
   seed:
-    values: [0]
+    value: 0
   lr:
     min: 0.0001
     max: 0.1
   opt_name:
     values: ["Adam", "SGD"]
   pretrained_on:
-    values: [None, "CIFAR10", "CIFAR100"]
+    values: ["NA", "CIFAR10", "CIFAR100"]
 early_terminate:
   type: hyperband
   min_iter: 3
-  
+
 command:
   - python
   - ${program}
   - "--sweep"
+  - "--finetuning"
   - "--fast"
   - ${args}
