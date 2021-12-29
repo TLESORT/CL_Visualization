@@ -22,7 +22,13 @@ parameters:
     min: 0.0001
     max: 0.1
   opt_name:
-    values: ["adam", "sgd"]
+    values: ["Adam", "SGD"]
+  pretrained_on:
+    values: [None, "CIFAR10", "CIFAR100"]
+early_terminate:
+  type: hyperband
+  min_iter: 3
+  
 command:
   - python
   - ${program}
