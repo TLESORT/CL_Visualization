@@ -89,6 +89,7 @@ parser.add_argument('--no_train', action='store_true', default=False, help='flag
 parser.add_argument('--analysis', action='store_true', default=False, help='flag for analysis')
 parser.add_argument('--fast', action='store_true', default=False, help='if fast we avoid most logging')
 parser.add_argument('--sweep', action='store_true', default=False, help='if sweep we do not check if exps has been already ran')
+parser.add_argument('--sweeps_HPs', action='store_true', default=False, help='use HPs previously got by sweep runnig')
 parser.add_argument('--project_name', default="CLOOD", type=str, help='project name for wandb')
 parser.add_argument('--offline', action='store_true', default=False, help='does not save in wandb')
 parser.add_argument('--offline_wandb', action='store_true', default=False, help='does save in wandb but offline')
@@ -205,7 +206,7 @@ if not (config.dev or config.offline):
 
             wandb.init(
                 dir=config.original_root,
-                project="CLOOD", settings=wandb.Settings(start_method='fork'),
+                project=config.project_name, settings=wandb.Settings(start_method='fork'),
                 group=experiment_label,
                 id=experiment_id + '-' + wandb.util.generate_id(),
                 entity='tlesort',
@@ -219,6 +220,11 @@ if not (config.dev or config.offline):
             time.sleep(10)
 
     wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
+
+    if config.sweep_HPs:
+        if config.project_name == "CLOOD":
+            from Reproducibility.SpuriousFeatures.HPs import get_selected_HPs_Spurious
+            config = get_selected_HPs_Spurious(config)
 
 if config.name_algo == "baseline":
     Algo = Trainer(config)
