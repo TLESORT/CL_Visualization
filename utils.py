@@ -5,6 +5,7 @@ import torchvision.transforms as trsf
 from Models.model import Model
 
 import torchvision.transforms as trsf
+import torch.optim as optim
 import numpy as np
 
 from continuum.datasets import InMemoryDataset
@@ -77,6 +78,14 @@ def get_scenario(dataset, scenario_name, nb_tasks, increments=[0], transform=Non
 
     return scenario
 
+def get_optim(name_optim, parameters, lr, momentum):
+    if name_optim=="SGD":
+        opt = optim.SGD(params=parameters, lr=lr, momentum=momentum)
+    elif name_optim=="Adam":
+        opt = optim.Adam(params=parameters, lr=lr)
+    else:
+        raise NotImplementedError("this opt is not implemented here")
+    return opt
 
 def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     if name_dataset == "MNIST":
