@@ -164,7 +164,7 @@ class IBERM(ERM):
     def init_task(self, ind_task, task_set):
         # reset for new task
         self.model.register_buffer('update_count', torch.tensor([0]))
-        super().init_task(ind_task, task_set)
+        return super().init_task(ind_task, task_set)
 
     def loss_ood(self, current_x, current_y, ind_task):
 
@@ -219,7 +219,7 @@ class IRM(ERM):
     def init_task(self, ind_task, task_set):
         # reset for new task
         self.model.register_buffer('update_count', torch.tensor([0]))
-        super().init_task(ind_task, task_set)
+        return super().init_task(ind_task, task_set)
 
     @staticmethod
     def _irm_penalty(logits, y):
@@ -280,7 +280,7 @@ class IBIRM(IRM):
     def init_task(self, ind_task, task_set):
         # reset for new task
         self.model.register_buffer('update_count', torch.tensor([0]))
-        super().init_task(ind_task, task_set)
+        return super().init_task(ind_task, task_set)
 
     def loss_ood(self, current_x, current_y, ind_task):
 
@@ -340,7 +340,7 @@ class SpectralDecoupling(ERM):
     def init_task(self, ind_task, task_set):
         # reset for new task
         self.model.register_buffer('update_count', torch.tensor([0]))
-        super().init_task(ind_task, task_set)
+        return super().init_task(ind_task, task_set)
 
     def loss_ood(self, current_x, current_y, ind_task):
 
