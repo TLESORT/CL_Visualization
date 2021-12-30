@@ -52,9 +52,10 @@ parser.add_argument('--opt_name', default="SGD", type=str,
                     choices=['SGD', 'Adam'],
                     help='data directory name')
 parser.add_argument('--weight_decay', default=0.0, type=float, help='weight_decay')
-parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda', choices=[0, 0.1, 0.5, 1, 10, 1e2])
 parser.add_argument('--irm_penalty_anneal_iters', default=500, type=float, help='irm_penalty_anneal_iters')
-parser.add_argument('--irm_lambda', default=0.1, type=float, help='irm_lambda', choices=[0.1, 1, 10, 1e2, 1e3, 1e4])
+parser.add_argument('--ib_penalty_anneal_iters', default=500, type=float, help='ib_penalty_anneal_iters')
+parser.add_argument('--irm_lambda', default=0.1, type=float, help='irm_lambda')
+parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda')
 parser.add_argument('--groupdro_eta', default=1e-2, type=float, help='_hparam(\'groupdro_eta\', 1e-2, lambda r: 10**r.uniform(-3, -1))')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
