@@ -5,14 +5,14 @@ torch.multiprocessing.set_sharing_strategy('file_system')
 
 from torch.utils.data import DataLoader
 
-import torch.optim as optim
+
 import torch.nn.functional as F
 import os
 
 from continuum.tasks import TaskSet, TaskType
 from continuum.scenarios import create_subscenario
 
-from utils import get_dataset, get_model, get_scenario, get_transform
+from utils import get_dataset, get_model, get_scenario, get_transform, get_optim
 from Encode.encode_utils import encode_scenario
 
 import numpy as np
@@ -85,14 +85,14 @@ class Trainer(Continual_Evaluation):
             self.scenario_tr = encode_scenario(self.scenario_tr,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{config.dataset}_{config.architecture}"
-                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train.hdf5",
+                                               name=os.path.join(self.data_dir, f"encode_{config.dataset}_{config.architecture}"
+                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train.hdf5")
                                                )
             self.scenario_te = encode_scenario(self.scenario_te,
                                                self.model,
                                                self.batch_size,
-                                               name=f"encode_{config.dataset}_{config.architecture}"
-                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_test.hdf5",
+                                               name=os.path.join(self.data_dir, f"encode_{config.dataset}_{config.architecture}"
+                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_test.hdf5")
                                                )
             # self.scenario_tr = encode_scenario(self.data_dir,
             #                                    self.scenario_tr,
@@ -143,12 +143,7 @@ class Trainer(Continual_Evaluation):
 
         self.num_classes = self.scenario_tr.nb_classes
         if not self.OutLayer in self.non_differential_heads:
-            if self.opt_name=="SGD":
-                self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
-            elif self.opt_name=="Adam":
-                self.opt = optim.Adam(params=self.model.parameters(), lr=self.lr)
-            else:
-                raise NotImplementedError("this opt is not implemented here")
+            self.opt = get_optim(self.opt_name, self.model.parameters(), self.lr, self.momentum)
         else:
             self.opt = None
 
@@ -167,12 +162,7 @@ class Trainer(Continual_Evaluation):
         np.random.seed(self.seed)
 
         if self.reset_opt and (not self.OutLayer in self.non_differential_heads):
-            if self.opt_name=="SGD":
-                self.opt = optim.SGD(params=self.model.parameters(), lr=self.lr, momentum=self.momentum)
-            elif self.opt_name=="Adam":
-                self.opt = optim.Adam(params=self.model.parameters(), lr=self.lr)
-            else:
-                raise NotImplementedError("this opt is not implemented here")
+            self.opt = get_optim(self.opt_name, self.model.parameters(), self.lr, self.momentum)
 
         if self.verbose: print("prepare subset")
         if self.subset is not None:

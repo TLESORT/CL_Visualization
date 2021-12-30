@@ -101,11 +101,11 @@ class ERM(OOD_Algorithm):
     """
 
     def __init__(self, config):
-        super().__init__(config)
 
-        # self.featurizer = self.model.feature_extractor
-        # self.classifier = self.model.head
-        # self.network = self.model
+        super().__init__(config)
+        # those algorithms are not originally designed for CL then we reset opt for each task
+        self.reset_opt = True
+
 
 
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
@@ -159,7 +159,12 @@ class IBERM(ERM):
         super(IBERM, self).__init__(config)
         self.model.register_buffer('update_count', torch.tensor([0]))
         self.normalize = config.normalize
-        self.ib_penalty_anneal_iters = 0
+        self.ib_penalty_anneal_iters = config.ib_penalty_anneal_iters
+
+    def init_task(self, ind_task, task_set):
+        # reset for new task
+        self.model.register_buffer('update_count', torch.tensor([0]))
+        super().init_task(ind_task, task_set)
 
     def loss_ood(self, current_x, current_y, ind_task):
 
@@ -210,6 +215,11 @@ class IRM(ERM):
         self.normalize = config.normalize
         self.irm_lambda = config.irm_lambda
         self.irm_penalty_anneal_iters = config.irm_penalty_anneal_iters  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+
+    def init_task(self, ind_task, task_set):
+        # reset for new task
+        self.model.register_buffer('update_count', torch.tensor([0]))
+        super().init_task(ind_task, task_set)
 
     @staticmethod
     def _irm_penalty(logits, y):
@@ -264,8 +274,13 @@ class IBIRM(IRM):
     def __init__(self, config):
         super(IBIRM, self).__init__(config)
 
-        self.irm_penalty_anneal_iters = 500  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
-        self.ib_penalty_anneal_iters = 500  # ('ib_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+        self.irm_penalty_anneal_iters = config.irm_penalty_anneal_iters  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+        self.ib_penalty_anneal_iters = config.ib_penalty_anneal_iters  # ('ib_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+
+    def init_task(self, ind_task, task_set):
+        # reset for new task
+        self.model.register_buffer('update_count', torch.tensor([0]))
+        super().init_task(ind_task, task_set)
 
     def loss_ood(self, current_x, current_y, ind_task):
 
@@ -322,7 +337,10 @@ class SpectralDecoupling(ERM):
         super().__init__(config)
         self.sp_coef = 0.003
 
-
+    def init_task(self, ind_task, task_set):
+        # reset for new task
+        self.model.register_buffer('update_count', torch.tensor([0]))
+        super().init_task(ind_task, task_set)
 
     def loss_ood(self, current_x, current_y, ind_task):
 
