@@ -1,0 +1,40 @@
+program: main.py
+method: bayes
+metric:
+  goal: maximize
+  name: test accuracy task 5
+parameters:
+  dataset:
+    value: "CIFAR10"
+  scenario_name:
+    value: "SpuriousFeatures"
+  num_tasks:
+    value: 5
+  nb_epochs:
+    value: 25
+  name_algo:
+    value: "ib_erm"
+  spurious_corr:
+    # We test only with 0.75, values: [0.25, 0.5, 0.75, 1.0]
+    value: 0.75
+  seed:
+    values: [0]
+  lr:
+    min: 0.0001
+    max: 0.1
+  opt_name:
+    values: [SGD, Adam]
+  ib_lambda:
+    # _hparam('ib_lambda', 1e2, lambda r: 10**r.uniform(-1, 5))
+    values: [ 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5 ]
+  ib_penalty_anneal_iters:
+    # _hparam('ib_penalty_anneal_iters', 500, lambda r: int(10**r.uniform(0, 4)))
+    values: [ 1e0, 1e1, 1e2, 1e3, 1e4 ]
+
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--fast"
+  - "--OOD_Training"
+  - ${args}

@@ -159,6 +159,7 @@ class IBERM(ERM):
         super(IBERM, self).__init__(config)
         self.model.register_buffer('update_count', torch.tensor([0]))
         self.normalize = config.normalize
+        self.ib_lambda = config.ib_lambda
         self.ib_penalty_anneal_iters = config.ib_penalty_anneal_iters
 
     def init_task(self, ind_task, task_set):
@@ -275,6 +276,8 @@ class IBIRM(IRM):
         super(IBIRM, self).__init__(config)
 
         self.irm_penalty_anneal_iters = config.irm_penalty_anneal_iters  # ('irm_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
+        self.irm_lambda = config.irm_lambda
+        self.ib_lambda = config.ib_lambda
         self.ib_penalty_anneal_iters = config.ib_penalty_anneal_iters  # ('ib_penalty_anneal_iters', 500, int(10 ** random_state.uniform(0, 4)))
 
     def init_task(self, ind_task, task_set):
@@ -286,10 +289,10 @@ class IBIRM(IRM):
 
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
-        irm_penalty_weight = (self.config.irm_lambda if self.model.update_count
+        irm_penalty_weight = (self.irm_lambda if self.model.update_count
                                                     >= self.irm_penalty_anneal_iters else 1.0)
 
-        ib_penalty_weight = (self.config.ib_lambda if self.model.update_count
+        ib_penalty_weight = (self.ib_lambda if self.model.update_count
                                                       >= self.ib_penalty_anneal_iters else 0.0)
 
         nll = 0.
