@@ -1,5 +1,5 @@
 program: main.py
-method: grid
+method: bayes
 metric:
   goal: maximize
   name: test accuracy task 5
@@ -20,9 +20,10 @@ parameters:
   seed:
     values: [0]
   lr:
-    values: [0.001, 0.01, 0.1]
+    min: 0.0001
+    max: 0.1
   opt_name:
-    value: Adam
+    values: [ SGD, Adam ]
   irm_lambda:
     # _hparam('irm_lambda', 1e2, lambda r: 10**r.uniform(-1, 5))
     values: [ 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5 ]

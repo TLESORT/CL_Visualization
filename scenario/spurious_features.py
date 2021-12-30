@@ -134,6 +134,10 @@ class SpuriousFeatures(InstanceIncremental):
         return nb_tasks
 
     def select_support(self, x, y, t, ind_task):
+        """"
+        Select a subset of the support. The selection is done based on original labels.
+        If we decide to use a support of 0.5 we select data from only half of the original classes.
+        """
         np.random.seed(self.seed + ind_task)
         rand_class_order = np.random.permutation(self.nb_classes)
 
