@@ -46,6 +46,11 @@ class Continual_Evaluation(abc.ABC):
         self.list_weights_dist = {}
         self.list_Fisher = []
 
+        self.best_train_epoch = -1
+        self.best_eval_epoch = -1
+        self.best_train_acc = -1
+        self.best_eval_acc = -1
+
     def _can_load_first_task(self):
         model_weights_path = os.path.join(self.log_dir, f"Model_Task_0.pth")
         opt_weights_path = os.path.join(self.log_dir, f"Opt_Task_0.pth")
@@ -123,6 +128,12 @@ class Continual_Evaluation(abc.ABC):
             table_norm = wandb.Table(data=data_norm, columns=["Norm", "Class"])
             wandb.log({f"Norm Task {ind_task}": wandb.plot.bar(table_norm, "Class", "Norm",
                                                                title=f"Norm  Bars Task {ind_task}")})
+        wandb.log({f'best_train_epoch_{ind_task}': self.best_train_epoch,
+                   f'best_eval_epoch_{ind_task}': self.best_eval_epoch})
+        self.best_train_epoch = -1
+        self.best_eval_epoch = -1
+        self.best_train_acc = -1
+        self.best_eval_acc = -1
 
     def log_weights_dist(self, ind_task):
 
@@ -210,6 +221,13 @@ class Continual_Evaluation(abc.ABC):
 
                     wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
                                'task': ind_task})
+
+            if accuracy_tr > self.best_train_acc:
+                self.best_train_acc = accuracy_tr
+                self.best_train_epoch = epoch
+            if accuracy_te > self.best_eval_acc:
+                self.best_eval_acc = accuracy_te
+                self.best_eval_epoch = epoch
 
             wandb.log({'train accuracy': accuracy_tr,
                        'test accuracy': accuracy_te,
