@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 # Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'erm',
-                             'ib_erm', 'irm', 'ib_irm', 'SpectralDecoupling', 'GroupDRO'],
+                             'ib_erm', 'ib-erm', 'irm', 'ib_irm', 'ib-irm', 'SpectralDecoupling', 'GroupDRO'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
@@ -100,6 +100,12 @@ parser.add_argument('--verbose', action='store_true', default=False, help='dev f
 config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
+
+# TODO: remove this once sweeps are done.
+if config.name_algo == "ib-erm":
+    config.name_algo = "ib_erm"
+if config.name_algo == "ib-irm":
+    config.name_algo = "ib_irm"
 
 # cluster sweep
 slurm_tmpdir = os.environ.get('SLURM_TMPDIR')
