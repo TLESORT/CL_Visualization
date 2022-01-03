@@ -221,7 +221,7 @@ if not (config.dev or config.offline):
 
     wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
 
-    if config.sweep_HPs:
+    if config.sweeps_HPs:
         if config.project_name == "CLOOD":
             from Reproducibility.SpuriousFeatures.HPs import get_selected_HPs_Spurious
             config = get_selected_HPs_Spurious(config)
