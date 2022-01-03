@@ -8,6 +8,7 @@ import numpy as np
 import os
 from copy import copy
 from continuum.tasks.task_set import TaskSet
+from continuum.tasks.base import TaskType
 from memory import MemorySet
 
 from Methods.trainer import Trainer
@@ -30,7 +31,15 @@ class Rehearsal(Trainer):
             f"{self.nb_samples_rehearsal_per_class} x {nb_classes} =" \
             f" {self.nb_samples_rehearsal_per_class * nb_classes} vs {len(task_set._y)} "
         indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
-        samples, labels, task_ids = task_set.get_raw_samples(indexes)
+
+        if task_set.data_type == TaskType.H5:
+            unique_indexes, inverse_ids = np.unique(indexes, return_inverse=True)
+            samples, labels, task_ids = task_set.get_raw_samples(unique_indexes)
+            samples, labels = samples[inverse_ids], labels[inverse_ids]
+            if task_ids is not None:
+                task_ids = task_ids[inverse_ids]
+        else:
+            samples, labels, task_ids = task_set.get_raw_samples(indexes)
 
         assert task_ids is not None # if it is none it would be better to create a valid task id tensor
 
@@ -61,10 +70,17 @@ class Rehearsal(Trainer):
                 assert len(self.data_memory) == self.data_memory.nb_classes * self.nb_samples_rehearsal_per_class, \
                     f"{len(self.data_memory)} == {self.data_memory.nb_classes} * {self.nb_samples_rehearsal_per_class}"
             # We convert task set to a memory set because we need to manipulate the list_ID to balance classes
-            task_memory_set = MemorySet(task_set._x,
-                                        task_set._y,
-                                        task_set._t,
-                                        task_set.trsf)
+            if task_set.data_type == TaskType.H5:
+                samples, labels, task_ids = task_set.get_raw_samples(np.arange(len(task_set)))
+                task_memory_set = MemorySet(samples,
+                                            labels,
+                                            task_ids,
+                                            task_set.trsf)
+            else:
+                task_memory_set = MemorySet(task_set._x,
+                                            task_set._y,
+                                            task_set._t,
+                                            task_set.trsf)
 
             task_memory_set.concatenate(self.data_memory)
             task_memory_set.balance_classes()

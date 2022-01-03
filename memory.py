@@ -241,8 +241,8 @@ class MemorySet(ArrayTaskSet):
 
     def check_internal_state(self):
 
-        assert len(self._x) == len(self._y)
-        assert len(self._y) == len(self._t)
+        assert len(self._x) == len(self._y), print(f"{len(self._x)} == {len(self._y)}")
+        assert len(self._y) == len(self._t), print(f"{len(self._y)} == {len(self._t)}")
         nb_samples = len(self._y)
         nb_instances = len(self.list_IDs)
 
