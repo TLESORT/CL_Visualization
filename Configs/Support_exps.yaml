@@ -1,0 +1,32 @@
+program: main.py
+method: grid
+metric:
+  goal: maximize
+  name: test accuracy task 5
+parameters:
+  dataset:
+    value: "CIFAR10"
+  scenario_name:
+    value: "SpuriousFeatures"
+  num_tasks:
+    value: 10
+  nb_epochs:
+    value: 25
+  name_algo:
+    values: ["baseline", "rehearsal", "irm", "ib_irm", "ib_erm"]
+  spurious_corr:
+    value: 0.75
+  support:
+    values: [0.2, 0.4, 0.6, 0.8]
+  nb_samples_rehearsal_per_class:
+    values: [ 10, 50, 100, 500, 1000]
+  seed:
+    values: [0, 1]
+
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--fast"
+  - "--sweeps_HPs"
+  - ${args}
