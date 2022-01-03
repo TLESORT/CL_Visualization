@@ -101,6 +101,11 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
+if config.sweeps_HPs:
+    if config.project_name == "CLOOD":
+        from Reproducibility.SpuriousFeatures.HPs import get_selected_HPs_Spurious
+        config = get_selected_HPs_Spurious(config)
+
 # TODO: remove this once sweeps are done.
 if config.name_algo == "ib-erm":
     config.name_algo = "ib_erm"
@@ -228,10 +233,6 @@ if not (config.dev or config.offline):
 
     wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
 
-    if config.sweeps_HPs:
-        if config.project_name == "CLOOD":
-            from Reproducibility.SpuriousFeatures.HPs import get_selected_HPs_Spurious
-            config = get_selected_HPs_Spurious(config)
 
 if config.name_algo == "baseline":
     Algo = Trainer(config)
