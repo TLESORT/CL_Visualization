@@ -128,8 +128,9 @@ class Continual_Evaluation(abc.ABC):
             table_norm = wandb.Table(data=data_norm, columns=["Norm", "Class"])
             wandb.log({f"Norm Task {ind_task}": wandb.plot.bar(table_norm, "Class", "Norm",
                                                                title=f"Norm  Bars Task {ind_task}")})
-        wandb.log({f'best_train_epoch_{ind_task}': self.best_train_epoch,
-                   f'best_eval_epoch_{ind_task}': self.best_eval_epoch})
+        if not self.dev:
+            wandb.log({f'best_train_epoch_{ind_task}': self.best_train_epoch,
+                       f'best_eval_epoch_{ind_task}': self.best_eval_epoch})
         self.best_train_epoch = -1
         self.best_eval_epoch = -1
         self.best_train_acc = -1

@@ -73,7 +73,7 @@ class BasicBlock(nn.Module):
 
 class CifarResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=10):
+    def __init__(self, block, layers, num_classes=10, dropout=False):
         super(CifarResNet, self).__init__()
 
         self.image_size = 32
@@ -85,6 +85,9 @@ class CifarResNet(nn.Module):
         self.relu = nn.ReLU(inplace=True)
         self.num_classes = num_classes
         self.data_encoded = False
+        self.dropout = dropout
+        if self.dropout:
+            self.dropout_layer = nn.Dropout(p=0.5)
 
         self.layer1 = self._make_layer(block, 16, layers[0])
         self.layer2 = self._make_layer(block, 32, layers[1], stride=2)
@@ -142,6 +145,8 @@ class CifarResNet(nn.Module):
         if not self.data_encoded:
             x = x.view(-1, self.input_dim, self.image_size, self.image_size)
             x = self.feature_extractor(x)
+        if self.dropout:
+            x = self.dropout_layer(x)
         x = self.head.forward_task(x, task_ids)
         return x
 
@@ -151,6 +156,8 @@ class CifarResNet(nn.Module):
             x = self.feature_extractor(x)
         x = x.view(x.size(0), -1)
         x = self.head(x)
+        if self.dropout:
+            x = self.dropout_layer(x)
         assert x.shape[-1] == self.num_classes, print(f"{x.shape[-1]} vs {self.num_classes}")
 
         return x
@@ -170,11 +177,11 @@ class CifarResNet(nn.Module):
         return self.head.get_loss(out, labels, loss_func, masked)
 
 
-def cifar_resnet20(pretrained=None, model_dir=None, **kwargs):
+def cifar_resnet20(pretrained=None, model_dir=None, dropout=False, **kwargs):
     if pretrained is None:
-        model = CifarResNet(BasicBlock, [3, 3, 3], **kwargs)
+        model = CifarResNet(BasicBlock, [3, 3, 3], dropout=dropout, **kwargs)
     else:
-        model = CifarResNet(BasicBlock, [3, 3, 3], num_classes=pretrained_settings[pretrained]['num_classes'])
+        model = CifarResNet(BasicBlock, [3, 3, 3], num_classes=pretrained_settings[pretrained]['num_classes'], dropout=dropout)
         model.load_state_dict(model_zoo.load_url(pretrained_settings[pretrained]['resnet20'], model_dir=model_dir))
     return model
 

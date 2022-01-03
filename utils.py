@@ -169,7 +169,7 @@ def get_transform(name_dataset, architecture, train="True"):
 
 
 def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None,
-              architecture="resnet"):
+              architecture="resnet", dropout=False):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         # assert name_dataset == "Disjoint"
@@ -188,7 +188,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                            classes_per_head=list_classes_per_tasks,
                            OutLayer=OutLayer,
                            pretrained_on=pretrained_on,
-                           model_dir=model_dir)
+                           model_dir=model_dir, dropout=dropout)
 
     elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2']:
         from Models.imagenet import ImageNetModel

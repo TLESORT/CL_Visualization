@@ -13,7 +13,9 @@ from continuum.tasks import TaskSet, TaskType
 from continuum.scenarios import create_subscenario
 
 from utils import get_dataset, get_model, get_scenario, get_transform, get_optim
-from Encode.encode_utils import encode_scenario
+#from Encode.encode_utils import encode_scenario
+from continuum.datasets import H5Dataset
+from continuum.scenarios import encode_scenario, ContinualScenario
 
 import numpy as np
 
@@ -47,6 +49,7 @@ class Trainer(Continual_Evaluation):
 
         self.algo_name = "baseline"
         self.fast = config.fast
+        self.dropout = config.dropout
         self.pretrained_on = config.pretrained_on
         self.OutLayer = config.OutLayer
         self.nb_epochs = config.nb_epochs
@@ -74,7 +77,8 @@ class Trainer(Continual_Evaluation):
                                self.OutLayer,
                                self.name_algo,
                                model_dir=self.pmodel_dir,
-                               architecture=self.architecture)
+                               architecture=self.architecture,
+                               dropout=self.dropout)
         self.model.cuda()
 
         self.finetuning = config.finetuning
@@ -82,18 +86,36 @@ class Trainer(Continual_Evaluation):
         self.data_encoded = False
         if (self.pretrained_on is not None) and not self.finetuning:
             # we replace the scenario data by feature vector from the pretrained model to save training time
-            self.scenario_tr = encode_scenario(self.scenario_tr,
-                                               self.model,
-                                               self.batch_size,
-                                               name=os.path.join(self.data_dir, f"encode_{config.dataset}_{config.architecture}"
+
+            inference_fct = (lambda model, x: model.to(torch.device('cuda:0')).feature_extractor(x.to(torch.device('cuda:0'))))
+
+            dataset_name = config.dataset
+            if config.scenario_name == "SpuriousFeatures":
+                dataset_name = f"{config.dataset}Spurious"
+
+            name_tr = os.path.join(self.data_dir, f"encode_{dataset_name}_{config.architecture}"
                                                     f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train.hdf5")
-                                               )
-            self.scenario_te = encode_scenario(self.scenario_te,
-                                               self.model,
-                                               self.batch_size,
-                                               name=os.path.join(self.data_dir, f"encode_{config.dataset}_{config.architecture}"
+            name_te = os.path.join(self.data_dir, f"encode_{dataset_name}_{config.architecture}"
                                                     f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_test.hdf5")
-                                               )
+            if not os.path.exists(name_tr):
+                self.scenario_tr = encode_scenario(self.scenario_tr,
+                                                   self.model,
+                                                   self.batch_size,
+                                                   filename=name_tr,
+                                                   inference_fct=inference_fct
+                                                   )
+            else:
+                self.scenario_tr = ContinualScenario(H5Dataset(None, None, None, name_tr))
+            if not os.path.exists(name_te):
+                self.scenario_te = encode_scenario(self.scenario_te,
+                                                   self.model,
+                                                   self.batch_size,
+                                                   filename=name_te,
+                                                   inference_fct=inference_fct
+                                                   )
+            else:
+                self.scenario_te = ContinualScenario(H5Dataset(None, None, None, name_te))
+
             # self.scenario_tr = encode_scenario(self.data_dir,
             #                                    self.scenario_tr,
             #                                    self.model,
@@ -118,18 +140,22 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-        if self.num_tasks > 1  or self.scenario_name=="SpuriousFeatures":
-            # no need for mixing task in Spurious features and it create problems since there is not the same nb of task
-            # in train and test
-            # random permutation of task order
-            if self.num_tasks > 1:
-                self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
-            if self.scenario_te.nb_tasks > 1: # some test scenario have more task than train scenario
-                test_task_order = self.task_order
-                if self.scenario_name=="SpuriousFeatures":
-                    test_task_order = np.concatenate([self.task_order,np.array([self.scenario_te.nb_tasks-1])])
+        if not self.scenario_name=="SpuriousFeatures":
+            if self.num_tasks > 1  or self.scenario_name=="SpuriousFeatures":
+                # no need for mixing task in Spurious features, it create problems and randomization is already done with seed
+                # random permutation of task order
+                if self.num_tasks > 1:
+                    self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
+                if self.scenario_te.nb_tasks > 1: # some test scenario have more task than train scenario
+                    test_task_order = self.task_order
+                    if self.scenario_name=="SpuriousFeatures":
+                        test_task_order = np.concatenate([self.task_order,np.array([self.scenario_te.nb_tasks-1])])
 
-                self.scenario_te = create_subscenario(self.scenario_te, test_task_order)
+                    self.scenario_te = create_subscenario(self.scenario_te, test_task_order)
+        elif self.scenario_name=="SpuriousFeatures" and not self.data_encoded:
+            # trick to convert transFormScenario into a continual inmemory scenario
+            self.scenario_tr = create_subscenario(self.scenario_tr, np.arange(self.scenario_tr.nb_tasks))
+            self.scenario_te = create_subscenario(self.scenario_te, np.arange(self.scenario_te.nb_tasks))
 
         if not self.data_encoded:
             for ind_task, task_set in enumerate(self.scenario_te):

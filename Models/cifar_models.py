@@ -8,13 +8,13 @@ from Models.Output_Layers.head import NNHead
 
 
 def CIFARModel(num_classes=10, OutLayer="Linear", classes_per_head=None, method="baseline", pretrained_on=None,
-               model_dir=None, finetuning=False):
+               model_dir=None, finetuning=False, dropout=False):
 
     if pretrained_on is not None:
-        model = cifar_resnet20(pretrained=pretrained_on, model_dir=model_dir)
+        model = cifar_resnet20(pretrained=pretrained_on, model_dir=model_dir, dropout=dropout)
         model.num_classes = num_classes  # manual correction
     else:
-        model = cifar_resnet20(num_classes=num_classes)
+        model = cifar_resnet20(num_classes=num_classes, dropout=dropout)
         model.num_classes = num_classes  # manual correction
     latent_dim = model.fc.in_features
 

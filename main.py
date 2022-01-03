@@ -74,6 +74,7 @@ parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
 # FLAGS
+parser.add_argument('--dropout', action='store_true', default=False, help='add dropout to features vector')
 parser.add_argument('--finetuning', action='store_true', default=False,
                     help='decide if we finetune pretrained models')
 parser.add_argument('--OOD_Training', action='store_true', default=False,
