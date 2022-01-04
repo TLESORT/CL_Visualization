@@ -101,16 +101,17 @@ config = parser.parse_args()
 torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
-if config.sweeps_HPs:
-    if config.project_name == "CLOOD":
-        from Reproducibility.SpuriousFeatures.HPs import get_selected_HPs_Spurious
-        config = get_selected_HPs_Spurious(config)
 
 # TODO: remove this once sweeps are done.
 if config.name_algo == "ib-erm":
     config.name_algo = "ib_erm"
 if config.name_algo == "ib-irm":
     config.name_algo = "ib_irm"
+
+if config.sweeps_HPs:
+    if config.project_name == "CLOOD":
+        from Reproducibility.SpuriousFeatures.HPs import get_selected_HPs_Spurious
+        config = get_selected_HPs_Spurious(config)
 
 # cluster sweep
 slurm_tmpdir = os.environ.get('SLURM_TMPDIR')
