@@ -6,6 +6,15 @@ wandb sweep --name baseline_sweep -p CLOOD Configs/config_files.yaml
 ```
 
 
+# Support Experiments
+
+# Spurious Experiments
+
+```
+wandb sweep --name spurious_sweep -p CLOOD Configs/Spurious_exps.yaml 
+```
+
+# Preliminary experiments
 preliminaries_irm ~ 100 runs
 
 ```

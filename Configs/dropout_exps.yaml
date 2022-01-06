@@ -21,7 +21,7 @@ parameters:
   nb_samples_rehearsal_per_class:
     value: 100
   seed:
-    values: [0, 1]
+    values: [0, 1, 2, 3, 4]
 
 command:
   - python

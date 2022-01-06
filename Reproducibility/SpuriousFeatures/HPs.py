@@ -10,6 +10,7 @@ def get_selected_HPs_Spurious(config):
             config.irm_lambda = 10
             config.irm_penalty_anneal_iters = 1
             config.lr = 0.02198
+            config.reset_opt = True
         elif config.name_algo == "ib_irm":
             # https://wandb.ai/tlesort/CLOOD/runs/318ctjmb?workspace=user-tlesort
             config.opt = "Adam"
@@ -18,12 +19,14 @@ def get_selected_HPs_Spurious(config):
             config.ib_lambda = 10
             config.ib_penalty_anneal_iters = 10000
             config.lr = 0.08116
+            config.reset_opt = True
         elif config.name_algo == "ib_erm":
             # https://wandb.ai/tlesort/CLOOD/runs/8bt8b5v6?workspace=user-tlesort
             config.opt = "Adam"
             config.ib_lambda = 10
             config.ib_penalty_anneal_iters = 1
             config.lr = 0.02565
+            config.reset_opt = True
         elif config.name_algo == "rehearsal" or config.name_algo == "baseline":
             # https://wandb.ai/tlesort/CLOOD/runs/k0f6y6h8?workspace=user-tlesort
             config.opt = "Adam"
