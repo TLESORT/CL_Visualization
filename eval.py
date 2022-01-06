@@ -351,6 +351,8 @@ class Continual_Evaluation(abc.ABC):
 
     def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
 
+        assert not np.isnan(loss), print("Loss is NaN, no point to continue training.")
+
         if "MIMO_" in self.OutLayer:
             # the prediction average output
             output = output.mean(1)
