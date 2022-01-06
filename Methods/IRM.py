@@ -100,14 +100,6 @@ class ERM(OOD_Algorithm):
     Empirical Risk Minimization (ERM)  (Somehow Same as Rehearsal Base)
     """
 
-    def __init__(self, config):
-
-        super().__init__(config)
-        # those algorithms are not originally designed for CL then we reset opt for each task
-        self.reset_opt = True
-
-
-
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
 
         if ind_task == 0:
@@ -121,7 +113,7 @@ class ERM(OOD_Algorithm):
 
             loss = self.loss_ood(x_, y_, ind_task)
             loss.backward()
-            # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)  # clip gradient to avoid Nan
             # loss = self.regularize_loss(self.model, loss)
             self.optimizer_step(ind_task)
 
@@ -177,9 +169,7 @@ class IBERM(ERM):
         nll = 0.
         ib_penalty = 0.
 
-        #all_x = torch.cat([x for x, y in minibatches])
         all_features = torch.cat([self.model.feature_extractor(x) for x, y in minibatches])
-        #all_features = self.featurizer(all_x)
         all_logits = self.model.head(all_features)
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
@@ -241,8 +231,6 @@ class IRM(ERM):
 
         nll = 0.
         penalty = 0.
-        # all_x = torch.cat([x for x, y in minibatches])
-        # all_logits = self.model(all_x)
         all_logits = torch.cat([self.model(x) for x, y in minibatches])
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
@@ -299,9 +287,7 @@ class IBIRM(IRM):
         irm_penalty = 0.
         ib_penalty = 0.
 
-        #all_x = torch.cat([x for x, y in minibatches])
         all_features = torch.cat([self.model.feature_extractor(x) for x, y in minibatches])
-        #all_features = self.model.feature_extractor(all_x)
         all_logits = self.model.head(all_features)
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
@@ -349,9 +335,7 @@ class SpectralDecoupling(ERM):
 
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
-        #all_x = torch.cat([x for x, y in minibatches])
         all_y = torch.cat([y for x, y in minibatches])
-        #y_hat = self.classifier(self.featurizer(all_x))
         all_hat_y = torch.cat([self.predict(x) for x, y in minibatches])
         loss = torch.log(1.0 + torch.exp(-all_hat_y[:, 0] * all_y)).mean()
         loss += self.sp_coef * (all_hat_y ** 2).mean()
