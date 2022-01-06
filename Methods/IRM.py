@@ -324,7 +324,7 @@ class SpectralDecoupling(ERM):
 
     def __init__(self, config):
         super().__init__(config)
-        self.sp_coef = 0.003
+        self.sd_reg = config.sd_reg
 
     def init_task(self, ind_task, task_set):
         # reset for new task
@@ -337,17 +337,17 @@ class SpectralDecoupling(ERM):
 
         all_y = torch.cat([y for x, y in minibatches])
         all_hat_y = torch.cat([self.predict(x) for x, y in minibatches])
-        loss = torch.log(1.0 + torch.exp(-all_hat_y[:, 0] * all_y)).mean()
-        loss += self.sp_coef * (all_hat_y ** 2).mean()
-
+        loss = F.cross_entropy(all_hat_y, all_y)
+        penalty = (all_hat_y ** 2).mean()
+        loss = loss + self.sd_reg * penalty
         return loss
 
-    def optimizer_step(self, ind_task):
-        self.opt.step()
-        if self.num_classes == 2:
-            with torch.no_grad():
-                # binary classification vectors are just opposit to each others
-                self.classifier.layer.weight[1,:] = -1 * self.classifier.layer.weight[0,:]
+    # def optimizer_step(self, ind_task):
+    #     self.opt.step()
+    #     if self.num_classes == 2:
+    #         with torch.no_grad():
+    #             # binary classification vectors are just opposit to each others
+    #             self.classifier.layer.weight[1,:] = -1 * self.classifier.layer.weight[0,:]
 
 
 class GroupDRO(ERM):
@@ -406,9 +406,9 @@ class AbstractDANN(OOD_Algorithm):
         # Algorithms
         self.featurizer = self.model.feature_extractor
         self.classifier = self.model.head
-        self.discriminator = networks.MLP(self.featurizer.n_outputs,
-            num_domains, self.hparams)
-        self.class_embeddings = nn.Embedding(num_classes,
+        self.discriminator = MLP(self.featurizer.n_outputs,
+            self.num_tasks, config)
+        self.class_embeddings = nn.Embedding(self.num_tasks,
             self.featurizer.n_outputs)
 
         # Optimizers

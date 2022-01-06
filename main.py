@@ -57,6 +57,7 @@ parser.add_argument('--ib_penalty_anneal_iters', default=500, type=float, help='
 parser.add_argument('--irm_lambda', default=0.1, type=float, help='irm_lambda')
 parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda')
 parser.add_argument('--groupdro_eta', default=1e-2, type=float, help='_hparam(\'groupdro_eta\', 1e-2, lambda r: 10**r.uniform(-3, -1))')
+parser.add_argument('--sd_reg', default=0.1, type=float, help='0.1, lambda r: 10**r.uniform(-5, -1)')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
 parser.add_argument('--normalize', action="store_true", help="normalize the loss of irm / vrex")
