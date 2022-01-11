@@ -15,8 +15,8 @@ parser = argparse.ArgumentParser()
 
 # Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
-                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd', 'erm',
-                             'ib_erm', 'ib-erm', 'irm', 'ib_irm', 'ib-irm', 'SpectralDecoupling', 'GroupDRO'],
+                    choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd',
+                             'erm', 'irm', 'ib_irm', 'ib-irm', 'SpectralDecoupling', 'GroupDRO', 'groupDRO'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
@@ -108,6 +108,8 @@ if config.name_algo == "ib-erm":
     config.name_algo = "ib_erm"
 if config.name_algo == "ib-irm":
     config.name_algo = "ib_irm"
+if config.name_algo == "groupDRO":
+    config.name_algo = "GroupDRO"
 
 if config.sweeps_HPs:
     if config.project_name == "CLOOD":
