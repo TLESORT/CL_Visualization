@@ -235,7 +235,8 @@ if not (config.dev or config.offline):
             print(f"Retrying {i}")
             time.sleep(10)
 
-    wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
+    if config.masked_out is not None:
+        wandb.config.update({"OutLayer": name_out}, allow_val_change=True)
 
 
 if config.name_algo == "baseline":
