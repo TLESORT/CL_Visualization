@@ -86,8 +86,8 @@ class CifarResNet(nn.Module):
         self.num_classes = num_classes
         self.data_encoded = False
         self.dropout = dropout
-        if self.dropout:
-            self.dropout_layer = nn.Dropout(p=0.5)
+        if self.dropout is not None:
+            self.dropout_layer = nn.Dropout(p=self.dropout)
 
         self.layer1 = self._make_layer(block, 16, layers[0])
         self.layer2 = self._make_layer(block, 32, layers[1], stride=2)
@@ -145,7 +145,7 @@ class CifarResNet(nn.Module):
         if not self.data_encoded:
             x = x.view(-1, self.input_dim, self.image_size, self.image_size)
             x = self.feature_extractor(x)
-        if self.dropout:
+        if self.dropout is not None:
             x = self.dropout_layer(x)
         x = self.head.forward_task(x, task_ids)
         return x
@@ -156,7 +156,7 @@ class CifarResNet(nn.Module):
             x = self.feature_extractor(x)
         x = x.view(x.size(0), -1)
         x = self.head(x)
-        if self.dropout:
+        if self.dropout is not None:
             x = self.dropout_layer(x)
         assert x.shape[-1] == self.num_classes, print(f"{x.shape[-1]} vs {self.num_classes}")
 
@@ -177,7 +177,7 @@ class CifarResNet(nn.Module):
         return self.head.get_loss(out, labels, loss_func, masked)
 
 
-def cifar_resnet20(pretrained=None, model_dir=None, dropout=False, **kwargs):
+def cifar_resnet20(pretrained=None, model_dir=None, dropout=None, **kwargs):
     if pretrained is None:
         model = CifarResNet(BasicBlock, [3, 3, 3], dropout=dropout, **kwargs)
     else:
