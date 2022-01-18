@@ -22,12 +22,13 @@ parameters:
     value: 100
   seed:
     values: [0, 1, 2, 3, 4]
+  dropout:
+    values: [0.25, 0.50, 0.75]
 
 command:
   - python
   - ${program}
   - "--sweep"
   - "--fast"
-  - "--dropout"
   - "--sweeps_HPs"
   - ${args}

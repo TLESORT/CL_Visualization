@@ -2,7 +2,7 @@ program: main.py
 method: grid
 metric:
   goal: maximize
-  name: test accuracy task 5
+  name: test accuracy task 10
 parameters:
   dataset:
     value: "CIFAR10"
@@ -13,13 +13,13 @@ parameters:
   nb_epochs:
     value: 25
   name_algo:
-    values: ["baseline", "rehearsal", "irm", "ib_irm", "ib_erm"]
+    values: ["GroupDRO", "SpectralDecoupling","baseline", "rehearsal", "irm", "ib_irm", "ib_erm"]
   spurious_corr:
     values: [0.25, 0.5, 0.75, 1.0]
   nb_samples_rehearsal_per_class:
     value: 100
   seed:
-    values: [0, 1]
+    values: [0, 1, 2, 3, 4]
 
 command:
   - python
