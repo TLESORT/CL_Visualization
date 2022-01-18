@@ -74,7 +74,7 @@ def get_scenario(dataset, scenario_name, nb_tasks, increments=[0], transform=Non
     elif scenario_name == "SpuriousFeatures":
         from scenario.spurious_features import SpuriousFeatures
         scenario = SpuriousFeatures(dataset, nb_tasks=nb_tasks, base_transformations=transform,
-                                    correlation=config.spurious_corr, train=dataset.train)
+                                    correlation=config.spurious_corr, train=dataset.train, support=config.support)
 
     return scenario
 
@@ -169,7 +169,7 @@ def get_transform(name_dataset, architecture, train="True"):
 
 
 def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, method, model_dir=None,
-              architecture="resnet", dropout=False):
+              architecture="resnet", dropout=None):
     if test_label:
         # there are no test label for domain incremental since the classes should be always the same
         # assert name_dataset == "Disjoint"

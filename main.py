@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 # Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd',
-                             'erm', 'irm', 'ib_irm', 'ib-irm', 'SpectralDecoupling', 'GroupDRO', 'groupDRO'],
+                             'erm', 'irm', 'ib_irm', 'ib-irm', 'SpectralDecoupling', 'GroupDRO'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
@@ -59,6 +59,7 @@ parser.add_argument('--ib_lambda', default=0.0, type=float, help='ib_lambda')
 parser.add_argument('--groupdro_eta', default=1e-2, type=float, help='_hparam(\'groupdro_eta\', 1e-2, lambda r: 10**r.uniform(-3, -1))')
 parser.add_argument('--sd_reg', default=0.1, type=float, help='0.1, lambda r: 10**r.uniform(-5, -1)')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+parser.add_argument('--dropout', default=None, type=float, help='dropout between feature and head')
 parser.add_argument('--importance', default=1.0, type=float, help='Importance of penalty')
 parser.add_argument('--normalize', action="store_true", help="normalize the loss of irm / vrex")
 parser.add_argument('--nb_epochs', default=5, type=int,
@@ -75,7 +76,6 @@ parser.add_argument('--seed', default="1664", type=int,
                     help='seed for number generator')
 
 # FLAGS
-parser.add_argument('--dropout', action='store_true', default=False, help='add dropout to features vector')
 parser.add_argument('--finetuning', action='store_true', default=False,
                     help='decide if we finetune pretrained models')
 parser.add_argument('--OOD_Training', action='store_true', default=False,

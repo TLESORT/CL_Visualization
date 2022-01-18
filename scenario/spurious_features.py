@@ -139,9 +139,9 @@ class SpuriousFeatures(InstanceIncremental):
         If we decide to use a support of 0.5 we select data from only half of the original classes.
         """
         np.random.seed(self.seed + ind_task)
-        rand_class_order = np.random.permutation(self.nb_classes)
+        rand_class_order = np.random.permutation(self.initial_nb_classes)
 
-        nb_classes = int(np.ceil(self.nb_classes * self.support / 2))
+        nb_classes = int(np.ceil(self.initial_nb_classes * self.support / 2))
 
         # select nb_classes for both labels
         selected_classes_0 = rand_class_order[np.where(self.class_remapping(rand_class_order) == 0)[0][:nb_classes]]
@@ -154,9 +154,11 @@ class SpuriousFeatures(InstanceIncremental):
         y_indexes = np.concatenate([np.where(y==value)[0] for value in selected_classes])
         # reoder everything
         y_indexes.sort()
-
-
-        return x[y_indexes], y[y_indexes], t[y_indexes]
+        x = x[y_indexes]
+        y = y[y_indexes]
+        if t is not None:
+            t = t[y_indexes]
+        return x, y, t
 
 
 
@@ -184,7 +186,6 @@ class SpuriousFeatures(InstanceIncremental):
 
 
         x, y, t = self.dataset
-
 
         if self.support != 1.0:
             x, y, t = self.select_support(x, y, t, task_index)
