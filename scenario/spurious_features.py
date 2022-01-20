@@ -160,9 +160,6 @@ class SpuriousFeatures(InstanceIncremental):
             t = t[y_indexes]
         return x, y, t
 
-
-
-
     def _select_data_by_task(
             self,
             task_index: int
@@ -187,8 +184,11 @@ class SpuriousFeatures(InstanceIncremental):
 
         x, y, t = self.dataset
 
-        if self.support != 1.0:
-            x, y, t = self.select_support(x, y, t, task_index)
+        # no selection if support is one
+        if (self.support != 1.0):
+            # no support selection if we are at the last test task
+            if not ((not self.train) and (task_index == self.nb_tasks-1)):
+                x, y, t = self.select_support(x, y, t, task_index)
 
         y = self.class_remapping(y)
         x = self._data_transformation(x, y, task_index)
