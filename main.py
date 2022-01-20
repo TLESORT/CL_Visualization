@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 # Algorithms Parameters
 parser.add_argument('--name_algo', type=str,
                     choices=['baseline', 'rehearsal', 'ewc_diag', "ewc_diag_id", "ewc_kfac_id", 'ewc_kfac', 'ogd',
-                             'erm', 'irm', 'ib_irm', 'ib-irm', 'SpectralDecoupling', 'GroupDRO'],
+                             'erm', 'irm', 'ib_irm', 'ib_erm', 'SpectralDecoupling', 'GroupDRO'],
                     default='baseline', help='Approach type')
 parser.add_argument('--scenario_name', type=str, choices=['Disjoint', 'Rotations', 'Domain', 'SpuriousFeatures'], default="Disjoint", help='continual scenario')
 parser.add_argument('--OutLayer', default="Linear", type=str,
