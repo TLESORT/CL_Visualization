@@ -10,6 +10,7 @@ from copy import copy
 from continuum.tasks.task_set import TaskSet
 from continuum.tasks.base import TaskType
 from memory import MemorySet
+from Sampling.sampling import sampling
 
 from Methods.trainer import Trainer
 
@@ -19,6 +20,7 @@ class Rehearsal(Trainer):
         self.name_algo = "rehearsal"
         self.data_memory = None
         self.nb_samples_rehearsal_per_class = config.nb_samples_rehearsal_per_class
+        self.sampling_strat = "rand"
 
     def sample_task(self, task_set):
         """
@@ -30,7 +32,12 @@ class Rehearsal(Trainer):
         assert self.nb_samples_rehearsal_per_class * nb_classes < len(task_set._y), \
             f"{self.nb_samples_rehearsal_per_class} x {nb_classes} =" \
             f" {self.nb_samples_rehearsal_per_class * nb_classes} vs {len(task_set._y)} "
-        indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
+
+        indexes = sampling(dataset=task_set,
+                           nb_samples=self.nb_samples_rehearsal_per_class * nb_classes,
+                           method=self.sampling_strat)
+
+
 
         if task_set.data_type == TaskType.H5:
             unique_indexes, inverse_ids = np.unique(indexes, return_inverse=True)
