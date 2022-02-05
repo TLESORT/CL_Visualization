@@ -42,6 +42,7 @@ class Trainer(Continual_Evaluation):
         self.batch_size = config.batch_size
         self.test_label = config.test_label
         self.masked_out = config.masked_out
+        self.keep_task_order = config.keep_task_order
 
         self.num_tasks = config.num_tasks
         self.increments = config.increments
@@ -110,22 +111,23 @@ class Trainer(Continual_Evaluation):
             assert self.scenario_tr.nb_tasks == self.num_tasks, \
                 print(f"{self.scenario_tr.nb_tasks} vs {self.num_tasks}")
 
-        if not self.scenario_name=="SpuriousFeatures":
-            if self.num_tasks > 1  or self.scenario_name=="SpuriousFeatures":
-                # no need for mixing task in Spurious features, it create problems and randomization is already done with seed
-                # random permutation of task order
-                if self.num_tasks > 1:
-                    self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
-                if self.scenario_te.nb_tasks > 1: # some test scenario have more task than train scenario
-                    test_task_order = self.task_order
-                    if self.scenario_name=="SpuriousFeatures":
-                        test_task_order = np.concatenate([self.task_order,np.array([self.scenario_te.nb_tasks-1])])
+        if not self.keep_task_order:
+            if not self.scenario_name=="SpuriousFeatures":
+                if self.num_tasks > 1  or self.scenario_name=="SpuriousFeatures":
+                    # no need for mixing task in Spurious features, it create problems and randomization is already done with seed
+                    # random permutation of task order
+                    if self.num_tasks > 1:
+                        self.scenario_tr = create_subscenario(self.scenario_tr, self.task_order)
+                    if self.scenario_te.nb_tasks > 1: # some test scenario have more task than train scenario
+                        test_task_order = self.task_order
+                        if self.scenario_name=="SpuriousFeatures":
+                            test_task_order = np.concatenate([self.task_order,np.array([self.scenario_te.nb_tasks-1])])
 
-                    self.scenario_te = create_subscenario(self.scenario_te, test_task_order)
-        elif self.scenario_name=="SpuriousFeatures" and not self.data_encoded:
-            # trick to convert transFormScenario into a continual inmemory scenario
-            self.scenario_tr = create_subscenario(self.scenario_tr, np.arange(self.scenario_tr.nb_tasks))
-            self.scenario_te = create_subscenario(self.scenario_te, np.arange(self.scenario_te.nb_tasks))
+                        self.scenario_te = create_subscenario(self.scenario_te, test_task_order)
+            elif self.scenario_name=="SpuriousFeatures" and not self.data_encoded:
+                # trick to convert transFormScenario into a continual inmemory scenario
+                self.scenario_tr = create_subscenario(self.scenario_tr, np.arange(self.scenario_tr.nb_tasks))
+                self.scenario_te = create_subscenario(self.scenario_te, np.arange(self.scenario_te.nb_tasks))
 
         if not self.data_encoded:
             for ind_task, task_set in enumerate(self.scenario_te):
