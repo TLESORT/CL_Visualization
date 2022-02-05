@@ -1,0 +1,28 @@
+program: main.py
+method: grid
+metric:
+  goal: maximize
+  name: test accuracy
+parameters:
+  dataset:
+    value: "CIFAR10"
+  scenario_name:
+    value: "Disjoint"
+  num_tasks:
+    value: 5
+  nb_epochs:
+    value: 25
+  name_algo:
+    value: "baseline"
+  seed:
+    values: [0,1,2,3,4]
+
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--lr=0.1"
+  - "--fast"
+  - "--test_label"
+  - "--masked_out multi-head"
+  - ${args}
