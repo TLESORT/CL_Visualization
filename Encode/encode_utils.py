@@ -2,10 +2,32 @@ import os
 import pickle
 import numpy as np
 import torch
+import h5py
 from torch.utils.data import DataLoader
 from continuum.datasets import InMemoryDataset
 from continuum.scenarios import ContinualScenario
 from continuum.tasks import TaskType
+from continuum.scenarios import encode_scenario
+
+def scenario_encoder(scenario, model, batch_size, name, force_encode=False):
+    inference_fct = (lambda model, x: model.to(torch.device('cuda:0')).feature_extractor(x.to(torch.device('cuda:0'))))
+
+    if not os.path.exists(name):
+        encode_scenario(scenario,
+                        model,
+                        batch_size,
+                        filename=name,
+                        inference_fct=inference_fct
+                        )
+    # Dataset = H5Dataset(None, None, None, name_tr)
+    with h5py.File(name, 'r') as hf:
+        x = hf['x'][:]
+        y = hf['y'][:]
+        t = hf['t'][:]
+    MemoryDataset_tr = InMemoryDataset(x, y, t, data_type=TaskType.TENSOR)
+    return ContinualScenario(MemoryDataset_tr)
+
+
 
 def encode(model, scenario, batch_size, dataset, train):
 
@@ -57,7 +79,7 @@ def save_encoded_data(file_name, encoded_data):
     with open(file_name, 'wb') as f:
         pickle.dump(encoded_data, f, pickle.HIGHEST_PROTOCOL)
 
-def encode_scenario(data_dir, scenario, model, batch_size, name, force_encode=False, save=True, train=True, dataset=None):
+def encode_scenario_old(data_dir, scenario, model, batch_size, name, force_encode=False, save=True, train=True, dataset=None):
 
     data_path = os.path.join(data_dir, f"{name}.pkl")
     if os.path.isfile(data_path) and not force_encode:

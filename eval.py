@@ -34,6 +34,7 @@ class Continual_Evaluation(abc.ABC):
         self.vector_task_labels_epoch_tr = np.zeros(0)
 
         self.vector_predictions_epoch_te = np.zeros(0)
+        self.vector_unmasked_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
         self.vector_task_labels_epoch_te = np.zeros(0)
 
@@ -99,10 +100,11 @@ class Continual_Evaluation(abc.ABC):
         if ind_task == 0 and self.name_algo != "ogd":
             # we will save the state of the training to save time for other experiments
 
-            torch.save(self.model.state_dict(), os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth"))
-            # log optimizer if one
-            if self.opt is not None:
-                torch.save(self.opt.state_dict(), os.path.join(self.log_dir, f"Opt_Task_{ind_task}.pth"))
+            if not self.fast:
+                torch.save(self.model.state_dict(), os.path.join(self.log_dir, f"Model_Task_{ind_task}.pth"))
+                # log optimizer if one
+                if self.opt is not None:
+                    torch.save(self.opt.state_dict(), os.path.join(self.log_dir, f"Opt_Task_{ind_task}.pth"))
 
             # save log from first tasks
             self.post_training_log(ind_task)
@@ -159,6 +161,7 @@ class Continual_Evaluation(abc.ABC):
         else:
             vector_label = self.vector_labels_epoch_te
             vector_preds = self.vector_predictions_epoch_te
+            unmasked_vector_preds = self.vector_unmasked_predictions_epoch_te
 
         classes_correctly_predicted = np.zeros(nb_classes)
         classes_wrongly_predicted = np.zeros(nb_classes)
@@ -188,11 +191,18 @@ class Continual_Evaluation(abc.ABC):
         assert self.vector_predictions_epoch_te.shape[0] == self.vector_labels_epoch_te.shape[0]
         correct_tr = (self.vector_predictions_epoch_tr == self.vector_labels_epoch_tr).sum()
         correct_te = (self.vector_predictions_epoch_te == self.vector_labels_epoch_te).sum()
+        unmasked_correct_te=None
+        if len(self.vector_unmasked_predictions_epoch_te)>0:
+            unmasked_correct_te = (self.vector_unmasked_predictions_epoch_te == self.vector_labels_epoch_te).sum()
         nb_instances_tr = self.vector_labels_epoch_tr.shape[0]
         nb_instances_te = self.vector_labels_epoch_te.shape[0]
 
         accuracy_tr = (1.0 * correct_tr) / nb_instances_tr
         accuracy_te = (1.0 * correct_te) / nb_instances_te
+        if unmasked_correct_te is not None:
+            unmasked_accuracy_te = (1.0 * unmasked_correct_te) / nb_instances_te
+        else:
+            unmasked_accuracy_te=None
 
         if not (self.dev or self.offline):
 
@@ -214,14 +224,24 @@ class Continual_Evaluation(abc.ABC):
                     vector_labels_epoch_te_task = self.vector_labels_epoch_te[indexes]
                     vector_predictions_epoch_te_task = self.vector_predictions_epoch_te[indexes]
                     correct_te_task = (vector_predictions_epoch_te_task == vector_labels_epoch_te_task).sum()
+                    unmasked_correct_te_task = None
+                    if len(self.vector_unmasked_predictions_epoch_te)>0:
+                        vector_unmasked_predictions_epoch_te_task = self.vector_unmasked_predictions_epoch_te[indexes]
+                        unmasked_correct_te_task = (vector_unmasked_predictions_epoch_te_task == vector_labels_epoch_te_task).sum()
+                        unmasked_accuracy_te_task = (1.0 * unmasked_correct_te_task) / len(indexes)
                     assert len(indexes) == vector_labels_epoch_te_task.shape[0], \
                         print(f'{len(indexes)} vs {vector_labels_epoch_te_task.shape[0]}')
                     accuracy_te_task = (1.0 * correct_te_task) / len(indexes)
 
                     print(f'test accuracy task {list_tasks[i]}: {accuracy_te_task}, epoch - {self.nb_tot_epoch},task {ind_task}')
 
-                    wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
-                               'task': ind_task})
+                    if unmasked_correct_te_task is None:
+                        wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
+                                   'task': ind_task})
+                    else:
+                        wandb.log({f'test accuracy task {list_tasks[i]}': accuracy_te_task, 'epoch': self.nb_tot_epoch,
+                                   'task': ind_task, f'unmasked test accuracy task {list_tasks[i]}': unmasked_accuracy_te_task})
+
 
             if accuracy_tr > self.best_train_acc:
                 self.best_train_acc = accuracy_tr
@@ -229,11 +249,18 @@ class Continual_Evaluation(abc.ABC):
             if accuracy_te > self.best_eval_acc:
                 self.best_eval_acc = accuracy_te
                 self.best_eval_epoch = epoch
+            if unmasked_correct_te_task is None:
+                wandb.log({'train accuracy': accuracy_tr,
+                           'test accuracy': accuracy_te,
+                           'epoch': self.nb_tot_epoch,
+                           'task': ind_task})
+            else:
+                wandb.log({'train accuracy': accuracy_tr,
+                           'test accuracy': accuracy_te,
+                           'unmasked test accuracy': unmasked_accuracy_te,
+                           'epoch': self.nb_tot_epoch,
+                           'task': ind_task})
 
-            wandb.log({'train accuracy': accuracy_tr,
-                       'test accuracy': accuracy_te,
-                       'epoch': self.nb_tot_epoch,
-                       'task': ind_task})
 
         if self.proj_drift_eval and (self.pretrained_on is not None) and self.finetuning:
 
@@ -323,6 +350,7 @@ class Continual_Evaluation(abc.ABC):
         self.vector_labels_epoch_tr = np.zeros(0)
         self.vector_task_labels_epoch_tr = np.zeros(0)
         self.vector_predictions_epoch_te = np.zeros(0)
+        self.vector_unmasked_predictions_epoch_te = np.zeros(0)
         self.vector_labels_epoch_te = np.zeros(0)
         self.vector_task_labels_epoch_te = np.zeros(0)
 
@@ -349,8 +377,8 @@ class Continual_Evaluation(abc.ABC):
 
         return np.array(list_preds)
 
-    def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True):
-
+    def log_iter(self, ind_task, model, loss, output, labels, task_labels, train=True, output_unmasked=None):
+        unmasked_predictions = None # this variable is here to estimate how much we loose by getting back to singleH
         assert not np.isnan(loss.item()), print("Loss is NaN, no point to continue training.")
 
         if "MIMO_" in self.OutLayer:
@@ -361,6 +389,8 @@ class Continual_Evaluation(abc.ABC):
             predictions = np.array(output.max(dim=1)[1].cpu())
         else:
             predictions = self._multihead_predictions(output, labels, task_labels)
+            if output_unmasked is not None:
+                unmasked_predictions = np.array(output_unmasked.max(dim=1)[1].cpu())
 
         if not (self.dev or self.offline):
             if train:
@@ -401,6 +431,10 @@ class Continual_Evaluation(abc.ABC):
         else:
             ## / ! \ we do not log loss for test, maybe one day....
             self.vector_predictions_epoch_te = np.concatenate([self.vector_predictions_epoch_te, predictions])
+            if output_unmasked is not None:
+                self.vector_unmasked_predictions_epoch_te = np.concatenate([
+                    self.vector_unmasked_predictions_epoch_te,
+                    unmasked_predictions])
             self.vector_labels_epoch_te = np.concatenate([self.vector_labels_epoch_te, labels.cpu().numpy()])
             self.vector_task_labels_epoch_te = np.concatenate([self.vector_task_labels_epoch_te, task_labels])
 

@@ -9,13 +9,15 @@ from torch.utils.data import DataLoader
 import torch.nn.functional as F
 import os
 
+
 from continuum.tasks import TaskSet, TaskType
 from continuum.scenarios import create_subscenario
 
 from utils import get_dataset, get_model, get_scenario, get_transform, get_optim
-#from Encode.encode_utils import encode_scenario
-from continuum.datasets import H5Dataset
-from continuum.scenarios import encode_scenario, ContinualScenario
+from Encode.encode_utils import scenario_encoder
+
+from continuum.datasets import H5Dataset, InMemoryDataset
+from continuum.scenarios import ContinualScenario
 
 import numpy as np
 
@@ -87,7 +89,6 @@ class Trainer(Continual_Evaluation):
         if (self.pretrained_on is not None) and not self.finetuning:
             # we replace the scenario data by feature vector from the pretrained model to save training time
 
-            inference_fct = (lambda model, x: model.to(torch.device('cuda:0')).feature_extractor(x.to(torch.device('cuda:0'))))
 
             dataset_name = config.dataset
             if config.scenario_name == "SpuriousFeatures":
@@ -97,41 +98,10 @@ class Trainer(Continual_Evaluation):
                                                     f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train.hdf5")
             name_te = os.path.join(self.data_dir, f"encode_{dataset_name}_{config.architecture}"
                                                     f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_test.hdf5")
-            if not os.path.exists(name_tr):
-                self.scenario_tr = encode_scenario(self.scenario_tr,
-                                                   self.model,
-                                                   self.batch_size,
-                                                   filename=name_tr,
-                                                   inference_fct=inference_fct
-                                                   )
-            else:
-                self.scenario_tr = ContinualScenario(H5Dataset(None, None, None, name_tr))
-            if not os.path.exists(name_te):
-                self.scenario_te = encode_scenario(self.scenario_te,
-                                                   self.model,
-                                                   self.batch_size,
-                                                   filename=name_te,
-                                                   inference_fct=inference_fct
-                                                   )
-            else:
-                self.scenario_te = ContinualScenario(H5Dataset(None, None, None, name_te))
 
-            # self.scenario_tr = encode_scenario(self.data_dir,
-            #                                    self.scenario_tr,
-            #                                    self.model,
-            #                                    self.batch_size,
-            #                                    name=f"encode_{config.dataset}_{config.architecture}"
-            #                                         f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train",
-            #                                    train=True,
-            #                                    dataset=self.dataset)
-            # self.scenario_te = encode_scenario(self.data_dir,
-            #                                    self.scenario_te,
-            #                                    self.model,
-            #                                    self.batch_size,
-            #                                    name=f"encode_{config.dataset}_{config.architecture}"
-            #                                         f"_{config.pretrained_on}_{self.scenario_te.nb_tasks}_test",
-            #                                    train=False,
-            #                                    dataset=self.dataset)
+            self.scenario_tr = scenario_encoder(self.scenario_tr, self.model, self.batch_size, name_tr)
+            self.scenario_te  = scenario_encoder(self.scenario_te, self.model, self.batch_size, name_te)
+
             self.data_encoded = True
             self.model.set_data_encoded(flag=True)
             self.transform_train = None
@@ -200,6 +170,8 @@ class Trainer(Continual_Evaluation):
 
         print("Size Taskset")
         print(len(task_set))
+        # print(self.model.head.layer.weight.shape)
+        # print(self.model.head.layer.weight[0])
 
         data_loader_tr = DataLoader(task_set,
                                     batch_size=self.batch_size,
@@ -232,15 +204,13 @@ class Trainer(Continual_Evaluation):
             self.model.update_head(epoch)
 
     def test(self, ind_task_log, data_loader=None, train=False, nb_embedding=200):
-
-
         if data_loader is None:
             data_loader = self.eval_te_loader
 
         np_embedding = np.zeros((0, self.model.features_size))
         np_classes = np.zeros(0)
         np_task_ids = np.zeros(0)
-
+        output_unmasked = None
         for i_, (x_, y_, t_) in enumerate(data_loader):
 
             # data does not fit to the model if size<=1
@@ -262,13 +232,13 @@ class Trainer(Continual_Evaluation):
                 np_task_ids = np.concatenate([np_task_ids,np.array(t_.clone().cpu())], axis=0)
 
             if self.test_label:
-                output = self.model.head.forward_task(features, t_.long())
+                output, output_unmasked = self.model.head.forward_task(features, t_.long())
             else:
                 output = self.model.get_last_layer()(features)
 
             loss = self.model.get_loss(output, y_, loss_func=F.cross_entropy)
 
-            self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train)
+            self.log_iter(ind_task_log, self.model, loss, output, y_, t_, train=train, output_unmasked=output_unmasked)
 
         if self.proj_drift_eval and (not train):
             np.random.seed(self.seed)
@@ -282,7 +252,7 @@ class Trainer(Continual_Evaluation):
     def head_without_grad(self, x_, y_, t_, ind_task, epoch):
 
         if self.test_label:
-            output = self.model.forward_task(x_, t_)
+            output, output_unmasked  = self.model.forward_task(x_, t_)
         else:
             output = self.model(x_)
 
@@ -290,7 +260,6 @@ class Trainer(Continual_Evaluation):
                                    y_,
                                    loss_func=F.cross_entropy,
                                    masked=self.masked_out
-                                   # we apply mask from task 1 because before there is no risk of forgetting
                                    )
 
         self.model.accumulate(x_, y_, epoch)
@@ -299,7 +268,7 @@ class Trainer(Continual_Evaluation):
     def head_with_grad(self, x_, y_, t_, ind_task, epoch):
         self.opt.zero_grad()
         if self.test_label:
-            output = self.model.forward_task(x_, t_.long())
+            output, _ = self.model.forward_task(x_, t_.long())
         else:
             output = self.model(x_)
 
@@ -322,12 +291,13 @@ class Trainer(Continual_Evaluation):
             if self.verbose: print(f"Epoch : {epoch}")
             self.model.train()
             if (self.subset is not None) and not (self.OutLayer in self.non_differential_heads):
-                # we artificially augment the number of itereation for convergence purposes
+                # we artificially augment the number of iteration for convergence purposes
                 nb_run = int(50000 / self.subset)
             else:
                 nb_run = 1
             for _ in range(nb_run):
                 for i_, (x_, y_, t_) in enumerate(data_loader):
+
                     # data does not fit to the model if size<=1
                     if x_.size(0) <= 1:
                         continue
@@ -361,6 +331,7 @@ class Trainer(Continual_Evaluation):
 
         for task_id, task_set in enumerate(self.scenario_tr):
             print(f"Task {task_id}: Start")
+            print(f"Classes : {task_set.get_classes()}")
 
             if self.verbose: print("init_task")
             data_loader = self.init_task(task_id, task_set)

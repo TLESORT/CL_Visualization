@@ -15,6 +15,7 @@ class NNHead(nn.Module):
         self.multi_heads = False
 
         if not (classes_per_tasks is None):
+
             assert len(np.unique(classes_per_tasks))==self.num_classes
 
             self.num_head=len(classes_per_tasks)
@@ -52,9 +53,13 @@ class NNHead(nn.Module):
 
         # we recreate a prediction tensor of size [batch_size, self.global_num_classes]
         # we do so to get outputs of always same shape, the zeros should not interfere with prediction
-        out = torch.mul(self.forward(x), self.heads_mask[task_ids])
-        out[out == 0] = -1e10 # very low prob for other outputs head
-        return out
+        out = self.forward(x)
+        out_masked = torch.mul(out, self.heads_mask[task_ids])
+        out_masked[out_masked == 0] = -1e30 # very low prob for other outputs head
+
+        out_masked.register_hook(lambda grad: torch.mul(grad, self.heads_mask[task_ids]))
+
+        return out_masked, out
 
 
     def forward(self, x):
@@ -90,8 +95,9 @@ class NNHead(nn.Module):
                 ind_mask = self.classes_mask[label_unique].sum(0)
                 full_mask = ind_mask.unsqueeze(0).repeat(out.shape[0], 1)
                 out = torch.mul(out, full_mask)
-                out[out==0] = -1e10
+                out[out==0] = -1e30
 
 
             loss = loss_func(out, labels)
+        assert loss == loss, print("There should be some Nan")
         return loss
