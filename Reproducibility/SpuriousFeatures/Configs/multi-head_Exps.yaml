@@ -13,7 +13,7 @@ parameters:
   nb_epochs:
     value: 25
   OutLayer:
-    value: ["MeanLayer", "WeightNorm"]
+    values: ["MeanLayer", "WeightNorm"]
   name_algo:
     value: "baseline"
   masked_out:
