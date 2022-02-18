@@ -31,4 +31,5 @@ command:
   - "--fast"
   - "--test_label"
   - "--reset_opt"
+  - "--keep_task_order"
   - ${args}
