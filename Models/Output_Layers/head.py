@@ -57,7 +57,7 @@ class NNHead(nn.Module):
         out_masked = torch.mul(out, self.heads_mask[task_ids])
         out_masked[out_masked == 0] = -1e30 # very low prob for other outputs head
 
-        out_masked.register_hook(lambda grad: torch.mul(grad, self.heads_mask[task_ids]))
+        out_masked.register_hook(lambda grad: torch.mul(grad, self.heads_mask[task_ids.long()]))
 
         return out_masked, out
 
