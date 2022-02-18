@@ -54,10 +54,11 @@ class NNHead(nn.Module):
         # we recreate a prediction tensor of size [batch_size, self.global_num_classes]
         # we do so to get outputs of always same shape, the zeros should not interfere with prediction
         out = self.forward(x)
-        out_masked = torch.mul(out, self.heads_mask[task_ids])
+        out_masked = torch.mul(out, self.heads_mask[task_ids.long()])
         out_masked[out_masked == 0] = -1e30 # very low prob for other outputs head
 
-        out_masked.register_hook(lambda grad: torch.mul(grad, self.heads_mask[task_ids.long()]))
+        if not (self.LayerType in ["MeanLayer", "MedianLayer", "SLDA"]):
+            out_masked.register_hook(lambda grad: torch.mul(grad, self.heads_mask[task_ids.long()]))
 
         return out_masked, out
 

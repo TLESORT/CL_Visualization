@@ -12,6 +12,8 @@ parameters:
     value: 5
   nb_epochs:
     value: 25
+  OutLayer:
+    value: ["MeanLayer", "WeightNorm"]
   name_algo:
     value: "baseline"
   masked_out:
@@ -29,5 +31,4 @@ command:
   - "--fast"
   - "--test_label"
   - "--reset_opt"
-  - "--keep_task_order"
   - ${args}
