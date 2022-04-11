@@ -115,7 +115,7 @@ if config.dataset in ["OxfordPet", "OxfordFlower102"] and config.scenario_name==
     elif config.dataset == "OxfordFlower102":
         nb_classes = 102
     class_per_task = nb_classes // config.num_tasks
-    remaining = nb_classes % class_per_task
+    remaining = nb_classes % config.num_tasks
     config.increments = [class_per_task] * (config.num_tasks-1) + [class_per_task+remaining]
     print(config.increments)
 
