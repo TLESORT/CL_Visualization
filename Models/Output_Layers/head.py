@@ -15,8 +15,7 @@ class NNHead(nn.Module):
         self.multi_heads = False
 
         if not (classes_per_tasks is None):
-
-            assert len(np.unique(classes_per_tasks))==self.num_classes
+            assert len(np.unique(np.concatenate(classes_per_tasks)))==self.num_classes
 
             self.num_head=len(classes_per_tasks)
 
