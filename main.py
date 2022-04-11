@@ -33,7 +33,7 @@ parser.add_argument('--architecture', default="resnet", type=str,
 # Logs / Data / Paths
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
+                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong',"OxfordPet", "OxfordFlower102"], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
@@ -108,6 +108,16 @@ if config.name_algo == "ib-irm":
     config.name_algo = "ib_irm"
 if config.name_algo == "groupDRO":
     config.name_algo = "GroupDRO"
+
+if config.dataset in ["OxfordPet", "OxfordFlower102"] and config.scenario_name=="Disjoint" and config.increments[0]==0:
+    if config.dataset == "OxfordPet":
+        nb_classes = 37
+    elif config.dataset == "OxfordFlower102":
+        nb_classes = 102
+    class_per_task = nb_classes // config.num_tasks
+    remaining = nb_classes % class_per_task
+    config.increments = [class_per_task] * (config.num_tasks-1) + [class_per_task+remaining]
+    print(config.increments)
 
 if config.sweeps_HPs:
     if config.project_name == "CLOOD":
