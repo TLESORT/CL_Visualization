@@ -3,7 +3,8 @@
 
 def get_selected_HPs_Spurious(config):
     """"This function gives HPs selected through baseline sweeps for final experiments."""
-    if config.dataset == "CIFAR10" and config.scenario_name == "SpuriousFeatures":
+    if (config.dataset == "CIFAR10" and config.scenario_name == "SpuriousFeatures") or  \
+            config.dataset in ["VLCS", "TerraIncognita"]:
         reset_opt = False
         if config.name_algo == "irm":
             # https://wandb.ai/tlesort/CLOOD/runs/j6plvbvy?workspace=user-tlesort
