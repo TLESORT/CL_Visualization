@@ -98,6 +98,6 @@ class NNHead(nn.Module):
                 out[out==0] = -1e30
 
 
-            loss = loss_func(out, labels)
+            loss = loss_func(out, labels.long())
         assert loss == loss, print("There should be some Nan")
         return loss

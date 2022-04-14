@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 import torch
 import numpy as np
@@ -33,7 +34,8 @@ parser.add_argument('--architecture', default="resnet", type=str,
 # Logs / Data / Paths
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong',"OxfordPet", "OxfordFlower102"], help='dataset name')
+                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong',"OxfordPet", "OxfordFlower102",
+                             "VLCS"], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
@@ -129,6 +131,27 @@ slurm_tmpdir = os.environ.get('SLURM_TMPDIR')
 if not (slurm_tmpdir is None):
     config.root_dir = os.path.join(slurm_tmpdir, "Archives")
     config.data_dir = os.path.join(slurm_tmpdir, "Datasets")
+
+    data_storage_dir = "/network/projects/_groups/large_cl/Datasets/"
+    second_data_storage_dir = "./Archives/Datasets/"
+
+    if config.dataset == "GTSRB":
+        # files: GT-final_test.csv  GTSRB_Final_Test_GT.zip GTSRB_Final_Test_Images.zip
+        list_files = ["GT-final_test.csv", "GTSRB_Final_Test_GT.zip", "GTSRB_Final_Test_Images.zip"]
+    elif config.dataset == "VLCS":
+        list_files = ["VLCS.tar.gz"]
+
+    for filename in list_files:
+        full_path = os.path.join(config.data_dir, filename)
+        if not os.path.exists(full_path):
+            storage_path = os.path.join(data_storage_dir, filename)
+            second_storage_path = os.path.join(second_data_storage_dir, filename)
+            if os.path.exists(storage_path):
+                shutil.copy(storage_path, full_path)  # shutil.copy(src_path, dst_path)
+            elif os.path.exists(storage_path):
+                shutil.copy(storage_path, full_path)  # shutil.copy(src_path, dst_path)
+            else:
+                pass  # file will be downloaded automatically then...
 
 config.original_root = config.root_dir
 
