@@ -35,7 +35,7 @@ parser.add_argument('--architecture', default="resnet", type=str,
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
                              "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong',"OxfordPet", "OxfordFlower102",
-                             "VLCS"], help='dataset name')
+                             "VLCS", "TerraIncognita"], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
@@ -140,6 +140,8 @@ if not (slurm_tmpdir is None):
         list_files = ["GT-final_test.csv", "GTSRB_Final_Test_GT.zip", "GTSRB_Final_Test_Images.zip"]
     elif config.dataset == "VLCS":
         list_files = ["VLCS.tar.gz"]
+    elif config.dataset == "TerraIncognita":
+        list_files = ["eccv_18_all_images_sm.tar.gz", "caltech_camera_traps.json.zip"]
 
     for filename in list_files:
         full_path = os.path.join(config.data_dir, filename)

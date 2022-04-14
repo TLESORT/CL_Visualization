@@ -112,6 +112,9 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "VLCS":
         from continuum.datasets import VLCS
         dataset = VLCS(path_dir, download=True, train=train)
+    elif name_dataset == "TerraIncognita":
+        from continuum.datasets import TerraIncognita
+        dataset = TerraIncognita(path_dir, download=True, train=train)
     elif name_dataset == "CIFAR100":
         from continuum.datasets import CIFAR100
         dataset = CIFAR100(path_dir, download=True, train=train)
@@ -153,7 +156,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 def get_transform(name_dataset, architecture, train="True"):
     list_transform = None
-    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2', 'OxfordPet', 'OxfordFlower102', "VLCS"]:
+    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2', 'OxfordPet', 'OxfordFlower102', "VLCS", "TerraIncognita"]:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
         resize = trsf.Resize(size=(224, 224))
@@ -203,7 +206,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                            pretrained_on=pretrained_on,
                            model_dir=model_dir, dropout=dropout)
 
-    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2', 'OxfordPet', 'OxfordFlower102', "VLCS"]:
+    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2', 'OxfordPet', 'OxfordFlower102', "VLCS", "TerraIncognita"]:
         from Models.imagenet import ImageNetModel
         model = ImageNetModel(num_classes=scenario.nb_classes,
                               classes_per_head=list_classes_per_tasks,
