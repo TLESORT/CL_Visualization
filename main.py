@@ -150,8 +150,8 @@ if not (slurm_tmpdir is None):
             second_storage_path = os.path.join(second_data_storage_dir, filename)
             if os.path.exists(storage_path):
                 shutil.copy(storage_path, full_path)  # shutil.copy(src_path, dst_path)
-            elif os.path.exists(second_data_storage_dir):
-                shutil.copy(second_data_storage_dir, full_path)  # shutil.copy(src_path, dst_path)
+            elif os.path.exists(second_storage_path):
+                shutil.copy(second_storage_path, full_path)  # shutil.copy(src_path, dst_path)
             else:
                 pass  # file will be downloaded automatically then...
 
