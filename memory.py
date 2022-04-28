@@ -20,13 +20,9 @@ class MemorySet(ArrayTaskSet):
     ):
         super().__init__(x=x, y=y, t=t, trsf=trsf, target_trsf=None)
 
-        if isinstance(x[0], str):
-            print("OUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-            print(x[0].type())
+        if isinstance(x[0], str) or isinstance(x[0], bytes):
             self.data_type = TaskType.IMAGE_PATH
         else:
-            print("NOOOOOOOOOOOOOOOOOOOOONNNNNNNNNNNNNNNNNNNNNNNNNN")
-            print(x[0].type())
             self.data_type = TaskType.IMAGE_ARRAY
 
         list_labels_id = range(len(self._y))

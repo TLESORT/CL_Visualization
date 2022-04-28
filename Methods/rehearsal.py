@@ -43,7 +43,7 @@ class Rehearsal(Trainer):
 
         assert task_ids is not None # if it is none it would be better to create a valid task id tensor
 
-        return MemorySet(samples, labels, task_ids, None)
+        return MemorySet(samples, labels, task_ids, trsf=task_set.trsf)
 
     def init_task(self, ind_task: int, task_set: TaskSet):
 
