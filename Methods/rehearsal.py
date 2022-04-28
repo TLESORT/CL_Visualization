@@ -30,8 +30,11 @@ class Rehearsal(Trainer):
         assert self.nb_samples_rehearsal_per_class * nb_classes < len(task_set._y), \
             f"{self.nb_samples_rehearsal_per_class} x {nb_classes} =" \
             f" {self.nb_samples_rehearsal_per_class * nb_classes} vs {len(task_set._y)} "
-        indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
 
+        for i in range(10):
+            indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
+            if len(np.unique(task_set._y[indexes])) == nb_classes:
+                break
         assert len(np.unique(task_set._y[indexes])) == nb_classes
 
         if task_set.data_type == TaskType.H5:
