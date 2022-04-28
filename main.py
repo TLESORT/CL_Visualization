@@ -131,6 +131,8 @@ slurm_tmpdir = os.environ.get('SLURM_TMPDIR')
 if not (slurm_tmpdir is None):
     config.root_dir = os.path.join(slurm_tmpdir, "Archives")
     config.data_dir = os.path.join(slurm_tmpdir, "Datasets")
+    if not os.path.exists(config.data_dir):
+        os.makedirs(config.data_dir)
 
     data_storage_dir = "/network/projects/_groups/large_cl/Datasets/"
     second_data_storage_dir = "./Archives/Datasets/"
