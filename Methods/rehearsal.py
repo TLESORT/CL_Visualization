@@ -32,6 +32,8 @@ class Rehearsal(Trainer):
             f" {self.nb_samples_rehearsal_per_class * nb_classes} vs {len(task_set._y)} "
         indexes = np.random.randint(0, len(task_set._y), self.nb_samples_rehearsal_per_class * nb_classes)
 
+        assert len(np.unique(task_set._y[indexes])) == nb_classes
+
         if task_set.data_type == TaskType.H5:
             unique_indexes, inverse_ids = np.unique(indexes, return_inverse=True)
             samples, labels, task_ids = task_set.get_raw_samples(unique_indexes)
@@ -59,6 +61,8 @@ class Rehearsal(Trainer):
         if ind_task > 0:
             # ptit checkup
             if self.scenario_name == "Domain" or self.scenario_name == "SpuriousFeatures":
+
+                assert task_set.nb_classes == len(np.unique(self.data_memory._y)), print(np.unique(self.data_memory._y))
                 assert len(self.data_memory) == self.data_memory.nb_classes *\
                        self.nb_samples_rehearsal_per_class *\
                        ind_task, \
