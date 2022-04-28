@@ -2,9 +2,9 @@ from typing import Tuple, Union
 
 import numpy as np
 from torchvision import transforms
+from PIL import Image
 
 from continuum.tasks.task_set import ArrayTaskSet, TaskType
-
 
 class MemorySet(ArrayTaskSet):
     """
@@ -51,6 +51,19 @@ class MemorySet(ArrayTaskSet):
         nb_tot_samples = self._x.shape[0]
         indexes = np.random.randint(0, nb_tot_samples, nb_samples)
         return self.get_raw_samples(indexes)
+
+    def get_sample(self, index: int) -> np.ndarray:
+        """Returns a Pillow image corresponding to the given `index`.
+
+        :param index: Index to query the image.
+        :return: A Pillow image.
+        """
+        x = self._x[index]
+        if self.data_type == TaskType.IMAGE_ARRAY:
+            x = Image.fromarray(x.astype("uint8"))
+        else:
+            x = Image.open(x).convert("RGB")
+        return x
 
     def get_nb_samples(self):
         """
