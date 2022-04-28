@@ -335,7 +335,7 @@ class SpectralDecoupling(ERM):
 
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
 
-        all_y = torch.cat([y for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches]).long()
         all_hat_y = torch.cat([self.predict(x) for x, y in minibatches])
         loss = F.cross_entropy(all_hat_y, all_y)
         penalty = (all_hat_y ** 2).mean()
