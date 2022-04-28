@@ -19,7 +19,11 @@ class MemorySet(ArrayTaskSet):
             trsf: transforms.Compose
     ):
         super().__init__(x=x, y=y, t=t, trsf=trsf, target_trsf=None)
-        self.data_type = TaskType.IMAGE_ARRAY
+
+        if isinstance(x[0], str):
+            self.data_type = TaskType.IMAGE_PATH
+        else:
+            self.data_type = TaskType.IMAGE_ARRAY
 
         list_labels_id = range(len(self._y))
 
