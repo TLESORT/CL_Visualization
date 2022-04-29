@@ -135,7 +135,7 @@ class ERM(OOD_Algorithm):
         minibatches = self.get_minibatches(current_x, current_y, ind_task)
         #all_x = torch.cat([x for x, y in minibatches])
         all_hat_y = torch.cat([self.predict(x) for x, y in minibatches])
-        all_y = torch.cat([y for x, y in minibatches])
+        all_y = torch.cat([y for x, y in minibatches]).long()
 
         loss = F.cross_entropy(all_hat_y, all_y)
 
@@ -176,7 +176,7 @@ class IBERM(ERM):
             features = all_features[all_logits_idx:all_logits_idx + x.shape[0]]
             logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
             all_logits_idx += x.shape[0]
-            nll += F.cross_entropy(logits, y)
+            nll += F.cross_entropy(logits, y.long())
             ib_penalty += features.var(dim=0).mean()
 
         nll /= len(minibatches)
@@ -215,8 +215,8 @@ class IRM(ERM):
     @staticmethod
     def _irm_penalty(logits, y):
         scale = torch.tensor(1.).to(y.device).requires_grad_()
-        loss_1 = F.cross_entropy(logits[::2] * scale, y[::2])
-        loss_2 = F.cross_entropy(logits[1::2] * scale, y[1::2])
+        loss_1 = F.cross_entropy(logits[::2] * scale, y[::2].long())
+        loss_2 = F.cross_entropy(logits[1::2] * scale, y[1::2].long())
         grad_1 = autograd.grad(loss_1, [scale], create_graph=True)[0]
         grad_2 = autograd.grad(loss_2, [scale], create_graph=True)[0]
         result = torch.sum(grad_1 * grad_2)
@@ -236,7 +236,7 @@ class IRM(ERM):
         for i, (x, y) in enumerate(minibatches):
             logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
             all_logits_idx += x.shape[0]
-            nll += F.cross_entropy(logits, y)
+            nll += F.cross_entropy(logits, y.long())
             penalty += self._irm_penalty(logits, y)
         nll /= len(minibatches)
         penalty /= len(minibatches)
@@ -291,6 +291,7 @@ class IBIRM(IRM):
         all_logits = self.model.head(all_features)
         all_logits_idx = 0
         for i, (x, y) in enumerate(minibatches):
+            y=y.long()
             features = all_features[all_logits_idx:all_logits_idx + x.shape[0]]
             logits = all_logits[all_logits_idx:all_logits_idx + x.shape[0]]
             all_logits_idx += x.shape[0]
@@ -381,7 +382,7 @@ class GroupDRO(ERM):
 
         for m in range(len(minibatches)):
             x, y = minibatches[m]
-            losses[m] = F.cross_entropy(self.predict(x), y)
+            losses[m] = F.cross_entropy(self.predict(x), y.long())
             self.model.q[m] *= (self.groupdro_eta * losses[m].data).exp()
 
         self.model.q /= self.model.q.sum()
@@ -465,7 +466,7 @@ class AbstractDANN(OOD_Algorithm):
             return {'disc_loss': disc_loss.item()}
         else:
             all_preds = self.classifier(all_z)
-            classifier_loss = F.cross_entropy(all_preds, all_y)
+            classifier_loss = F.cross_entropy(all_preds, all_y.long())
             gen_loss = (classifier_loss +
                         (self.hparams['lambda'] * -disc_loss))
             self.disc_opt.zero_grad()
