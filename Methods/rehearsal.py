@@ -18,6 +18,7 @@ class Rehearsal(Trainer):
         super().__init__(config)
         self.name_algo = "rehearsal"
         self.data_memory = None
+        self.replay_balance = config.replay_balance
         self.nb_samples_rehearsal_per_class = config.nb_samples_rehearsal_per_class
 
     def sample_task(self, task_set):
@@ -47,6 +48,7 @@ class Rehearsal(Trainer):
 
     def init_task(self, ind_task: int, task_set: TaskSet):
 
+
         if not self.data_encoded: # if data is encoded we can not plot it
             task_set.plot(self.sample_dir, f"training_{ind_task}.png",
                           nb_samples=100,
@@ -57,6 +59,10 @@ class Rehearsal(Trainer):
         # add replay samples in taskset without the new samples
         task_memory_set = None
         if ind_task > 0:
+
+            new_classes = task_set.get_classes()
+            previous_classes = self.data_memory.get_classes()
+
             # ptit checkup
             if self.scenario_name == "Domain" or self.scenario_name == "SpuriousFeatures":
                 assert len(self.data_memory) == self.data_memory.nb_classes *\
@@ -83,7 +89,7 @@ class Rehearsal(Trainer):
                                             task_set.trsf)
 
             task_memory_set.concatenate(self.data_memory)
-            task_memory_set.balance_classes()
+            task_memory_set.balance_classes(ratio=self.replay_balance, new_classes=new_classes, previous_classes=previous_classes)
             task_memory_set.check_internal_state()
         else:
             task_memory_set = task_set

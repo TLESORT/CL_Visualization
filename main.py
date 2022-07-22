@@ -66,7 +66,8 @@ parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
 parser.add_argument('--batch_size', default=256, type=int, help='batch size')
 parser.add_argument('--nb_samples_rehearsal_per_class', default=100, type=int, help='nb_samples_rehearsal_per_class')
-parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "multi-head"],
+parser.add_argument('--replay_balance', default=1.0, type=float, help=' define how much replay we realize, 1 menas perfect balance between previous and past data.')
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "None", "single", "group", "multi-head"],
                     help='if single we only update one out dimension,'
                          ' if group mask the classes in the batch,'
                          ' multi-head is for training with multi head while testing single head')
@@ -107,6 +108,9 @@ if config.name_algo == "ib-irm":
     config.name_algo = "ib_irm"
 if config.name_algo == "groupDRO":
     config.name_algo = "GroupDRO"
+
+if config.masked_out == "None":
+    config.masked_out = None
 
 if config.sweeps_HPs:
     if config.project_name == "CLOOD":

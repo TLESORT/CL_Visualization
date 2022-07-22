@@ -123,16 +123,26 @@ class MemorySet(ArrayTaskSet):
         new_dic = {i: np.random.choice(class_indexes) for i in range(len_list, len_list + nb_new_instance_needed)}
         self.list_IDs.update(new_dic)
 
-    def balance_classes(self):
+    def balance_classes(self, ratio=None, new_classes=None, previous_classes=None):
         """
         modify list_ID so classes will be balanced while loaded with data loader
         """
         self.reset_list_IDs()
-        list_classes = self.get_classes()
+        if ratio is None:
+            ratio = 1.0
+            # we just balance the memory without caring about new and old classes
+            list_classes = self.get_classes()
+            list_classes_ref = self.get_classes()
+        else:
+            # we only balance by modifying previous data
+            # we assume that the sub-group new_classes and old_classes are already balanced
+            list_classes = previous_classes
+            list_classes_ref = new_classes
 
-        # first we get the number of samples for each class
+
+        # first we get the number of samples for reference classes
         list_samples_per_classes = {}
-        for _class in list_classes:
+        for _class in list_classes_ref:
             nb_samples = self.get_nb_samples_class(_class)
             list_samples_per_classes[_class] = nb_samples
 
@@ -141,9 +151,9 @@ class MemorySet(ArrayTaskSet):
 
         # we increase the nb of samples for classes under represented
         for _class in list_classes:
-            nb_samples = list_samples_per_classes[_class]
+            nb_samples = self.get_nb_samples_class(_class)
             assert nb_samples <= max_samples
-            increase_factor = 1.0 * max_samples / nb_samples
+            increase_factor = ratio *  1.0 * max_samples / nb_samples
             # we tolerate 5% error
             if increase_factor > 1.05:
                 self.increase_size_class(increase_factor, _class)

@@ -1,0 +1,38 @@
+program: main.py
+method: grid
+metric:
+  goal: maximize
+  name: test accuracy task 10
+parameters:
+  project_name:
+    value: "CL_Visualization"
+  dataset:
+    value: "CIFAR10"
+  scenario_name:
+    value: "Disjoint"
+  opt_name:
+    value: "Adam"
+  num_tasks:
+    value: 5
+  nb_epochs:
+    value: 25
+  name_algo:
+    values: ["rehearsal"]
+  nb_samples_rehearsal_per_class:
+    value: 100
+  OutLayer:
+    values: [ 'Linear', 'CosLayer', 'FCosLayer', "Linear_no_bias", 'WeightNorm', 'OriginalWeightNorm' ]
+  masked_out:
+    values: [ "None", "single", "group"]
+  replay_balance:
+    values: [0.25, 0.5, 0.75, 1.0]
+  seed:
+    values: [0, 1, 2 3 4]
+
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--fast"
+  - "--sweeps_HPs"
+  - ${args}
