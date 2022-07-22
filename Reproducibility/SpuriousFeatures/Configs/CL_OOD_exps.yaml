@@ -1,0 +1,26 @@
+program: main.py
+method: grid
+metric:
+  goal: maximize
+  name: test accuracy
+parameters:
+  dataset:
+    values: ["VLCS", "TerraIncognita"]
+  scenario_name:
+    value: "Domain"
+  num_tasks:
+    value: 4
+  nb_epochs:
+    value: 50
+  name_algo:
+    values: ["baseline", "rehearsal", "irm", "ib_irm", "ib_erm", "GroupDRO", "SpectralDecoupling"]
+  seed:
+    values: [0, 1, 2, 3, 4]
+
+command:
+  - python
+  - ${program}
+  - "--sweep"
+  - "--fast"
+  - "--sweeps_HPs"
+  - ${args}

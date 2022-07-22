@@ -5,21 +5,23 @@ metric:
   name: test accuracy
 parameters:
   dataset:
-    value: "CIFAR10"
+    values: ["OxfordPet", "OxfordFlower102"]
   scenario_name:
     value: "Disjoint"
   num_tasks:
-    value: 5
+    value: 10
   nb_epochs:
     value: 25
   OutLayer:
-    values: ["MeanLayer", "WeightNorm"]
+    values: ["MeanLayer", "WeightNorm", "Linear"]
+  architecture:
+    values: ["resnet", "alexnet", "vgg", "googlenet"]
   name_algo:
     value: "baseline"
   masked_out:
     value: "multi-head"
   pretrained_on:
-    value: "CIFAR100"
+    value: "ImageNet"
   seed:
     values: [0,1,2,3,4]
 
