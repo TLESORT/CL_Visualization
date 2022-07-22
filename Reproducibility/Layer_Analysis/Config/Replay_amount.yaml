@@ -2,7 +2,7 @@ program: main.py
 method: grid
 metric:
   goal: maximize
-  name: test accuracy task 10
+  name: test accuracy
 parameters:
   project_name:
     value: "CL_Visualization"
@@ -21,13 +21,13 @@ parameters:
   nb_samples_rehearsal_per_class:
     value: 100
   OutLayer:
-    values: [ 'Linear', 'CosLayer', 'FCosLayer', "Linear_no_bias", 'WeightNorm', 'OriginalWeightNorm' ]
+    values: [ 'Linear', 'CosLayer', 'WeightNorm' ]
   masked_out:
     values: [ "None", "single", "group"]
   replay_balance:
     values: [0.25, 0.5, 0.75, 1.0]
   seed:
-    values: [0, 1, 2 3 4]
+    values: [0, 1, 2, 3, 4]
 
 command:
   - python
