@@ -203,14 +203,14 @@ if config.pretrained_on == "NA": config.pretrained_on = None
 if not (config.dev or config.offline):
 
     # Check if experience already exists
-    exp_already_done=False
-    if config.seed != 1664 and not config.sweep: # this seed is vip and sweep already check if exps are already run
-        exp_already_done = check_exp_config(config, name_out)
-    if exp_already_done:
-        print(f"This experience has already been run and finished: {experiment_id}")
-        exit()
-    else:
-        print("This experience has not been run yet")
+    # exp_already_done=False
+    # if config.seed != 1664 and not config.sweep: # this seed is vip and sweep already check if exps are already run
+    #     exp_already_done = check_exp_config(config, name_out)
+    # if exp_already_done:
+    #     print(f"This experience has already been run and finished: {experiment_id}")
+    #     exit()
+    # else:
+    #     print("This experience has not been run yet")
 
     for i in range(10):
         try:
