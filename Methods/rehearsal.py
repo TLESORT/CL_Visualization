@@ -110,4 +110,11 @@ class Rehearsal(Trainer):
                                   nb_samples=100,
                                   shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
 
+        if self.verbose and ind_task > 0:
+            print("Composition of new dataset")
+            print(len(task_memory_set))
+            print(len(task_memory_set._y))
+            for class_ in task_memory_set.get_classes():
+                print(f"{class_} : {len(np.where(task_memory_set._y[list(task_memory_set.list_IDs.values())] == class_)[0])}")
+
         return super().init_task(ind_task, task_memory_set)
