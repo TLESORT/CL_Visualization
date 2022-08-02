@@ -96,6 +96,9 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
     elif name_dataset == "Core50":
         from continuum.datasets import Core50
         dataset = Core50(path_dir, download=False, train=train)
+    elif name_dataset == "Tiny":
+        from continuum.datasets import TinyImageNet200
+        dataset = TinyImageNet200(path_dir, download=True, train=train)
     elif name_dataset == "Core10Lifelong":
         from continuum.datasets import Core50
         dataset = Core50(path_dir, scenario="domains", classification="category", train=train)
@@ -140,7 +143,7 @@ def get_dataset(path_dir, name_dataset, name_scenario, train="True"):
 
 def get_transform(name_dataset, architecture, train="True"):
     list_transform = None
-    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2']:
+    if name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2', "Tiny"]:
         normalize = trsf.Normalize(mean=[0.485, 0.456, 0.406],
                                    std=[0.229, 0.224, 0.225])
         resize = trsf.Resize(size=(224, 224))
@@ -190,7 +193,7 @@ def get_model(name_dataset, scenario, pretrained_on, test_label, OutLayer, metho
                            pretrained_on=pretrained_on,
                            model_dir=model_dir, dropout=dropout)
 
-    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2']:
+    elif name_dataset in ["Core50", "Core10Lifelong", "Core10Mix", 'CUB200', 'AwA2', "Tiny"]:
         from Models.imagenet import ImageNetModel
         model = ImageNetModel(num_classes=scenario.nb_classes,
                               classes_per_head=list_classes_per_tasks,

@@ -33,7 +33,7 @@ parser.add_argument('--architecture', default="resnet", type=str,
 # Logs / Data / Paths
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong'], help='dataset name')
+                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong', "Tiny"], help='dataset name')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
