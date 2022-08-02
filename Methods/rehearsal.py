@@ -95,20 +95,27 @@ class Rehearsal(Trainer):
             task_memory_set = task_set
 
         if not self.data_encoded: # if data is encoded we can not plot it
-            task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
-                          nb_samples=100,
-                          shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            try:
+                task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
+                              nb_samples=100,
+                              shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            except:
+                print("Can not plot samples.")
 
-        # merge memory with new samples
+                # merge memory with new samples
         if self.data_memory is not None:
             self.data_memory.concatenate(samples_memory)
         else:
             self.data_memory = samples_memory
 
         if not self.data_encoded: # if data is encoded we can not plot it
-            self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
-                                  nb_samples=100,
-                                  shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            try:
+                self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
+                                      nb_samples=100,
+                                      shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            except:
+                print("Can not plot samples.")
+
 
         if self.verbose and ind_task > 0:
             print("Composition of new dataset")
