@@ -41,7 +41,7 @@ parser.add_argument('--support', type=float, default=1.0, help='amount of data o
 parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
 parser.add_argument('--root_dir', default="./Archives", type=str,
                     help='data directory name')
-parser.add_argument('--data_dir', default="./Archives/Datasets", type=str,
+parser.add_argument('--data_dir', default="../Datasets", type=str,
                     help='data directory name')
 parser.add_argument('--pmodel_dir', default="Pretrained", type=str,
                     help='data directory name')
