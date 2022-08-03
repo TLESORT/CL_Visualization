@@ -86,7 +86,7 @@ class Rehearsal(Trainer):
                 task_memory_set = MemorySet(task_set._x,
                                             task_set._y,
                                             task_set._t,
-                                            task_set.trsf)
+                                            task_set.trsf, data_type=task_set.data_type)
 
             task_memory_set.concatenate(self.data_memory)
             task_memory_set.balance_classes(ratio=self.replay_balance, new_classes=new_classes, previous_classes=previous_classes)

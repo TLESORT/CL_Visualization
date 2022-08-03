@@ -5,8 +5,19 @@ from torchvision import transforms
 
 from continuum.tasks.task_set import ArrayTaskSet, TaskType
 
+from PIL import Image
 
-class MemorySet(ArrayTaskSet):
+def MemorySet(x, y, t, trsf, data_type=TaskType.IMAGE_ARRAY):
+
+    if data_type == TaskType.IMAGE_ARRAY:
+        memoryset = ArrayMemorySet(x, y, t, trsf)
+    elif data_type == TaskType.IMAGE_PATH:
+        memoryset = PathMemorySet(x, y, t, trsf)
+
+    return memoryset
+
+
+class ArrayMemorySet(ArrayTaskSet):
     """
     A task set designed for Rehearsal strategies
     """
@@ -20,7 +31,6 @@ class MemorySet(ArrayTaskSet):
     ):
         super().__init__(x=x, y=y, t=t, trsf=trsf, target_trsf=None)
         self.data_type = TaskType.IMAGE_ARRAY
-
         list_labels_id = range(len(self._y))
 
         # dictionnary used by pytorch loader
@@ -266,3 +276,25 @@ class MemorySet(ArrayTaskSet):
         nb_tot_instances = len(self)
         indexes = np.random.randint(0, nb_tot_instances, nb_samples)
         return self.get_samples(indexes)
+
+class PathMemorySet(ArrayMemorySet):
+
+    def __init__(
+            self,
+            x: np.ndarray,
+            y: np.ndarray,
+            t: np.ndarray,
+            trsf: transforms.Compose
+    ):
+        super().__init__(x=x, y=y, t=t, trsf=trsf)
+        self.data_type = TaskType.IMAGE_PATH
+
+    def get_sample(self, index: int) -> np.ndarray:
+        """Returns a Pillow image corresponding to the given `index`.
+
+        :param index: Index to query the image.
+        :return: A Pillow image.
+        """
+        x = self._x[index]
+        x = Image.open(x).convert("RGB")
+        return x
