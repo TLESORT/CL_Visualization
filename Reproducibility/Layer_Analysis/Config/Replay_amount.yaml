@@ -12,22 +12,26 @@ parameters:
     value: "Disjoint"
   opt_name:
     value: "Adam"
+  batch_size:
+    value: 8
+  lr:
+    values: [0.001]
   num_tasks:
     value: 5
   nb_epochs:
-    value: 25
+    value: 50
   name_algo:
     values: ["rehearsal"]
   nb_samples_rehearsal_per_class:
     value: 100
   OutLayer:
-    values: [ 'Linear', 'CosLayer', 'WeightNorm' ]
+    values: [ 'Linear', 'WeightNorm' ]
   masked_out:
-    values: [ "None", "single", "group"]
+    values: [ "None", "group"]
   replay_balance:
-    values: [0.25, 0.5, 0.75, 1.0]
+    values: [0.01, 0.1, 0.5, 1.0]
   seed:
-    values: [0, 1, 2, 3, 4]
+    values: [0, 1, 2]
 
 command:
   - python
@@ -35,4 +39,5 @@ command:
   - "--sweep"
   - "--fast"
   - "--sweeps_HPs"
+  - "--reset_opt"
   - ${args}
