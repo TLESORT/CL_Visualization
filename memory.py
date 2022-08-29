@@ -3,13 +3,7 @@ from typing import Tuple, Union
 import numpy as np
 from torchvision import transforms
 from PIL import Image
-
 from continuum.tasks.task_set import ArrayTaskSet, TaskType
-
-<<<<<<< HEAD
-class MemorySet(ArrayTaskSet):
-=======
-from PIL import Image
 
 def MemorySet(x, y, t, trsf, data_type=TaskType.IMAGE_ARRAY):
 
@@ -22,7 +16,6 @@ def MemorySet(x, y, t, trsf, data_type=TaskType.IMAGE_ARRAY):
 
 
 class ArrayMemorySet(ArrayTaskSet):
->>>>>>> main
     """
     A task set designed for Rehearsal strategies
     """
