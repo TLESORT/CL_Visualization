@@ -1,27 +1,17 @@
 import torch
 import torch.multiprocessing
-
 torch.multiprocessing.set_sharing_strategy('file_system')
-
 from torch.utils.data import DataLoader
-
-
 import torch.nn.functional as F
 import os
 
-
+import numpy as np
 from continuum.tasks import TaskSet, TaskType
 from continuum.scenarios import create_subscenario
 
+from eval import Continual_Evaluation
 from utils import get_dataset, get_model, get_scenario, get_transform, get_optim
 from Encode.encode_utils import scenario_encoder
-
-from continuum.datasets import H5Dataset, InMemoryDataset
-from continuum.scenarios import ContinualScenario
-
-import numpy as np
-
-from eval import Continual_Evaluation
 
 
 class Trainer(Continual_Evaluation):
@@ -45,6 +35,7 @@ class Trainer(Continual_Evaluation):
         self.keep_task_order = config.keep_task_order
 
         self.num_tasks = config.num_tasks
+        self.num_classes = config.num_classes
         self.increments = config.increments
         self.scenario_name = config.scenario_name
         self.subset = config.subset
@@ -61,6 +52,13 @@ class Trainer(Continual_Evaluation):
 
         dataset_train = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=True)
         dataset_test = get_dataset(self.data_dir, self.dataset, self.scenario_name, train=False)
+
+        if self.num_classes == -1:
+            self.num_classes = dataset_train.nb_classes
+        else:
+            dataset_train = dataset_train.slice(keep_classes=np.arange(self.num_classes))
+            dataset_test = dataset_test.slice(keep_classes=np.arange(self.num_classes))
+
 
         self.transform_train = get_transform(self.dataset, architecture=self.architecture, train=True)
         self.transform_test = get_transform(self.dataset, architecture=self.architecture, train=False)

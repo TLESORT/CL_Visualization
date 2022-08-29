@@ -39,6 +39,7 @@ parser.add_argument('--dataset', default="MNIST", type=str,
 
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
+parser.add_argument('--num_classes', type=int, default=-1, help='Num classes taken in the dataset')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
 parser.add_argument('--support', type=float, default=1.0, help='amount of data of the original data in each task for spurious correlation scenarios')
 parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
