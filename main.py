@@ -144,6 +144,7 @@ if not (slurm_tmpdir is None):
     data_storage_dir = "/network/projects/_groups/large_cl/Datasets/"
     second_data_storage_dir = "./Archives/Datasets/"
 
+    list_files = []
     if config.dataset == "GTSRB":
         # files: GT-final_test.csv  GTSRB_Final_Test_GT.zip GTSRB_Final_Test_Images.zip
         list_files = ["GT-final_test.csv", "GTSRB_Final_Test_GT.zip", "GTSRB_Final_Test_Images.zip"]
