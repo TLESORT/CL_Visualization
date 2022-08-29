@@ -34,8 +34,9 @@ parser.add_argument('--architecture', default="resnet", type=str,
 # Logs / Data / Paths
 parser.add_argument('--dataset', default="MNIST", type=str,
                     choices=['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
-                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong',"OxfordPet", "OxfordFlower102",
+                             "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong', "Tiny","OxfordPet", "OxfordFlower102",
                              "VLCS", "TerraIncognita"], help='dataset name')
+
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
@@ -68,7 +69,8 @@ parser.add_argument('--nb_epochs', default=5, type=int,
                     help='Epochs for each task')
 parser.add_argument('--batch_size', default=256, type=int, help='batch size')
 parser.add_argument('--nb_samples_rehearsal_per_class', default=100, type=int, help='nb_samples_rehearsal_per_class')
-parser.add_argument('--masked_out', default=None, type=str, choices=[None, "single", "group", "multi-head"],
+parser.add_argument('--replay_balance', default=1.0, type=float, help=' define how much replay we realize, 1 menas perfect balance between previous and past data.')
+parser.add_argument('--masked_out', default=None, type=str, choices=[None, "None", "single", "group", "multi-head"],
                     help='if single we only update one out dimension,'
                          ' if group mask the classes in the batch,'
                          ' multi-head is for training with multi head while testing single head')
@@ -111,6 +113,7 @@ if config.name_algo == "ib-irm":
 if config.name_algo == "groupDRO":
     config.name_algo = "GroupDRO"
 
+
 if config.dataset in ["OxfordPet", "OxfordFlower102"] and config.scenario_name=="Disjoint" and config.increments[0]==0:
     if config.dataset == "OxfordPet":
         nb_classes = 37
@@ -120,6 +123,9 @@ if config.dataset in ["OxfordPet", "OxfordFlower102"] and config.scenario_name==
     remaining = nb_classes % config.num_tasks
     config.increments = [class_per_task] * (config.num_tasks-1) + [class_per_task+remaining]
     print(config.increments)
+
+if config.masked_out == "None":
+    config.masked_out = None
 
 if config.sweeps_HPs:
     if config.project_name == "CLOOD":
@@ -237,14 +243,14 @@ if config.pretrained_on == "NA": config.pretrained_on = None
 if not (config.dev or config.offline):
 
     # Check if experience already exists
-    exp_already_done=False
-    if config.seed != 1664 and not config.sweep: # this seed is vip and sweep already check if exps are already run
-        exp_already_done = check_exp_config(config, name_out)
-    if exp_already_done:
-        print(f"This experience has already been run and finished: {experiment_id}")
-        exit()
-    else:
-        print("This experience has not been run yet")
+    # exp_already_done=False
+    # if config.seed != 1664 and not config.sweep: # this seed is vip and sweep already check if exps are already run
+    #     exp_already_done = check_exp_config(config, name_out)
+    # if exp_already_done:
+    #     print(f"This experience has already been run and finished: {experiment_id}")
+    #     exit()
+    # else:
+    #     print("This experience has not been run yet")
 
     for i in range(10):
         try:

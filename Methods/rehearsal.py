@@ -18,6 +18,7 @@ class Rehearsal(Trainer):
         super().__init__(config)
         self.name_algo = "rehearsal"
         self.data_memory = None
+        self.replay_balance = config.replay_balance
         self.nb_samples_rehearsal_per_class = config.nb_samples_rehearsal_per_class
 
     def sample_task(self, task_set):
@@ -52,6 +53,7 @@ class Rehearsal(Trainer):
 
     def init_task(self, ind_task: int, task_set: TaskSet):
 
+
         if not self.data_encoded: # if data is encoded we can not plot it
             task_set.plot(self.sample_dir, f"training_{ind_task}.png",
                           nb_samples=100,
@@ -62,6 +64,10 @@ class Rehearsal(Trainer):
         # add replay samples in taskset without the new samples
         task_memory_set = None
         if ind_task > 0:
+
+            new_classes = task_set.get_classes()
+            previous_classes = self.data_memory.get_classes()
+
             # ptit checkup
             if self.scenario_name == "Domain" or self.scenario_name == "SpuriousFeatures":
 
@@ -87,28 +93,42 @@ class Rehearsal(Trainer):
                 task_memory_set = MemorySet(task_set._x,
                                             task_set._y,
                                             task_set._t,
-                                            task_set.trsf)
+                                            task_set.trsf, data_type=task_set.data_type)
 
             task_memory_set.concatenate(self.data_memory)
-            task_memory_set.balance_classes()
+            task_memory_set.balance_classes(ratio=self.replay_balance, new_classes=new_classes, previous_classes=previous_classes)
             task_memory_set.check_internal_state()
         else:
             task_memory_set = task_set
 
         if not self.data_encoded: # if data is encoded we can not plot it
-            task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
-                          nb_samples=100,
-                          shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            try:
+                task_memory_set.plot(self.sample_dir, f"training_with_replay_{ind_task}.png",
+                              nb_samples=100,
+                              shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            except:
+                print("Can not plot samples.")
 
-        # merge memory with new samples
+                # merge memory with new samples
         if self.data_memory is not None:
             self.data_memory.concatenate(samples_memory)
         else:
             self.data_memory = samples_memory
 
         if not self.data_encoded: # if data is encoded we can not plot it
-            self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
-                                  nb_samples=100,
-                                  shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            try:
+                self.data_memory.plot(self.sample_dir, f"memory_{ind_task}.png",
+                                      nb_samples=100,
+                                      shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            except:
+                print("Can not plot samples.")
+
+
+        if self.verbose and ind_task > 0:
+            print("Composition of new dataset")
+            print(len(task_memory_set))
+            print(len(task_memory_set._y))
+            for class_ in task_memory_set.get_classes():
+                print(f"{class_} : {len(np.where(task_memory_set._y[list(task_memory_set.list_IDs.values())] == class_)[0])}")
 
         return super().init_task(ind_task, task_memory_set)

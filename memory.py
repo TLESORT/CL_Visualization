@@ -6,7 +6,23 @@ from PIL import Image
 
 from continuum.tasks.task_set import ArrayTaskSet, TaskType
 
+<<<<<<< HEAD
 class MemorySet(ArrayTaskSet):
+=======
+from PIL import Image
+
+def MemorySet(x, y, t, trsf, data_type=TaskType.IMAGE_ARRAY):
+
+    if data_type == TaskType.IMAGE_ARRAY:
+        memoryset = ArrayMemorySet(x, y, t, trsf)
+    elif data_type == TaskType.IMAGE_PATH:
+        memoryset = PathMemorySet(x, y, t, trsf)
+
+    return memoryset
+
+
+class ArrayMemorySet(ArrayTaskSet):
+>>>>>>> main
     """
     A task set designed for Rehearsal strategies
     """
@@ -19,12 +35,10 @@ class MemorySet(ArrayTaskSet):
             trsf: transforms.Compose
     ):
         super().__init__(x=x, y=y, t=t, trsf=trsf, target_trsf=None)
-
         if isinstance(x[0], str) or isinstance(x[0], bytes):
             self.data_type = TaskType.IMAGE_PATH
         else:
             self.data_type = TaskType.IMAGE_ARRAY
-
         list_labels_id = range(len(self._y))
 
         # dictionnary used by pytorch loader
@@ -140,17 +154,42 @@ class MemorySet(ArrayTaskSet):
         new_dic = {i: np.random.choice(class_indexes) for i in range(len_list, len_list + nb_new_instance_needed)}
         self.list_IDs.update(new_dic)
 
-    def balance_classes(self):
+    def reduce_size_class(self, reduction_factor, class_label):
+        """
+        reduce the number of a certain class.
+         If samples id are redundant in the ID_list it will remove redundancy then,
+         it will delete some samples if the reduction is to big.
+        """
+        indexes = self.get_indexes_class(class_label)
+        nb_instance_class = self.get_nb_instances_class(class_label)
+        nb_instance2remove = int(round(nb_instance_class * (1-reduction_factor)))
+
+        indexes2pop = np.random.choice(indexes, size=nb_instance2remove, replace=False)
+        for idx2pop in indexes2pop:
+            # randomely remove an instance
+            self.list_IDs.pop(idx2pop)
+
+    def balance_classes(self, ratio=None, new_classes=None, previous_classes=None):
         """
         modify list_ID so classes will be balanced while loaded with data loader
         """
         self.reset_list_IDs()
-        list_classes = self.get_classes()
+        if ratio is None:
+            ratio = 1.0
+            # we just balance the memory without caring about new and old classes
+            list_classes = self.get_classes()
+            list_classes_ref = self.get_classes()
+        else:
+            # we only balance by modifying previous data
+            # we assume that the sub-group new_classes and old_classes are already balanced
+            list_classes = previous_classes
+            list_classes_ref = new_classes
 
-        # first we get the number of samples for each class
+
+        # first we get the number of instance for reference classes
         list_samples_per_classes = {}
-        for _class in list_classes:
-            nb_samples = self.get_nb_samples_class(_class)
+        for _class in list_classes_ref:
+            nb_samples = self.get_nb_instances_class(_class)
             list_samples_per_classes[_class] = nb_samples
 
         ind_max_samples = max(list_samples_per_classes, key=list_samples_per_classes.get)
@@ -158,13 +197,19 @@ class MemorySet(ArrayTaskSet):
 
         # we increase the nb of samples for classes under represented
         for _class in list_classes:
-            nb_samples = list_samples_per_classes[_class]
+            assert self.get_nb_instances_class(_class) == self.get_nb_samples_class(_class),\
+                print("reset of list Ids has failed")
+            nb_samples = self.get_nb_instances_class(_class)
             assert nb_samples <= max_samples
-            increase_factor = 1.0 * max_samples / nb_samples
+            increase_factor = ratio *  1.0 * max_samples / nb_samples
             # we tolerate 5% error
             if increase_factor > 1.05:
                 self.increase_size_class(increase_factor, _class)
+            elif increase_factor < 0.95:
+                self.reduce_size_class(increase_factor, _class)
 
+        #reformat dictionnary to be continuous
+        self.list_IDs = {i: self.list_IDs[key] for i, key in enumerate(self.list_IDs.keys())}
         # Check if everything looks good
         self.check_internal_state()
 
@@ -224,14 +269,7 @@ class MemorySet(ArrayTaskSet):
         # TODO
         pass
 
-    def reduce_size_class(self, reduction_factor):
-        """
-        reduce the number of a certain class.
-         If samples id are redundant in the ID_list it will remove redundancy then,
-         it will delete some samples if the reduction is to big.
-        """
-        # TODO
-        pass
+
 
     def reduce_size_task(self, reduction_factor):
         """
@@ -263,13 +301,35 @@ class MemorySet(ArrayTaskSet):
         nb_samples = len(self._y)
         nb_instances = len(self.list_IDs)
 
-        assert nb_instances >= nb_samples
+        #assert nb_instances >= nb_samples
 
         for key, id_value in self.list_IDs.items():
             assert id_value < nb_samples
-            assert key < nb_instances
+            #assert key < nb_instances
 
     def get_random_samples(self, nb_samples):
         nb_tot_instances = len(self)
         indexes = np.random.randint(0, nb_tot_instances, nb_samples)
         return self.get_samples(indexes)
+
+class PathMemorySet(ArrayMemorySet):
+
+    def __init__(
+            self,
+            x: np.ndarray,
+            y: np.ndarray,
+            t: np.ndarray,
+            trsf: transforms.Compose
+    ):
+        super().__init__(x=x, y=y, t=t, trsf=trsf)
+        self.data_type = TaskType.IMAGE_PATH
+
+    def get_sample(self, index: int) -> np.ndarray:
+        """Returns a Pillow image corresponding to the given `index`.
+
+        :param index: Index to query the image.
+        :return: A Pillow image.
+        """
+        x = self._x[index]
+        x = Image.open(x).convert("RGB")
+        return x

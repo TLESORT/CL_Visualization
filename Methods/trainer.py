@@ -181,9 +181,12 @@ class Trainer(Continual_Evaluation):
                                     num_workers=6)
 
         if not self.data_encoded: # if data is encoded we can not plot it
-            task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
-                                  nb_samples=100,
-                                  shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            try:
+                task_set.plot(self.sample_dir, f"samples_task_{ind_task}.png",
+                                      nb_samples=100,
+                                      shape=[self.model.image_size, self.model.image_size, self.model.input_dim])
+            except:
+                print("Can not plot samples.")
 
         if self.verbose: print("prepare log")
         if ind_task == 0:
