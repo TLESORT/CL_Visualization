@@ -40,6 +40,7 @@ parser.add_argument('--dataset', default="MNIST", type=str,
 
 parser.add_argument('--num_tasks', type=int, default=5, help='Task number')
 parser.add_argument('--num_classes', type=int, default=-1, help='Num classes taken in the dataset')
+parser.add_argument('--classes_per_tasks', type=int, default=-1, help='Num classes per tasks')
 parser.add_argument('--spurious_corr', type=float, default=1.0, help='Correlation between the spurious features and the labels')
 parser.add_argument('--support', type=float, default=1.0, help='amount of data of the original data in each task for spurious correlation scenarios')
 parser.add_argument('--increments', type=int, nargs="*", default=[0], help='to manually set the number of increments.')
@@ -106,13 +107,8 @@ torch.manual_seed(config.seed)
 np.random.seed(config.seed)
 
 
-# TODO: remove this once sweeps are done.
-if config.name_algo == "ib-erm":
-    config.name_algo = "ib_erm"
-if config.name_algo == "ib-irm":
-    config.name_algo = "ib_irm"
-if config.name_algo == "groupDRO":
-    config.name_algo = "GroupDRO"
+if config.classes_per_tasks != -1 and config.num_classes == -1:
+    config.num_classes = config.classes_per_tasks * config.num_tasks
 
 
 if config.dataset in ["OxfordPet", "OxfordFlower102"] and config.scenario_name=="Disjoint" and config.increments[0]==0:
