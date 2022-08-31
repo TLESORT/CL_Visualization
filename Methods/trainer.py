@@ -94,9 +94,9 @@ class Trainer(Continual_Evaluation):
                 dataset_name = f"{config.dataset}Spurious"
 
             name_tr = os.path.join(self.data_dir, f"encode_{dataset_name}_{config.architecture}"
-                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train.hdf5")
+                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_train_{self.num_classes}.hdf5")
             name_te = os.path.join(self.data_dir, f"encode_{dataset_name}_{config.architecture}"
-                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_test.hdf5")
+                                                    f"_{config.pretrained_on}_{self.scenario_tr.nb_tasks}_test_{self.num_classes}.hdf5")
 
             self.scenario_tr = scenario_encoder(self.scenario_tr, self.model, self.batch_size, name_tr)
             self.scenario_te  = scenario_encoder(self.scenario_te, self.model, self.batch_size, name_te)
