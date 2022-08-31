@@ -140,6 +140,9 @@ if not (slurm_tmpdir is None):
     data_storage_dir = "/network/projects/_groups/large_cl/Datasets/"
     second_data_storage_dir = "./Archives/Datasets/"
 
+    #['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
+     # "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong', "Tiny","OxfordPet", "OxfordFlower102",
+     # "VLCS", "TerraIncognita"]
     list_files = []
     if config.dataset == "GTSRB":
         # files: GT-final_test.csv  GTSRB_Final_Test_GT.zip GTSRB_Final_Test_Images.zip
@@ -148,6 +151,14 @@ if not (slurm_tmpdir is None):
         list_files = ["VLCS.tar.gz"]
     elif config.dataset == "TerraIncognita":
         list_files = ["eccv_18_all_images_sm.tar.gz", "caltech_camera_traps.json.zip"]
+    elif config.dataset == "CUB200":
+        list_files = ["CUB_200_2011.tgz"]
+    elif config.dataset == "Tiny":
+        list_files = ["tiny-imagenet-200.zip"]
+    elif config.dataset == "CIFAR100":
+        list_files = ["cifar-100-python.tar.gz"]
+    elif config.dataset == "CIFAR10":
+        list_files = ["cifar-10-python.tar.gz"]
 
     for filename in list_files:
         full_path = os.path.join(config.data_dir, filename)
