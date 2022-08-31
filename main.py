@@ -137,8 +137,8 @@ if not (slurm_tmpdir is None):
     if not os.path.exists(config.data_dir):
         os.makedirs(config.data_dir)
 
-    data_storage_dir = "/network/projects/_groups/large_cl/Datasets/"
-    second_data_storage_dir = "./Archives/Datasets/"
+    data_storage_dir = "./Archives/Datasets/"
+    second_data_storage_dir = "/network/projects/_groups/large_cl/Datasets/"
 
     #['MNIST', 'mnist_fellowship', 'CIFAR10', 'CIFAR100', 'SVHN', 'CUB200', 'AwA2','Core50', 'ImageNet',
      # "Core10Lifelong", "Core10Mix", 'CIFAR100Lifelong', "Tiny","OxfordPet", "OxfordFlower102",
